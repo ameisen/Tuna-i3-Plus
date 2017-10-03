@@ -29,7 +29,6 @@
 #include "endstops.h"
 #include "temperature.h"
 #include "stepper.h"
-#include "ultralcd.h"
 #include "bi3_plus_lcd.h"
 
 // TEST_ENDSTOP: test the old and the current status of an endstop
@@ -175,7 +174,7 @@ void Endstops::report_state() {
     SERIAL_EOL();
 
     #if ENABLED(ULTRA_LCD)
-      lcd_status_printf_P(0, PSTR(MSG_LCD_ENDSTOPS " %c %c %c %c"), chrX, chrY, chrZ, chrP);
+      lcd::statusf(0, PSTR(MSG_LCD_ENDSTOPS " %c %c %c %c"), chrX, chrY, chrZ, chrP);
     #endif
 
     hit_on_purpose();

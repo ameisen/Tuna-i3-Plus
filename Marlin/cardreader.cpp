@@ -22,7 +22,6 @@
 
 #include "cardreader.h"
 
-#include "ultralcd.h"
 #include "bi3_plus_lcd.h"
 #include "stepper.h"
 #include "language.h"
@@ -417,7 +416,7 @@ void CardReader::openFile(char* name, bool read, bool push_current/*=false*/) {
 
       SERIAL_PROTOCOLLNPGM(MSG_SD_FILE_SELECTED);
       getfilename(0, fname);
-      lcd_setstatus(longFilename[0] ? longFilename : fname);
+      lcd::set_status(longFilename[0] ? longFilename : fname);
     }
     else {
       SERIAL_PROTOCOLPAIR(MSG_SD_OPEN_FILE_FAIL, fname);
@@ -434,7 +433,7 @@ void CardReader::openFile(char* name, bool read, bool push_current/*=false*/) {
     else {
       saving = true;
       SERIAL_PROTOCOLLNPAIR(MSG_SD_WRITE_TO_FILE, name);
-      lcd_setstatus(fname);
+	  lcd::set_status(fname);
     }
   }
 }

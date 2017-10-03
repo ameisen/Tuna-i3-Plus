@@ -102,11 +102,6 @@ const PinInfo pin_array[] PROGMEM = {
 
 };
 
-#define AVR_ATmega2560_FAMILY_PLUS_70 (MOTHERBOARD == BOARD_BQ_ZUM_MEGA_3D \
-|| MOTHERBOARD == BOARD_MIGHTYBOARD_REVE \
-|| MOTHERBOARD == BOARD_MINIRAMBO \
-|| MOTHERBOARD == BOARD_SCOOVO_X9H)
-
 #if AVR_AT90USB1286_FAMILY
   // Working with Teensyduino extension so need to re-define some things
   #include "pinsDebug_Teensyduino.h"
@@ -116,12 +111,6 @@ const PinInfo pin_array[] PROGMEM = {
   #define digitalPinToBitMask_DEBUG(p) digitalPinToBitMask(p)
   #define digitalPinToPort_DEBUG(p) digitalPinToPort_Teensy(p)
   #define get_pinMode(pin) (*portModeRegister(pin) & digitalPinToBitMask_DEBUG(pin))
-#elif AVR_ATmega2560_FAMILY_PLUS_70   // So we can access/display all the pins on boards using more than 70
-  #include "pinsDebug_plus_70.h"
-  #define digitalPinToTimer_DEBUG(p) digitalPinToTimer_plus_70(p)
-  #define digitalPinToBitMask_DEBUG(p) digitalPinToBitMask_plus_70(p)
-  #define digitalPinToPort_DEBUG(p) digitalPinToPort_plus_70(p)
-  bool get_pinMode(int8_t pin) {return *portModeRegister(digitalPinToPort_DEBUG(pin)) & digitalPinToBitMask_DEBUG(pin); }
 #else
   #define digitalPinToTimer_DEBUG(p) digitalPinToTimer(p)
   #define digitalPinToBitMask_DEBUG(p) digitalPinToBitMask(p)

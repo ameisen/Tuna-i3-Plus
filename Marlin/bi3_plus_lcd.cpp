@@ -1,7 +1,6 @@
 #include "bi3_plus_lcd.h"
 
 #include "temperature.h"
-#include "ultralcd.h"
 
 #include "Marlin.h"
 #include "language.h"

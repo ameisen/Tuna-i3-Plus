@@ -81,14 +81,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="bi3_plus_lcd.cpp" />
-    <ClCompile Include="blinkm.cpp" />
     <ClCompile Include="cardreader.cpp" />
     <ClCompile Include="configuration_store.cpp" />
     <ClCompile Include="dac_mcp4728.cpp" />
     <ClCompile Include="digipot_mcp4018.cpp" />
     <ClCompile Include="digipot_mcp4451.cpp" />
     <ClCompile Include="endstops.cpp" />
-    <ClCompile Include="G26_Mesh_Validation_Tool.cpp" />
     <ClCompile Include="hex_print_routines.cpp" />
     <ClCompile Include="least_squares_fit.cpp" />
     <ClCompile Include="M100_Free_Mem_Chk.cpp" />
@@ -113,10 +111,6 @@
     <ClCompile Include="stopwatch.cpp" />
     <ClCompile Include="temperature.cpp" />
     <ClCompile Include="twibus.cpp" />
-    <ClCompile Include="ubl.cpp" />
-    <ClCompile Include="ubl_G29.cpp" />
-    <ClCompile Include="ubl_motion.cpp" />
-    <ClCompile Include="ultralcd.cpp" />
     <ClCompile Include="utility.cpp" />
     <ClCompile Include="vector_3.cpp" />
     <ClCompile Include="watchdog.cpp" />
@@ -125,22 +119,7 @@
     <ClInclude Include="bi3_plus_lcd.h">
       <FileType>CppCode</FileType>
     </ClInclude>
-    <ClInclude Include="blinkm.h">
-      <FileType>CppCode</FileType>
-    </ClInclude>
-    <ClInclude Include="boards.h">
-      <FileType>CppCode</FileType>
-    </ClInclude>
-    <ClInclude Include="buzzer.h">
-      <FileType>CppCode</FileType>
-    </ClInclude>
     <ClInclude Include="cardreader.h">
-      <FileType>CppCode</FileType>
-    </ClInclude>
-    <ClInclude Include="circularqueue.h">
-      <FileType>CppCode</FileType>
-    </ClInclude>
-    <ClInclude Include="Conditionals.h">
       <FileType>CppCode</FileType>
     </ClInclude>
     <ClInclude Include="Conditionals_LCD.h">
@@ -696,21 +675,6 @@
       <FileType>CppCode</FileType>
     </ClInclude>
     <ClInclude Include="types.h">
-      <FileType>CppCode</FileType>
-    </ClInclude>
-    <ClInclude Include="ubl.h">
-      <FileType>CppCode</FileType>
-    </ClInclude>
-    <ClInclude Include="ultralcd.h">
-      <FileType>CppCode</FileType>
-    </ClInclude>
-    <ClInclude Include="ultralcd_impl_DOGM.h">
-      <FileType>CppCode</FileType>
-    </ClInclude>
-    <ClInclude Include="ultralcd_impl_HD44780.h">
-      <FileType>CppCode</FileType>
-    </ClInclude>
-    <ClInclude Include="ultralcd_st7920_u8glib_rrd.h">
       <FileType>CppCode</FileType>
     </ClInclude>
     <ClInclude Include="utf_mapper.h">

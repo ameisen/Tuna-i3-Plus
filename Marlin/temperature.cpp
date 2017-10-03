@@ -27,7 +27,6 @@
 #include "Marlin.h"
 #include "temperature.h"
 #include "thermistortables.h"
-#include "ultralcd.h"
 #include "bi3_plus_lcd.h"
 #include "planner.h"
 #include "language.h"
@@ -455,7 +454,7 @@ uint8_t Temperature::soft_pwm_amount[HOTENDS],
         settings.save();
         return;
       }
-      lcd_update();
+	  lcd::update();
     }
     if (!wait_for_heatup) disable_all_heaters();
   }
@@ -997,14 +996,8 @@ void Temperature::updateTemperaturesFromRawValues() {
  * Initialize the temperature manager
  * The manager is implemented by periodic calls to manage_heater()
  */
-void Temperature::init() {
-
-  #if MB(RUMBA) && (TEMP_SENSOR_0 == -1 || TEMP_SENSOR_1 == -1 || TEMP_SENSOR_2 == -1 || TEMP_SENSOR_BED == -1)
-    // Disable RUMBA JTAG in case the thermocouple extension is plugged on top of JTAG connector
-    MCUCR = _BV(JTD);
-    MCUCR = _BV(JTD);
-  #endif
-
+void Temperature::init()
+{
   // Finish init of mult hotend arrays
   HOTEND_LOOP() maxttemp[e] = maxttemp[0];
 
@@ -1913,7 +1906,7 @@ void Temperature::isr() {
   // Update lcd buttons 488 times per second
   //
   static bool do_buttons;
-  if ((do_buttons ^= true)) lcd_buttons_update();
+  if ((do_buttons ^= true)) lcd::update_buttons();
 
   /**
    * One sensor is sampled on every other call of the ISR.

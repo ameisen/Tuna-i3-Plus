@@ -97,10 +97,8 @@
 //
 #define HEATER_0_PIN       14   // changed @ rkoeppl 20110410
 
-#if !MB(GEN6)
-  #define HEATER_BED_PIN    1   // changed @ rkoeppl 20110410
-  #define TEMP_BED_PIN      0   // Analog Input
-#endif
+#define HEATER_BED_PIN    1   // changed @ rkoeppl 20110410
+#define TEMP_BED_PIN      0   // Analog Input
 
 //
 // Misc. Functions

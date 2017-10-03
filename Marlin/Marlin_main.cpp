@@ -243,7 +243,6 @@
 
 #include "Marlin.h"
 
-#include "ultralcd.h"
 #include "bi3_plus_lcd.h"
 #include "planner.h"
 #include "stepper.h"
@@ -273,17 +272,8 @@
   #include "planner_bezier.h"
 #endif
 
-#if HAS_BUZZER && DISABLED(LCD_USE_I2C_BUZZER)
-  #include "buzzer.h"
-#endif
-
 #if ENABLED(USE_WATCHDOG)
   #include "watchdog.h"
-#endif
-
-#if ENABLED(BLINKM)
-  #include "blinkm.h"
-  #include "Wire.h"
 #endif
 
 #if ENABLED(PCA9632)
@@ -330,17 +320,6 @@
 #if ENABLED(G38_PROBE_TARGET)
   bool G38_move = false,
        G38_endstop_hit = false;
-#endif
-
-#if ENABLED(AUTO_BED_LEVELING_UBL)
-  #include "ubl.h"
-  extern bool defer_return_to_status;
-  unified_bed_leveling ubl;
-  #define UBL_MESH_VALID !( ( ubl.z_values[0][0] == ubl.z_values[0][1] && ubl.z_values[0][1] == ubl.z_values[0][2] \
-                           && ubl.z_values[1][0] == ubl.z_values[1][1] && ubl.z_values[1][1] == ubl.z_values[1][2] \
-                           && ubl.z_values[2][0] == ubl.z_values[2][1] && ubl.z_values[2][1] == ubl.z_values[2][2] \
-                           && ubl.z_values[0][0] == 0 && ubl.z_values[1][0] == 0 && ubl.z_values[2][0] == 0 )  \
-                           || isnan(ubl.z_values[0][0]))
 #endif
 
 bool Running = true;
@@ -989,13 +968,6 @@ void servo_init() {
         , const uint8_t w=0
       #endif
   ) {
-
-    #if ENABLED(BLINKM)
-
-      // This variant uses i2c to send the RGB components to the device.
-      SendColors(r, g, b);
-
-    #endif
 
     #if ENABLED(RGB_LED) || ENABLED(RGBW_LED)
 
@@ -1801,7 +1773,7 @@ static void clean_up_after_endstop_or_probe_move() {
       SERIAL_ECHOLNPGM(" " MSG_FIRST);
 
       #if ENABLED(ULTRA_LCD)
-        lcd_status_printf_P(0, PSTR(MSG_HOME " %s%s%s " MSG_FIRST), xx ? MSG_X : "", yy ? MSG_Y : "", zz ? MSG_Z : "");
+	  lcd::statusf(0, PSTR(MSG_HOME " %s%s%s " MSG_FIRST), xx ? MSG_X : "", yy ? MSG_Y : "", zz ? MSG_Z : "");
       #endif
       return true;
     }
@@ -3366,7 +3338,7 @@ inline void gcode_G4() {
   refresh_cmd_timeout();
   dwell_ms += previous_cmd_ms;  // keep track of when we started waiting
 
-  if (!lcd_hasstatus()) LCD_MESSAGEPGM(MSG_DWELL);
+  if (!lcd::has_status()) LCD_MESSAGEPGM(MSG_DWELL);
 
   while (PENDING(millis(), dwell_ms)) idle();
 }
@@ -3928,7 +3900,7 @@ inline void gcode_G28(const bool always_home_all) {
     tool_change(old_tool_index, 0, true);
   #endif
 
-  lcd_refresh();
+  lcd::refresh();
 
   report_current_position();
 
@@ -5486,7 +5458,7 @@ void home_all_axes() { gcode_G28(true); }
             SERIAL_PROTOCOLPGM("std dev:");
             SERIAL_PROTOCOL_F(zero_std_dev, 3);
             SERIAL_EOL();
-            lcd_setstatus(mess);
+			lcd::set_status(mess);
           }
           SERIAL_PROTOCOLPAIR(".Height:", DELTA_HEIGHT + home_offset[Z_AXIS]);
           if (!_1p_calibration) {
@@ -5743,7 +5715,7 @@ inline void gcode_G92() {
     #if ENABLED(ULTIPANEL)
 
       if (!hasP && !hasS && args && *args)
-        lcd_setstatus(args, true);
+		  lcd::set_status(args, true);
       else {
         LCD_MESSAGEPGM(MSG_USERWAIT);
         #if ENABLED(LCD_PROGRESS_BAR) && PROGRESS_MSG_EXPIRE > 0
@@ -6329,7 +6301,7 @@ inline void gcode_M31() {
   char buffer[21];
   duration_t elapsed = print_job_timer.duration();
   elapsed.toString(buffer);
-  lcd_setstatus(buffer);
+  lcd::set_status(buffer);
 
   SERIAL_ECHO_START();
   SERIAL_ECHOLNPAIR("Print time: ", buffer);
@@ -7063,7 +7035,7 @@ inline void gcode_M104() {
     #endif
 
     if (parser.value_celsius() > thermalManager.degHotend(target_extruder))
-      lcd_status_printf_P(0, PSTR("E%i %s"), target_extruder + 1, MSG_HEATING);
+		lcd::statusf(0, PSTR("E%i %s"), target_extruder + 1, MSG_HEATING);
   }
 
   #if ENABLED(AUTOTEMP)
@@ -7278,7 +7250,7 @@ inline void gcode_M109() {
         print_job_timer.start();
     #endif
 
-    if (thermalManager.isHeatingHotend(target_extruder)) lcd_status_printf_P(0, PSTR("E%i %s"), target_extruder + 1, MSG_HEATING);
+    if (thermalManager.isHeatingHotend(target_extruder)) lcd::statusf(0, PSTR("E%i %s"), target_extruder + 1, MSG_HEATING);
   }
   else return;
 
@@ -8007,7 +7979,7 @@ inline void gcode_M115() {
 /**
  * M117: Set LCD Status Message
  */
-inline void gcode_M117() { lcd_setstatus(parser.string_arg); }
+inline void gcode_M117() { lcd::set_status(parser.string_arg); }
 
 /**
  * M118: Display a message in the host console.
@@ -9972,7 +9944,7 @@ inline void gcode_M355() {
  */
 inline void gcode_M999() {
   Running = true;
-  lcd_reset_alert_level();
+  lcd::reset_alert_level();
 
   if (parser.boolval('S')) return;
 
@@ -12802,7 +12774,6 @@ void idle(
     bool no_stepper_sleep/*=false*/
   #endif
 ) {
-  lcd_update();
   lcd::update();
 
   host_keepalive();
@@ -13063,9 +13034,6 @@ void setup() {
     SET_OUTPUT(E_MUX1_PIN);
     SET_OUTPUT(E_MUX2_PIN);
   #endif
-
-  lcd_init();
-  
 
   #ifndef CUSTOM_BOOTSCREEN_TIMEOUT
     #define CUSTOM_BOOTSCREEN_TIMEOUT 2500

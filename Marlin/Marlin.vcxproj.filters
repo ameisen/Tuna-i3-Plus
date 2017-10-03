@@ -21,9 +21,6 @@
     <ClCompile Include="bi3_plus_lcd.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="blinkm.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="cardreader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -99,9 +96,6 @@
     <ClCompile Include="twibus.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ultralcd.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="utility.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -112,9 +106,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="digipot_mcp4018.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="G26_Mesh_Validation_Tool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="hex_print_routines.cpp">
@@ -129,36 +120,12 @@
     <ClCompile Include="serial.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ubl.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ubl_G29.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ubl_motion.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="bi3_plus_lcd.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="blinkm.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="boards.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="buzzer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="cardreader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="circularqueue.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Conditionals.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Conditionals_LCD.h">
@@ -596,18 +563,6 @@
     <ClInclude Include="types.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ultralcd.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ultralcd_impl_DOGM.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ultralcd_impl_HD44780.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ultralcd_st7920_u8glib_rrd.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="utf_mapper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -741,9 +696,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="thermistortable_999.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ubl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="__vm\.Marlin.vsarduino.h">

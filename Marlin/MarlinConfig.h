@@ -25,7 +25,6 @@
 
 #include "fastio.h"
 #include "macros.h"
-#include "boards.h"
 #include "Version.h"
 #include "Configuration.h"
 #include "Conditionals_LCD.h"

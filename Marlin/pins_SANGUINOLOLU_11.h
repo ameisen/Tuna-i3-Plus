@@ -59,7 +59,7 @@
   #define BOARD_NAME "Sanguinololu <1.2"
 #endif
 
-#define IS_MELZI (MB(MELZI) || MB(MELZI_MAKR3D))
+#define IS_MELZI 0
 
 //
 // Limit Switches
@@ -116,10 +116,6 @@
 
 #endif
 
-#if MB(AZTEEG_X1) || MB(STB_11) || IS_MELZI
-  #define FAN_PIN           4 // Works for Panelolu2 too
-#endif
-
 //
 // Misc. Functions
 //
@@ -132,12 +128,6 @@
  */
 //#define SDSS               24
 #define SDSS               31
-
-#if IS_MELZI
-  #define LED_PIN           27
-#elif MB(STB_11)
-  #define LCD_BACKLIGHT_PIN 17 // LCD backlight LED
-#endif
 
 #if DISABLED(SPINDLE_LASER_ENABLE) && ENABLED(SANGUINOLOLU_V_1_2) && !(ENABLED(ULTRA_LCD) && ENABLED(NEWPANEL))  // try to use IO Header
   #define CASE_LIGHT_PIN         4   // MUST BE HARDWARE PWM  - see if IO Header is available

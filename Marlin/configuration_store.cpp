@@ -181,7 +181,6 @@ MarlinSettings settings;
 #include "endstops.h"
 #include "planner.h"
 #include "temperature.h"
-#include "ultralcd.h"
 #include "bi3_plus_lcd.h"
 #include "stepper.h"
 
@@ -195,10 +194,6 @@ MarlinSettings settings;
 
 #if ENABLED(HAVE_TMC2130)
   #include "stepper_indirection.h"
-#endif
-
-#if ENABLED(AUTO_BED_LEVELING_UBL)
-  #include "ubl.h"
 #endif
 
 #if ENABLED(AUTO_BED_LEVELING_BILINEAR)

@@ -29,15 +29,6 @@
 #define __PINSDEBUG_PLUS_70_H__
 
 #undef NUM_DIGITAL_PINS
-#if MOTHERBOARD == BOARD_BQ_ZUM_MEGA_3D
-  #define NUM_DIGITAL_PINS            85
-#elif MOTHERBOARD == BOARD_MIGHTYBOARD_REVE
-  #define NUM_DIGITAL_PINS            80
-#elif MOTHERBOARD == BOARD_MINIRAMBO
-  #define NUM_DIGITAL_PINS            85
-#elif MOTHERBOARD == BOARD_SCOOVO_X9H
-  #define NUM_DIGITAL_PINS            85
-#endif
 
 #define PA 1
 #define PB 2
