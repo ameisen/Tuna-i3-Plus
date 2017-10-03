@@ -2,17 +2,14 @@
 #define BI3PLUSLCD_H
 
 #include "Marlin.h"
+#include "utils.hpp"
 
-void lcdSetup();
-void lcdTask();
-
-void executeLoopedOperation(millis_t ms);
-void lcdStatusUpdate(millis_t ms);
-void lcdShowPage(uint8_t pageNumber);
-uint8_t lcdgetCurrentPage();
-void readLcdSerial();
-void lcdSendStats();
-void lcdSendMarlinVersion();
-void updateGraphData();
+namespace marlin::lcd
+{
+	void initialize();
+	void update();
+	void show_page(uint8 pageNumber);
+	void update_graph();
+}
 
 #endif

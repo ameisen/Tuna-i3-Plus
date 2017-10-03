@@ -396,7 +396,7 @@ uint8_t Temperature::soft_pwm_amount[HOTENDS],
       if (ELAPSED(ms, temp_ms + 2000UL)) {
         #if HAS_TEMP_HOTEND || HAS_TEMP_BED
           print_heaterstates();
-          updateGraphData();
+          lcd::update_graph();
           SERIAL_EOL();
         #endif
 
@@ -450,7 +450,7 @@ uint8_t Temperature::soft_pwm_amount[HOTENDS],
             _SET_BED_PID();
           #endif
         }
-        lcdShowPage(66);
+        lcd::show_page(66);
         enqueue_and_echo_command("M106 S0");
         settings.save();
         return;
@@ -518,7 +518,7 @@ int Temperature::getHeaterPower(int heater) {
 //
 void Temperature::_temp_error(const int8_t e, const char * const serial_msg, const char * const lcd_msg) {
   static bool killed = false;
-  lcdShowPage(68);
+  lcd::show_page(68);
   if (IsRunning()) {
     SERIAL_ERROR_START();
     serialprintPGM(serial_msg);

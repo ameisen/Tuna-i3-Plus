@@ -135,6 +135,35 @@ struct duration_t {
   }
 
   /**
+  * @brief Formats the duration as a string
+  * @details String will be formated using a "full" representation of duration
+  *
+  * @param buffer The array pointed to must be able to accommodate 21 bytes
+  *
+  * Output examples:
+  *  123456789012345678901 (strlen)
+  *  135y 364d 23h 59m 59s
+  *  364d 23h 59m 59s
+  *  23h 59m 59s
+  *  59m 59s
+  *  59s
+  */
+  template <uint8_t length>
+  void toString(char (&buffer)[length]) const {
+	  int y = this->year(),
+		  d = this->day() % 365,
+		  h = this->hour() % 24,
+		  m = this->minute() % 60,
+		  s = this->second() % 60;
+
+	  if (y) snprintf_P(buffer, length, PSTR("%iy %id %ih %im %is"), y, d, h, m, s);
+	  else if (d) snprintf_P(buffer, length, PSTR("%id %ih %im %is"), d, h, m, s);
+	  else if (h) snprintf_P(buffer, length, PSTR("%ih %im %is"), h, m, s);
+	  else if (m) snprintf_P(buffer, length, PSTR("%im %is"), m, s);
+	  else snprintf_P(buffer, length, PSTR("%is"), s);
+  }
+
+  /**
    * @brief Formats the duration as a string
    * @details String will be formated using a "digital" representation of duration
    *

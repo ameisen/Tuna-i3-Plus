@@ -12803,7 +12803,7 @@ void idle(
   #endif
 ) {
   lcd_update();
-  lcdTask();
+  lcd::update();
 
   host_keepalive();
 
@@ -13123,7 +13123,7 @@ void setup() {
     move_nozzle_servo(0);  // Initialize nozzle servo
   #endif
   
-  lcdSetup();
+	lcd::initialize();
 }
 
 /**

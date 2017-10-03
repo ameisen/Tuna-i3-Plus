@@ -94,7 +94,7 @@ enum ADCSensorState {
 // get all oversampled sensor readings
 #define MIN_ADC_ISR_LOOPS 10
 
-#define ACTUAL_ADC_SAMPLES max(int(MIN_ADC_ISR_LOOPS), int(SensorsReady))
+constexpr int ACTUAL_ADC_SAMPLES = max(int(MIN_ADC_ISR_LOOPS), int(SensorsReady));
 
 #if !HAS_HEATER_BED
   constexpr int16_t target_temperature_bed = 0;
@@ -125,7 +125,7 @@ class Temperature {
     #endif
 
     #if ENABLED(PIDTEMP) || ENABLED(PIDTEMPBED)
-      #define PID_dT ((OVERSAMPLENR * float(ACTUAL_ADC_SAMPLES)) / (F_CPU / 64.0 / 256.0))
+      #define PID_dT ((OVERSAMPLENR * float(ACTUAL_ADC_SAMPLES)) / (F_CPU / 64.0f / 256.0f))
     #endif
 
     #if ENABLED(PIDTEMP)

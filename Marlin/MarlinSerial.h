@@ -137,6 +137,13 @@
       static void printFloat(double, uint8_t);
 
     public:
+	  template <uint16_t N> static FORCE_INLINE void write(const uint8_t(&buffer)[N])
+	  {
+		  for (uint16_t i = 0; i < N; ++i)
+		  {
+			  write(buffer[i]);
+		  }
+	  }
       static FORCE_INLINE void write(const char* str) { while (*str) write(*str++); }
       static FORCE_INLINE void write(const uint8_t* buffer, size_t size) { while (size--) write(*buffer++); }
       static FORCE_INLINE void print(const String& s) { for (int i = 0; i < (int)s.length(); i++) write(s[i]); }
