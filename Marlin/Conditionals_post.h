@@ -99,9 +99,6 @@
 
   // Power Signal Control Definitions
   // By default use ATX definition
-  #define POWER_SUPPLY 1
-  #define PS_ON_AWAKE  LOW
-  #define PS_ON_ASLEEP HIGH
   #define HAS_POWER_SWITCH 0
 
   /**
