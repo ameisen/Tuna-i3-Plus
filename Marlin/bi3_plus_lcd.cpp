@@ -1017,6 +1017,11 @@ namespace marlin::lcd
 			lastPage = currentPage;
 			currentPage = pageNumber;
 		}
+		else
+		{
+			lastPage = 11;
+			currentPage = 11;
+		}
 
 		const uint8 buffer[7] = {
 			0x5A,//frame header
