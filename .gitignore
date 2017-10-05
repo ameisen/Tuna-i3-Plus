@@ -134,3 +134,6 @@ CMakeLists.txt
 Marlin/CMakeLists.txt
 
 README.md
+*.log
+*.eep
+.bin
