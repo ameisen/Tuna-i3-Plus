@@ -1,3 +1,5 @@
+$script_mtime = [$script_mtime, File.mtime(__FILE__).to_f].max
+
 require 'etc'
 require_relative 'atomic_int.rb'
 

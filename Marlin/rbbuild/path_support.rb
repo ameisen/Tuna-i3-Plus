@@ -1,3 +1,5 @@
+$script_mtime = [$script_mtime, File.mtime(__FILE__).to_f].max
+
 require 'pathname'
 
 # Normalize paths, needed because NT likes '\' and UNIX (and Ruby) like '//'

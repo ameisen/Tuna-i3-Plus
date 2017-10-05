@@ -1,3 +1,5 @@
+$script_mtime = [$script_mtime, File.mtime(__FILE__).to_f].max
+
 class AtomicInt
 	@value
 	@mutex

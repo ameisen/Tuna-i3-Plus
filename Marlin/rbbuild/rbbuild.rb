@@ -1,3 +1,5 @@
+$script_mtime = File.mtime(__FILE__).to_f
+
 global_time = Time.now
 init_time = Time.now
 
@@ -226,7 +228,7 @@ $source_files.each { |handler, files|
 		-> (idx) {
 			src = files[idx]
 			
-			src_time = File.mtime(src.path).to_f
+			src_time = [$script_mtime, File.mtime(src.path).to_f].max
 			obj_time = 0.0
 			
 			# First, we will check if an object file exists and if it's older than the source file.
@@ -256,7 +258,7 @@ $source_files.each { |handler, files|
 				deptime = $dependency_times[dep]
 				if (File.file? dep)
 					if (deptime == nil)
-						deptime = File.mtime(dep).to_f
+						deptime = [$script_mtime, File.mtime(dep).to_f].max
 						$dependency_times[dep] = deptime
 					end
 					if (deptime > obj_time)
@@ -297,7 +299,7 @@ if (any_rebuild)
 			
 			if (src.build)
 				if !$BuildOptions.verbose
-					puts src.path
+					puttabs src.path
 				end
 				handler.compile(src.path, src.object_path(), $BuildOptions.verbose)
 				STDOUT.flush
@@ -317,10 +319,11 @@ archiving_time = Time.now
 # Now we generate an archive.
 archive_path = best_path($BuildOptions.intermediate + "/" + $BuildOptions.name + ".a")
 build_archive = any_rebuild
+archive_time = nil
 if (!build_archive)
 	if (File.file? archive_path)
 		archive_time = File.mtime(archive_path).to_f
-		if (archive_time < newest_objtime)
+		if (archive_time < [$script_mtime, newest_objtime].max)
 			build_archive = true
 		end
 	else
@@ -355,7 +358,7 @@ if (!binary_rebuild)
 	if (!binary_exist)
 		binary_rebuild = true
 	else
-		archive_time = File.mtime(archive_path).to_f
+		archive_time = [$script_mtime, (archive_time == nil) ? File.mtime(archive_path).to_f : archive_time].max
 		binary_time = File.mtime(binary_path).to_f
 		if (archive_time > binary_time)
 			binary_rebuild = true
