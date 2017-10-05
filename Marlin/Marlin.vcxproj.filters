@@ -1,307 +1,145 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
-    </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Marlin.ino" />
-    <None Include="tunalib\tunalib.hpp">
-      <Filter>Header Files</Filter>
-    </None>
     <None Include="tuna.h" />
+    <None Include="tunalib\tunalib.hpp">
+      <Filter>tunalib</Filter>
+    </None>
+    <None Include="rbbuild\gcc_buildhandler.rb">
+      <Filter>rbbuild</Filter>
+    </None>
+    <None Include="rbbuild\path_support.rb">
+      <Filter>rbbuild</Filter>
+    </None>
+    <None Include="rbbuild\rbbuild.rb">
+      <Filter>rbbuild</Filter>
+    </None>
+    <None Include="rbbuild\thread_exec.rb">
+      <Filter>rbbuild</Filter>
+    </None>
+    <None Include="rbbuild\ascii.rb">
+      <Filter>rbbuild</Filter>
+    </None>
+    <None Include="rbbuild\atomic_int.rb">
+      <Filter>rbbuild</Filter>
+    </None>
+    <None Include="rbbuild\buildopts.rb">
+      <Filter>rbbuild</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="bi3_plus_lcd.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="cardreader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="configuration_store.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="endstops.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Marlin_main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="planner.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="planner_bezier.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="printcounter.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Sd2Card.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SdBaseFile.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SdFatUtil.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SdFile.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SdVolume.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="stepper.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="stepper_indirection.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="stopwatch.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="temperature.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="utility.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="watchdog.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="serial.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
+    <ClCompile Include="watchdog.cpp" />
+    <ClCompile Include="bi3_plus_lcd.cpp" />
+    <ClCompile Include="cardreader.cpp" />
+    <ClCompile Include="configuration_store.cpp" />
+    <ClCompile Include="endstops.cpp" />
+    <ClCompile Include="Marlin_main.cpp" />
+    <ClCompile Include="planner.cpp" />
+    <ClCompile Include="planner_bezier.cpp" />
+    <ClCompile Include="printcounter.cpp" />
+    <ClCompile Include="Sd2Card.cpp" />
+    <ClCompile Include="SdBaseFile.cpp" />
+    <ClCompile Include="SdFatUtil.cpp" />
+    <ClCompile Include="SdFile.cpp" />
+    <ClCompile Include="SdVolume.cpp" />
+    <ClCompile Include="serial.cpp" />
+    <ClCompile Include="stepper.cpp" />
+    <ClCompile Include="stepper_indirection.cpp" />
+    <ClCompile Include="stopwatch.cpp" />
+    <ClCompile Include="temperature.cpp" />
+    <ClCompile Include="utility.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="bi3_plus_lcd.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="cardreader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Conditionals_LCD.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Conditionals_post.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Configuration.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Configuration_adv.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="configuration_store.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="duration_t.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="endstops.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="enum.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="fastio.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="language.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="language_en.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="macros.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Marlin.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="MarlinConfig.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="pins.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="pins_BI3_PLUS.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="planner.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="planner_bezier.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="point_t.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="printcounter.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SanityCheck.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Sd2Card.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SdBaseFile.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SdFatConfig.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SdFatStructs.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SdFatUtil.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SdFile.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SdInfo.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SdVolume.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="speed_lookuptable.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="stepper.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="stepper_indirection.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="stopwatch.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="temperature.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="thermistortables.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="types.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="utility.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Version.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="watchdog.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="serial.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="thermistortable_1.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="thermistortable_10.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="thermistortable_1010.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="thermistortable_1047.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="thermistortable_11.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="thermistortable_110.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="thermistortable_12.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="thermistortable_13.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="thermistortable_147.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="thermistortable_2.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="thermistortable_20.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="thermistortable_3.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="thermistortable_4.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="thermistortable_5.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="thermistortable_51.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="thermistortable_52.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="thermistortable_55.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="thermistortable_6.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="thermistortable_60.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="thermistortable_66.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="thermistortable_7.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="thermistortable_70.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="thermistortable_71.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="thermistortable_75.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="thermistortable_8.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="thermistortable_9.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="thermistortable_998.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="thermistortable_999.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="bi3_plus_lcd.h" />
+    <ClInclude Include="cardreader.h" />
+    <ClInclude Include="Conditionals_LCD.h" />
+    <ClInclude Include="Conditionals_post.h" />
+    <ClInclude Include="Configuration.h" />
+    <ClInclude Include="Configuration_adv.h" />
+    <ClInclude Include="configuration_store.h" />
+    <ClInclude Include="duration_t.h" />
+    <ClInclude Include="endstops.h" />
+    <ClInclude Include="enum.h" />
+    <ClInclude Include="fastio.h" />
+    <ClInclude Include="language.h" />
+    <ClInclude Include="language_en.h" />
+    <ClInclude Include="macros.h" />
+    <ClInclude Include="Marlin.h" />
+    <ClInclude Include="MarlinConfig.h" />
+    <ClInclude Include="pins.h" />
+    <ClInclude Include="pins_BI3_PLUS.h" />
+    <ClInclude Include="planner.h" />
+    <ClInclude Include="planner_bezier.h" />
+    <ClInclude Include="point_t.h" />
+    <ClInclude Include="printcounter.h" />
+    <ClInclude Include="SanityCheck.h" />
+    <ClInclude Include="Sd2Card.h" />
+    <ClInclude Include="SdBaseFile.h" />
+    <ClInclude Include="SdFatConfig.h" />
+    <ClInclude Include="SdFatStructs.h" />
+    <ClInclude Include="SdFatUtil.h" />
+    <ClInclude Include="SdFile.h" />
+    <ClInclude Include="SdInfo.h" />
+    <ClInclude Include="SdVolume.h" />
+    <ClInclude Include="serial.h" />
+    <ClInclude Include="speed_lookuptable.h" />
+    <ClInclude Include="stepper.h" />
+    <ClInclude Include="stepper_indirection.h" />
+    <ClInclude Include="stopwatch.h" />
+    <ClInclude Include="temperature.h" />
+    <ClInclude Include="thermistortable_1.h" />
+    <ClInclude Include="thermistortable_2.h" />
+    <ClInclude Include="thermistortable_3.h" />
+    <ClInclude Include="thermistortable_4.h" />
+    <ClInclude Include="thermistortable_5.h" />
+    <ClInclude Include="thermistortable_6.h" />
+    <ClInclude Include="thermistortable_7.h" />
+    <ClInclude Include="thermistortable_8.h" />
+    <ClInclude Include="thermistortable_9.h" />
+    <ClInclude Include="thermistortable_10.h" />
+    <ClInclude Include="thermistortable_11.h" />
+    <ClInclude Include="thermistortable_12.h" />
+    <ClInclude Include="thermistortable_13.h" />
+    <ClInclude Include="thermistortable_20.h" />
+    <ClInclude Include="thermistortable_51.h" />
+    <ClInclude Include="thermistortable_52.h" />
+    <ClInclude Include="thermistortable_55.h" />
+    <ClInclude Include="thermistortable_60.h" />
+    <ClInclude Include="thermistortable_66.h" />
+    <ClInclude Include="thermistortable_70.h" />
+    <ClInclude Include="thermistortable_71.h" />
+    <ClInclude Include="thermistortable_75.h" />
+    <ClInclude Include="thermistortable_110.h" />
+    <ClInclude Include="thermistortable_147.h" />
+    <ClInclude Include="thermistortable_998.h" />
+    <ClInclude Include="thermistortable_999.h" />
+    <ClInclude Include="thermistortable_1010.h" />
+    <ClInclude Include="thermistortable_1047.h" />
+    <ClInclude Include="thermistortables.h" />
+    <ClInclude Include="types.h" />
+    <ClInclude Include="utility.h" />
+    <ClInclude Include="Version.h" />
+    <ClInclude Include="watchdog.h" />
+    <ClInclude Include="tunalib\initializer_list.h">
+      <Filter>tunalib</Filter>
     </ClInclude>
     <ClInclude Include="tunalib\utils.hpp">
-      <Filter>Header Files</Filter>
+      <Filter>tunalib</Filter>
     </ClInclude>
-    <ClInclude Include="__vm\.Marlin.vcarduino.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="__vm\.Marlin.vsarduino.h">
+      <Filter>__vm</Filter>
     </ClInclude>
-    <ClInclude Include="tunalib\initializer_list.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="tunalib">
+      <UniqueIdentifier>{bd52fd4a-1cd2-4caa-a730-18d1a37bd1f5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="rbbuild">
+      <UniqueIdentifier>{6a152b72-6e1b-4e63-9b09-716f4f86a24b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="__vm">
+      <UniqueIdentifier>{027f9ec7-2c86-4038-a6a1-c21305ad5ab1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>

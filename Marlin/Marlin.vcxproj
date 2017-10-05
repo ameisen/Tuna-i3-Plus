@@ -67,6 +67,13 @@
     <None Include="Marlin.ino">
       <FileType>CppCode</FileType>
     </None>
+    <None Include="rbbuild\ascii.rb" />
+    <None Include="rbbuild\atomic_int.rb" />
+    <None Include="rbbuild\buildopts.rb" />
+    <None Include="rbbuild\gcc_buildhandler.rb" />
+    <None Include="rbbuild\path_support.rb" />
+    <None Include="rbbuild\rbbuild.rb" />
+    <None Include="rbbuild\thread_exec.rb" />
     <None Include="tuna.h" />
     <None Include="tunalib\tunalib.hpp" />
   </ItemGroup>
@@ -305,7 +312,7 @@
     <ClInclude Include="watchdog.h">
       <FileType>CppCode</FileType>
     </ClInclude>
-    <ClInclude Include="__vm\.Marlin.vcarduino.h" />
+    <ClInclude Include="__vm\.Marlin.vsarduino.h" />
   </ItemGroup>
   <PropertyGroup>
     <DebuggerFlavor>VisualMicroDebugger</DebuggerFlavor>
