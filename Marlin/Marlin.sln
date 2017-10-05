@@ -1,0 +1,29 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.26730.16
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Marlin", "Marlin.vcxproj", "{C5F80730-F44F-4478-BDAE-6634EFC2CA88}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Deploy", "Deploy.vcxproj", "{9177862A-AC66-44EF-A38E-B0168C8BF75C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C5F80730-F44F-4478-BDAE-6634EFC2CA88} = {C5F80730-F44F-4478-BDAE-6634EFC2CA88}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Default|AVR = Default|AVR
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Default|AVR.ActiveCfg = Default|Win32
+		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Default|AVR.Build.0 = Default|Win32
+		{9177862A-AC66-44EF-A38E-B0168C8BF75C}.Default|AVR.ActiveCfg = Default|Win32
+		{9177862A-AC66-44EF-A38E-B0168C8BF75C}.Default|AVR.Build.0 = Default|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {ADE07CCD-BF38-4860-A244-0FEAAE13A142}
+	EndGlobalSection
+EndGlobal
