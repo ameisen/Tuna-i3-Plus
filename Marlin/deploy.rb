@@ -1,3 +1,5 @@
+$script_mtime = File.mtime(__FILE__).to_f
+
 require_relative 'rbbuild/path_support.rb'
 require 'open3'
 require 'optparse'
