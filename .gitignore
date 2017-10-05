@@ -139,3 +139,5 @@ README.md
 .bin
 .int
 .bin
+/Marlin/.bin/*.eep
+/Marlin/.int/Marlin.log
