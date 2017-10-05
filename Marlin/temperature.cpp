@@ -26,7 +26,6 @@
 
 #include "Marlin.h"
 #include "temperature.hpp"
-#include "thermistortables.h"
 #include "bi3_plus_lcd.h"
 #include "planner.h"
 #include "language.h"

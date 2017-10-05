@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "thermistortables.h"
+#include "thermistors/thermistortables.h"
 
 #include "MarlinConfig.h"
 

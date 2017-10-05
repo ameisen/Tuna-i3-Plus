@@ -1,8 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <None Include="Marlin.ino" />
-    <None Include="tuna.h" />
     <None Include="tunalib\tunalib.hpp">
       <Filter>tunalib</Filter>
     </None>
@@ -29,29 +27,15 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="watchdog.cpp" />
-    <ClCompile Include="bi3_plus_lcd.cpp" />
-    <ClCompile Include="cardreader.cpp" />
-    <ClCompile Include="configuration_store.cpp" />
-    <ClCompile Include="endstops.cpp" />
-    <ClCompile Include="Marlin_main.cpp" />
-    <ClCompile Include="planner.cpp" />
-    <ClCompile Include="planner_bezier.cpp" />
-    <ClCompile Include="printcounter.cpp" />
-    <ClCompile Include="Sd2Card.cpp" />
-    <ClCompile Include="SdBaseFile.cpp" />
-    <ClCompile Include="SdFatUtil.cpp" />
-    <ClCompile Include="SdFile.cpp" />
-    <ClCompile Include="SdVolume.cpp" />
-    <ClCompile Include="serial.cpp" />
-    <ClCompile Include="stepper.cpp" />
-    <ClCompile Include="stepper_indirection.cpp" />
-    <ClCompile Include="stopwatch.cpp" />
-    <ClCompile Include="temperature.cpp" />
-    <ClCompile Include="utility.cpp" />
-    <ClCompile Include="interrupts.cpp" />
-  </ItemGroup>
-  <ItemGroup>
+    <ClInclude Include="tunalib\initializer_list.h">
+      <Filter>tunalib</Filter>
+    </ClInclude>
+    <ClInclude Include="tunalib\utils.hpp">
+      <Filter>tunalib</Filter>
+    </ClInclude>
+    <ClInclude Include="__vm\.Marlin.vsarduino.h">
+      <Filter>__vm</Filter>
+    </ClInclude>
     <ClInclude Include="bi3_plus_lcd.h" />
     <ClInclude Include="cardreader.h" />
     <ClInclude Include="Conditionals_LCD.h" />
@@ -63,6 +47,9 @@
     <ClInclude Include="endstops.h" />
     <ClInclude Include="enum.h" />
     <ClInclude Include="fastio.h" />
+    <ClInclude Include="fastio_1280.h" />
+    <ClInclude Include="gcode.h" />
+    <ClInclude Include="interrupts.hpp" />
     <ClInclude Include="language.h" />
     <ClInclude Include="language_en.h" />
     <ClInclude Include="macros.h" />
@@ -72,7 +59,6 @@
     <ClInclude Include="pins_BI3_PLUS.h" />
     <ClInclude Include="planner.h" />
     <ClInclude Include="planner_bezier.h" />
-    <ClInclude Include="point_t.h" />
     <ClInclude Include="printcounter.h" />
     <ClInclude Include="SanityCheck.h" />
     <ClInclude Include="Sd2Card.h" />
@@ -88,60 +74,137 @@
     <ClInclude Include="stepper.h" />
     <ClInclude Include="stepper_indirection.h" />
     <ClInclude Include="stopwatch.h" />
-    <ClInclude Include="thermistortable_1.h" />
-    <ClInclude Include="thermistortable_2.h" />
-    <ClInclude Include="thermistortable_3.h" />
-    <ClInclude Include="thermistortable_4.h" />
-    <ClInclude Include="thermistortable_5.h" />
-    <ClInclude Include="thermistortable_6.h" />
-    <ClInclude Include="thermistortable_7.h" />
-    <ClInclude Include="thermistortable_8.h" />
-    <ClInclude Include="thermistortable_9.h" />
-    <ClInclude Include="thermistortable_10.h" />
-    <ClInclude Include="thermistortable_11.h" />
-    <ClInclude Include="thermistortable_12.h" />
-    <ClInclude Include="thermistortable_13.h" />
-    <ClInclude Include="thermistortable_20.h" />
-    <ClInclude Include="thermistortable_51.h" />
-    <ClInclude Include="thermistortable_52.h" />
-    <ClInclude Include="thermistortable_55.h" />
-    <ClInclude Include="thermistortable_60.h" />
-    <ClInclude Include="thermistortable_66.h" />
-    <ClInclude Include="thermistortable_70.h" />
-    <ClInclude Include="thermistortable_71.h" />
-    <ClInclude Include="thermistortable_75.h" />
-    <ClInclude Include="thermistortable_110.h" />
-    <ClInclude Include="thermistortable_147.h" />
-    <ClInclude Include="thermistortable_998.h" />
-    <ClInclude Include="thermistortable_999.h" />
-    <ClInclude Include="thermistortable_1010.h" />
-    <ClInclude Include="thermistortable_1047.h" />
-    <ClInclude Include="thermistortables.h" />
+    <ClInclude Include="temperature.hpp" />
+    <ClInclude Include="tuna.h" />
     <ClInclude Include="types.h" />
     <ClInclude Include="utility.h" />
+    <ClInclude Include="utils.hpp" />
     <ClInclude Include="Version.h" />
     <ClInclude Include="watchdog.h" />
-    <ClInclude Include="tunalib\initializer_list.h">
-      <Filter>tunalib</Filter>
+    <ClInclude Include="thermistors\thermistortable_13.h">
+      <Filter>thermistors</Filter>
     </ClInclude>
-    <ClInclude Include="tunalib\utils.hpp">
-      <Filter>tunalib</Filter>
+    <ClInclude Include="thermistors\thermistortable_20.h">
+      <Filter>thermistors</Filter>
     </ClInclude>
-    <ClInclude Include="__vm\.Marlin.vsarduino.h">
-      <Filter>__vm</Filter>
+    <ClInclude Include="thermistors\thermistortable_51.h">
+      <Filter>thermistors</Filter>
     </ClInclude>
-    <ClInclude Include="temperature.hpp" />
-    <ClInclude Include="interrupts.hpp" />
+    <ClInclude Include="thermistors\thermistortable_52.h">
+      <Filter>thermistors</Filter>
+    </ClInclude>
+    <ClInclude Include="thermistors\thermistortable_55.h">
+      <Filter>thermistors</Filter>
+    </ClInclude>
+    <ClInclude Include="thermistors\thermistortable_60.h">
+      <Filter>thermistors</Filter>
+    </ClInclude>
+    <ClInclude Include="thermistors\thermistortable_66.h">
+      <Filter>thermistors</Filter>
+    </ClInclude>
+    <ClInclude Include="thermistors\thermistortable_70.h">
+      <Filter>thermistors</Filter>
+    </ClInclude>
+    <ClInclude Include="thermistors\thermistortable_71.h">
+      <Filter>thermistors</Filter>
+    </ClInclude>
+    <ClInclude Include="thermistors\thermistortable_75.h">
+      <Filter>thermistors</Filter>
+    </ClInclude>
+    <ClInclude Include="thermistors\thermistortable_110.h">
+      <Filter>thermistors</Filter>
+    </ClInclude>
+    <ClInclude Include="thermistors\thermistortable_147.h">
+      <Filter>thermistors</Filter>
+    </ClInclude>
+    <ClInclude Include="thermistors\thermistortable_998.h">
+      <Filter>thermistors</Filter>
+    </ClInclude>
+    <ClInclude Include="thermistors\thermistortable_999.h">
+      <Filter>thermistors</Filter>
+    </ClInclude>
+    <ClInclude Include="thermistors\thermistortable_1010.h">
+      <Filter>thermistors</Filter>
+    </ClInclude>
+    <ClInclude Include="thermistors\thermistortable_1047.h">
+      <Filter>thermistors</Filter>
+    </ClInclude>
+    <ClInclude Include="thermistors\thermistortables.h">
+      <Filter>thermistors</Filter>
+    </ClInclude>
+    <ClInclude Include="thermistors\thermistortable_1.h">
+      <Filter>thermistors</Filter>
+    </ClInclude>
+    <ClInclude Include="thermistors\thermistortable_2.h">
+      <Filter>thermistors</Filter>
+    </ClInclude>
+    <ClInclude Include="thermistors\thermistortable_3.h">
+      <Filter>thermistors</Filter>
+    </ClInclude>
+    <ClInclude Include="thermistors\thermistortable_4.h">
+      <Filter>thermistors</Filter>
+    </ClInclude>
+    <ClInclude Include="thermistors\thermistortable_5.h">
+      <Filter>thermistors</Filter>
+    </ClInclude>
+    <ClInclude Include="thermistors\thermistortable_6.h">
+      <Filter>thermistors</Filter>
+    </ClInclude>
+    <ClInclude Include="thermistors\thermistortable_7.h">
+      <Filter>thermistors</Filter>
+    </ClInclude>
+    <ClInclude Include="thermistors\thermistortable_8.h">
+      <Filter>thermistors</Filter>
+    </ClInclude>
+    <ClInclude Include="thermistors\thermistortable_9.h">
+      <Filter>thermistors</Filter>
+    </ClInclude>
+    <ClInclude Include="thermistors\thermistortable_10.h">
+      <Filter>thermistors</Filter>
+    </ClInclude>
+    <ClInclude Include="thermistors\thermistortable_11.h">
+      <Filter>thermistors</Filter>
+    </ClInclude>
+    <ClInclude Include="thermistors\thermistortable_12.h">
+      <Filter>thermistors</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tunalib">
       <UniqueIdentifier>{bd52fd4a-1cd2-4caa-a730-18d1a37bd1f5}</UniqueIdentifier>
     </Filter>
-    <Filter Include="rbbuild">
-      <UniqueIdentifier>{6a152b72-6e1b-4e63-9b09-716f4f86a24b}</UniqueIdentifier>
-    </Filter>
     <Filter Include="__vm">
       <UniqueIdentifier>{027f9ec7-2c86-4038-a6a1-c21305ad5ab1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="thermistors">
+      <UniqueIdentifier>{a5b96ba1-7f00-491f-a7f0-ef6aaf24dbaa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="rbbuild">
+      <UniqueIdentifier>{6a152b72-6e1b-4e63-9b09-716f4f86a24b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="watchdog.cpp" />
+    <ClCompile Include="bi3_plus_lcd.cpp" />
+    <ClCompile Include="cardreader.cpp" />
+    <ClCompile Include="configuration_store.cpp" />
+    <ClCompile Include="endstops.cpp" />
+    <ClCompile Include="gcode.cpp" />
+    <ClCompile Include="interrupts.cpp" />
+    <ClCompile Include="Marlin_main.cpp" />
+    <ClCompile Include="planner.cpp" />
+    <ClCompile Include="planner_bezier.cpp" />
+    <ClCompile Include="printcounter.cpp" />
+    <ClCompile Include="Sd2Card.cpp" />
+    <ClCompile Include="SdBaseFile.cpp" />
+    <ClCompile Include="SdFatUtil.cpp" />
+    <ClCompile Include="SdFile.cpp" />
+    <ClCompile Include="SdVolume.cpp" />
+    <ClCompile Include="serial.cpp" />
+    <ClCompile Include="stepper.cpp" />
+    <ClCompile Include="stepper_indirection.cpp" />
+    <ClCompile Include="stopwatch.cpp" />
+    <ClCompile Include="temperature.cpp" />
+    <ClCompile Include="utility.cpp" />
   </ItemGroup>
 </Project>
