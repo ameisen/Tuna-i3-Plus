@@ -81,6 +81,7 @@ $gpp_buildhandler = Class.new do
 		command = objcopy_path + " " + command
 		if (print_cmd)
 			puts $TAB + command
+			STDOUT.flush
 		end
 		
 		pipe = IO.popen(command)
@@ -95,6 +96,7 @@ $gpp_buildhandler = Class.new do
 		command = compiler_path(source) + " " + buildline(source) + " -c #{quote_wrap(source)} -o #{quote_wrap(out)}"
 		if (print_cmd)
 			puts $TAB + command
+			STDOUT.flush
 		end
 		
 		pipe = IO.popen(command)
@@ -109,6 +111,7 @@ $gpp_buildhandler = Class.new do
 		command = compiler_path(source) + " " + buildline(source) + " -M -MT \"\" #{quote_wrap(source)}"
 		if (print_cmd)
 			puts $TAB + command
+			STDOUT.flush
 		end
 		
 		pipe = IO.popen(command)
@@ -128,6 +131,7 @@ $gpp_buildhandler = Class.new do
 		command = archiver_path() + " rcs " + quote_wrap(archive) + " " + quote_wrap(object)
 		if (print_cmd)
 			puts $TAB + command
+			STDOUT.flush
 		end
 		
 		pipe = IO.popen(command)
@@ -148,6 +152,7 @@ $gpp_buildhandler = Class.new do
 		command = gcc_path() + " " + buildline() +  "-fuse-linker-plugin -Wl,--gc-sections,--relax -o \"#{outfile}\" \"#{archive}\" #{lib_str}-lm"
 		if (print_cmd)
 			puts $TAB + command
+			STDOUT.flush
 		end
 		
 		pipe = IO.popen(command)

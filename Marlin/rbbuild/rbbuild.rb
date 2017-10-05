@@ -33,57 +33,21 @@ def duration (timediff)
 	return out;
 end
 
-# Print Build Configuration
-$BuildOptions.print_self()
-
-force_all_build = $BuildOptions.target == "rebuild"
-force_clean = ($BuildOptions.target == "rebuild") || ($BuildOptions.target == "clean")
-
-def str_hash (str)
-	hash = 14695981039346656037
-	str.split('').each { |c|
-		hash = (hash * 1099511628211) & 0xFFFFFFFFFFFFFFFF
-		hash = (hash ^ c.to_i)
-	}
-	return hash
-end
-
-def vputs(str, tabs = 0)
-	if ($BuildOptions.verbose)
-		puts(($TAB * tabs) + "VERBOSE: " + str)
-	end
-end
-
-# Build Handler setup
-$source_files = Hash.new nil
-$source_handlers = Hash.new nil
-Handlers = [
-	$gpp_buildhandler
-]
-
-Handlers.each { |handler|
-	handler.extensions.each { |ext|
-		$source_handlers[ext.downcase] = handler
-	}
-	$source_files[handler] = []
-}
-
-init_time = Time.now - init_time
-
-puts "Build System Initialized (#{duration(init_time)})";
-
 def force_delete(path)
-	if (File.directory? path)
-		FileUtils.rm_rf(path)
+	begin
 		if (File.directory? path)
-			FileUtils.remove_dir(path)
+			FileUtils.rm_rf(path)
+			if (File.directory? path)
+				FileUtils.remove_dir(path)
+			end
+		elsif (File.file? path)
+			File.delete(path)
 		end
-	elsif (File.file? path)
-		File.delete(path)
+	rescue
 	end
 end
 
-if (force_clean)
+def clean()
 	clean_time = Time.now
 	puts "Cleaning..."
 	
@@ -129,6 +93,55 @@ if (force_clean)
 	if ($BuildOptions.target == "clean")
 		exit 0
 	end
+end
+
+# Print Build Configuration
+if ($BuildOptions.target != "clean")
+	$BuildOptions.print_self()
+else
+	clean()
+end
+
+force_all_build = $BuildOptions.target == "rebuild"
+force_clean = ($BuildOptions.target == "rebuild") || ($BuildOptions.target == "clean")
+
+def str_hash (str)
+	hash = 14695981039346656037
+	str.split('').each { |c|
+		hash = (hash * 1099511628211) & 0xFFFFFFFFFFFFFFFF
+		hash = (hash ^ c.to_i)
+	}
+	return hash
+end
+
+def vputs(str, tabs = 0)
+	if ($BuildOptions.verbose)
+		puts(($TAB * tabs) + "VERBOSE: " + str)
+	end
+end
+
+# Build Handler setup
+$source_files = Hash.new nil
+$source_handlers = Hash.new nil
+Handlers = [
+	$gpp_buildhandler
+]
+
+Handlers.each { |handler|
+	handler.extensions.each { |ext|
+		$source_handlers[ext.downcase] = handler
+	}
+	$source_files[handler] = []
+}
+
+init_time = Time.now - init_time
+
+if ($BuildOptions.target != "clean")
+	puts "Build System Initialized (#{duration(init_time)})";
+end
+
+if (force_clean)
+	clean()
 end
 
 parse_time = Time.now
@@ -262,14 +275,16 @@ puts "Dependency Generation Complete. (#{duration(dep_time)})"
 compile_time = Time.now
 
 if (any_rebuild)
-	puts "The following files will be compiled:"
-	$source_files.each { |handler, files|
-		files.each { |src|
-			if (src.build)
-				puttabs(src.path, 1);
-			end
+	if ($BuildOptions.verbose)
+		puts "The following files will be compiled:"
+		$source_files.each { |handler, files|
+			files.each { |src|
+				if (src.build)
+					puttabs(src.path, 1);
+				end
+			}
 		}
-	}
+	end
 	
 	puts "Compiling..."
 	$source_files.each { |handler, files|
@@ -279,7 +294,11 @@ if (any_rebuild)
 			src = files[idx]
 			
 			if (src.build)
-				handler.compile(src.path, src.object_path())
+				if !$BuildOptions.verbose
+					puts src.path
+				end
+				handler.compile(src.path, src.object_path(), $BuildOptions.verbose)
+				STDOUT.flush
 			end
 		},
 		files.length).join()

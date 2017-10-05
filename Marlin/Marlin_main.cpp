@@ -7014,7 +7014,7 @@ inline void gcode_M104() {
 
   if (parser.seenval('S')) {
     const int16_t temp = parser.value_celsius();
-    thermalManager.setTargetHotend(temp, target_extruder);
+    thermalManager.setTargetHotend(temp);
 
     #if ENABLED(DUAL_X_CARRIAGE)
       if (dual_x_carriage_mode == DXC_DUPLICATION_MODE && target_extruder == 0)
@@ -7034,7 +7034,7 @@ inline void gcode_M104() {
       }
     #endif
 
-    if (parser.value_celsius() > thermalManager.degHotend(target_extruder))
+    if (parser.value_celsius() > thermalManager.degHotend())
 		lcd::statusf(0, PSTR("E%i %s"), target_extruder + 1, MSG_HEATING);
   }
 
@@ -7075,7 +7075,7 @@ inline void gcode_M104() {
 
   void print_heaterstates() {
     #if HAS_TEMP_HOTEND
-      print_heater_state(thermalManager.degHotend(target_extruder), thermalManager.degTargetHotend(target_extruder)
+      print_heater_state(thermalManager.degHotend(), thermalManager.degTargetHotend()
         #if ENABLED(SHOW_TEMP_ADC_VALUES)
           , thermalManager.rawHotendTemp(target_extruder)
         #endif
@@ -7098,10 +7098,10 @@ inline void gcode_M104() {
       );
     #endif
     SERIAL_PROTOCOLPGM(" @:");
-    SERIAL_PROTOCOL(thermalManager.getHeaterPower(target_extruder));
+    SERIAL_PROTOCOL(thermalManager.getHeaterPower<Temperature::Manager::Hotend>());
     #if HAS_TEMP_BED
       SERIAL_PROTOCOLPGM(" B@:");
-      SERIAL_PROTOCOL(thermalManager.getHeaterPower(-1));
+      SERIAL_PROTOCOL(thermalManager.getHeaterPower<Temperature::Manager::Bed>());
     #endif
     #if HOTENDS > 1
       HOTEND_LOOP() {
@@ -7229,7 +7229,7 @@ inline void gcode_M109() {
   const bool no_wait_for_cooling = parser.seenval('S');
   if (no_wait_for_cooling || parser.seenval('R')) {
     const int16_t temp = parser.value_celsius();
-    thermalManager.setTargetHotend(temp, target_extruder);
+    thermalManager.setTargetHotend(temp);
 
     #if ENABLED(DUAL_X_CARRIAGE)
       if (dual_x_carriage_mode == DXC_DUPLICATION_MODE && target_extruder == 0)
@@ -7250,7 +7250,7 @@ inline void gcode_M109() {
         print_job_timer.start();
     #endif
 
-    if (thermalManager.isHeatingHotend(target_extruder)) lcd::statusf(0, PSTR("E%i %s"), target_extruder + 1, MSG_HEATING);
+    if (thermalManager.isHeatingHotend()) lcd::statusf(0, PSTR("E%i %s"), target_extruder + 1, MSG_HEATING);
   }
   else return;
 
@@ -7281,9 +7281,9 @@ inline void gcode_M109() {
 
   do {
     // Target temperature might be changed during the loop
-    if (target_temp != thermalManager.degTargetHotend(target_extruder)) {
-      wants_to_cool = thermalManager.isCoolingHotend(target_extruder);
-      target_temp = thermalManager.degTargetHotend(target_extruder);
+    if (target_temp != thermalManager.degTargetHotend()) {
+      wants_to_cool = thermalManager.isCoolingHotend();
+      target_temp = thermalManager.degTargetHotend();
 
       // Exit if S<lower>, continue if S<higher>, R<lower>, or R<higher>
       if (no_wait_for_cooling && wants_to_cool) break;
@@ -7306,7 +7306,7 @@ inline void gcode_M109() {
     idle();
     refresh_cmd_timeout(); // to prevent stepper_inactive_time from running out
 
-    const float temp = thermalManager.degHotend(target_extruder);
+    const float temp = thermalManager.degHotend();
 
     #if ENABLED(PRINTER_EVENT_LEDS)
       // Gradually change LED strip from violet to red as nozzle heats up
@@ -8635,11 +8635,11 @@ inline void gcode_M226() {
     const uint8_t e = parser.byteval('E'); // extruder being updated
 
     if (e < HOTENDS) { // catch bad input value
-      if (parser.seen('P')) PID_PARAM(Kp, e) = parser.value_float();
-      if (parser.seen('I')) PID_PARAM(Ki, e) = scalePID_i(parser.value_float());
-      if (parser.seen('D')) PID_PARAM(Kd, e) = scalePID_d(parser.value_float());
+      if (parser.seen('P')) PID_PARAM(Kp) = parser.value_float();
+      if (parser.seen('I')) PID_PARAM(Ki) = scalePID_i(parser.value_float());
+      if (parser.seen('D')) PID_PARAM(Kd) = scalePID_d(parser.value_float());
       #if ENABLED(PID_EXTRUSION_SCALING)
-        if (parser.seen('C')) PID_PARAM(Kc, e) = parser.value_float();
+        if (parser.seen('C')) PID_PARAM(Kc) = parser.value_float();
         if (parser.seen('L')) lpq_len = parser.value_float();
         NOMORE(lpq_len, LPQ_MAX_LEN);
       #endif
@@ -8647,14 +8647,14 @@ inline void gcode_M226() {
       thermalManager.updatePID();
       SERIAL_ECHO_START();
       #if ENABLED(PID_PARAMS_PER_HOTEND)
-        SERIAL_ECHOPAIR(" e:", e); // specify extruder in serial output
+        SERIAL_ECHOPAIR(" e:"); // specify extruder in serial output
       #endif // PID_PARAMS_PER_HOTEND
-      SERIAL_ECHOPAIR(" p:", PID_PARAM(Kp, e));
-      SERIAL_ECHOPAIR(" i:", unscalePID_i(PID_PARAM(Ki, e)));
-      SERIAL_ECHOPAIR(" d:", unscalePID_d(PID_PARAM(Kd, e)));
+      SERIAL_ECHOPAIR(" p:", PID_PARAM(Kp));
+      SERIAL_ECHOPAIR(" i:", unscalePID_i(PID_PARAM(Ki)));
+      SERIAL_ECHOPAIR(" d:", unscalePID_d(PID_PARAM(Kd)));
       #if ENABLED(PID_EXTRUSION_SCALING)
         //Kc does not have scaling applied above, or in resetting defaults
-        SERIAL_ECHOPAIR(" c:", PID_PARAM(Kc, e));
+        SERIAL_ECHOPAIR(" c:", PID_PARAM(Kc));
       #endif
       SERIAL_EOL();
     }
@@ -8790,7 +8790,7 @@ inline void gcode_M303() {
 
     KEEPALIVE_STATE(NOT_BUSY); // don't send "busy: processing" messages during autotune output
 
-    thermalManager.PID_autotune(temp, e, c, u);
+    thermalManager.PID_autotune(temp, c, u);
 
     KEEPALIVE_STATE(IN_HANDLER);
   #else
@@ -12025,7 +12025,7 @@ void prepare_move_to_destination() {
 
     if (!DEBUGGING(DRYRUN)) {
       if (destination[E_AXIS] != current_position[E_AXIS]) {
-        if (thermalManager.tooColdToExtrude(active_extruder)) {
+        if (thermalManager.tooColdToExtrude()) {
           current_position[E_AXIS] = destination[E_AXIS]; // Behave as if the move really took place, but ignore E part
           SERIAL_ECHO_START();
           SERIAL_ECHOLNPGM(MSG_ERR_COLD_EXTRUDE_STOP);

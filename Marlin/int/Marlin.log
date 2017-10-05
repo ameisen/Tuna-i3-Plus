@@ -1,0 +1,23 @@
+﻿  Build Configuration:
+    Name                : tuna
+    Target              : build
+    Root                : D:/Projects/i3PlusPlus/Marlin
+    Threads             : 16
+    Intermediate Path   : ./int
+    Output              : out/tuna.elf
+    Output Dependencies ΓòÆ out/tuna.eep
+                        Γòÿ out/tuna.hex
+    Source Paths        ΓòÆ .
+                        Γòÿ D:/Tools/arduino/hardware/arduino/avr/cores/arduino
+  Build System Initialized (0.014001s)
+  Directories Parsed. (0.031002s)
+  Determining which object files need to be rebuilt
+  Dependency Generation Complete. (0.598983s)
+  No object files are out of date. (0.0s)
+  Archive file is not out of date. (0.0s)
+  Output binary is not out of date. (0.000966s)
+  Beginning Custom Build Step.
+    EEP file is not out of date.
+    HEX file is not out of date.
+  Custom Build Step Complete (0.0s)
+  Build Not Needed. (0.644952s)

@@ -31,7 +31,7 @@
 
 #include "MarlinConfig.h"
 
-#include "tuna.h"
+#include <tuna>
 
 #define HOTEND_INDEX  0
 #define EXTRUDER_IDX  0

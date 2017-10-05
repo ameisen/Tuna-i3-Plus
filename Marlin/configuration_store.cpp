@@ -476,11 +476,11 @@ void MarlinSettings::postprocess() {
 
       #if ENABLED(PIDTEMP)
         if (e < HOTENDS) {
-          EEPROM_WRITE(PID_PARAM(Kp, e));
-          EEPROM_WRITE(PID_PARAM(Ki, e));
-          EEPROM_WRITE(PID_PARAM(Kd, e));
+          EEPROM_WRITE(PID_PARAM(Kp));
+          EEPROM_WRITE(PID_PARAM(Ki));
+          EEPROM_WRITE(PID_PARAM(Kd));
           #if ENABLED(PID_EXTRUSION_SCALING)
-            EEPROM_WRITE(PID_PARAM(Kc, e));
+            EEPROM_WRITE(PID_PARAM(Kc));
           #else
             dummy = 1.0f; // 1.0 = default kc
             EEPROM_WRITE(dummy);
@@ -881,11 +881,11 @@ void MarlinSettings::postprocess() {
           EEPROM_READ(dummy); // Kp
           if (e < HOTENDS && dummy != DUMMY_PID_VALUE) {
             // do not need to scale PID values as the values in EEPROM are already scaled
-            PID_PARAM(Kp, e) = dummy;
-            EEPROM_READ(PID_PARAM(Ki, e));
-            EEPROM_READ(PID_PARAM(Kd, e));
+            PID_PARAM(Kp) = dummy;
+            EEPROM_READ(PID_PARAM(Ki));
+            EEPROM_READ(PID_PARAM(Kd));
             #if ENABLED(PID_EXTRUSION_SCALING)
-              EEPROM_READ(PID_PARAM(Kc, e));
+              EEPROM_READ(PID_PARAM(Kc));
             #else
               EEPROM_READ(dummy);
             #endif
@@ -1301,11 +1301,11 @@ void MarlinSettings::reset() {
       HOTEND_LOOP()
     #endif
     {
-      PID_PARAM(Kp, e) = DEFAULT_Kp;
-      PID_PARAM(Ki, e) = scalePID_i(DEFAULT_Ki);
-      PID_PARAM(Kd, e) = scalePID_d(DEFAULT_Kd);
+      PID_PARAM(Kp) = DEFAULT_Kp;
+      PID_PARAM(Ki) = scalePID_i(DEFAULT_Ki);
+      PID_PARAM(Kd) = scalePID_d(DEFAULT_Kd);
       #if ENABLED(PID_EXTRUSION_SCALING)
-        PID_PARAM(Kc, e) = DEFAULT_Kc;
+        PID_PARAM(Kc) = DEFAULT_Kc;
       #endif
     }
     #if ENABLED(PID_EXTRUSION_SCALING)
@@ -1746,11 +1746,11 @@ void MarlinSettings::reset() {
         // !forReplay || HOTENDS == 1
         {
           CONFIG_ECHO_START;
-          SERIAL_ECHOPAIR("  M301 P", PID_PARAM(Kp, 0)); // for compatibility with hosts, only echo values for E0
-          SERIAL_ECHOPAIR(" I", unscalePID_i(PID_PARAM(Ki, 0)));
-          SERIAL_ECHOPAIR(" D", unscalePID_d(PID_PARAM(Kd, 0)));
+          SERIAL_ECHOPAIR("  M301 P", PID_PARAM(Kp)); // for compatibility with hosts, only echo values for E0
+          SERIAL_ECHOPAIR(" I", unscalePID_i(PID_PARAM(Ki)));
+          SERIAL_ECHOPAIR(" D", unscalePID_d(PID_PARAM(Kd)));
           #if ENABLED(PID_EXTRUSION_SCALING)
-            SERIAL_ECHOPAIR(" C", PID_PARAM(Kc, 0));
+            SERIAL_ECHOPAIR(" C", PID_PARAM(Kc));
             SERIAL_ECHOPAIR(" L", lpq_len);
           #endif
           SERIAL_EOL();
