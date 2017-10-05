@@ -39,7 +39,8 @@ namespace marlin::lcd
 		OpMode opMode = OpMode::None;
 		uint8 eventCnt = 0;
 		uint8 tempGraphUpdate = 0;
-		uint8 lastPage = type_trait<uint8>::max;
+		uint8 currentPage = 11; // main menu
+		uint8 lastPage = 11; // main menu
 
 		constexpr millis_t update_period = { 100 }; // originally 500
 
@@ -145,6 +146,9 @@ namespace marlin::lcd
 		//show page OK
 		uint8 get_current_page()
 		{
+			return currentPage;
+#if 0
+
 			{
 				constexpr const uint8 buffer[6] = {
 					0x5A,//frame header
@@ -170,6 +174,7 @@ namespace marlin::lcd
 			}
 
 			return 0;
+#endif
 		}
 
 		//receive data from lcd OK
@@ -832,21 +837,20 @@ namespace marlin::lcd
 					enqueue_and_echo_command(command); //enque pid command
 					tempGraphUpdate = 2;
 				}
-				break;
-			}
+			} break;
 			case 0x3D: { //Close temp screen
-				if (lcdData == 1) {
+				if (lcdData == 1) // back
+				{
 					tempGraphUpdate = 0;
 					Serial.println(lastPage);
 					show_page(lastPage);
 				}
-				else {
-					lastPage = get_current_page();
-					Serial.println(lastPage);
+				else // open temp screen
+				{
 					tempGraphUpdate = 2;
 					show_page(63);
 				}
-			}
+			} break;
 			case 0x55: { //enter print menu without selecting file
 				tempGraphUpdate = 2;
 				if (card.sdprinting == false)
@@ -864,7 +868,7 @@ namespace marlin::lcd
 					serial<2>::write(str_buffer);
 				}
 				show_page(33);//print menu
-			}
+			} break;
 					   /*case 0xFF: {
 					   show_page(58); //enable lcd bridge mode
 					   while (1) {
@@ -1006,8 +1010,14 @@ namespace marlin::lcd
 	}
 
 	//show page OK
-	void show_page(uint8 pageNumber)
+	constexpr void show_page(uint8 pageNumber)
 	{
+		if (pageNumber >= 11) //main menu
+		{
+			lastPage = currentPage;
+			currentPage = pageNumber;
+		}
+
 		const uint8 buffer[7] = {
 			0x5A,//frame header
 			0xA5,

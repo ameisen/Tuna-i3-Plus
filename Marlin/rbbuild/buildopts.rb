@@ -123,10 +123,10 @@ $BuildOptions = Class.new do
 		
 		max_length = 0
 		
-		@Terminator ||= " #{$Ascii['═']} "
+		@Terminator   ||= " #{$Ascii['═']} "
 		@Array_Unique ||= " #{$Ascii['═']} "
-		@Array_Kicker ||= " #{$Ascii['╒']} "
-		@Array_Line ||= " #{$Ascii['│']} "
+		@Array_Kicker ||= " #{$Ascii['╤']} "
+		@Array_Line   ||= " #{$Ascii['╞']} "
 		@Array_Footer ||= " #{$Ascii['╘']} "
 		if !([@Terminator, @Array_Kicker, @Array_Line, @Array_Footer].all? {|v| v.length == @Terminator.length})
 			#raise SyntaxError.new("Configuration Print Terminators are not equivalent in length.")

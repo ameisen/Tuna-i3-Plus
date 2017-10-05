@@ -8,7 +8,7 @@ namespace marlin::lcd
 {
 	void initialize();
 	void update();
-	void show_page(uint8 pageNumber);
+	constexpr void show_page(uint8 pageNumber);
 	void update_graph();
 	constexpr inline bool has_status() { return false; }
 	constexpr inline void set_status(const char* const, const bool = false) { }
