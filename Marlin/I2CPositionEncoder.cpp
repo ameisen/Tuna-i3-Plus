@@ -33,7 +33,7 @@
 #if ENABLED(I2C_POSITION_ENCODERS)
 
   #include "Marlin.h"
-  #include "temperature.h"
+  #include "temperature.hpp"
   #include "stepper.h"
   #include "I2CPositionEncoder.h"
   #include "gcode.h"

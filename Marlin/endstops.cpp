@@ -27,7 +27,7 @@
 #include "Marlin.h"
 #include "cardreader.h"
 #include "endstops.h"
-#include "temperature.h"
+#include "temperature.hpp"
 #include "stepper.h"
 #include "bi3_plus_lcd.h"
 

@@ -49,6 +49,7 @@
     <ClCompile Include="stopwatch.cpp" />
     <ClCompile Include="temperature.cpp" />
     <ClCompile Include="utility.cpp" />
+    <ClCompile Include="interrupts.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="bi3_plus_lcd.h" />
@@ -87,7 +88,6 @@
     <ClInclude Include="stepper.h" />
     <ClInclude Include="stepper_indirection.h" />
     <ClInclude Include="stopwatch.h" />
-    <ClInclude Include="temperature.h" />
     <ClInclude Include="thermistortable_1.h" />
     <ClInclude Include="thermistortable_2.h" />
     <ClInclude Include="thermistortable_3.h" />
@@ -130,6 +130,8 @@
     <ClInclude Include="__vm\.Marlin.vsarduino.h">
       <Filter>__vm</Filter>
     </ClInclude>
+    <ClInclude Include="temperature.hpp" />
+    <ClInclude Include="interrupts.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tunalib">

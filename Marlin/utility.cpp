@@ -22,7 +22,7 @@
 
 #include "Marlin.h"
 #include "utility.h"
-#include "temperature.h"
+#include "temperature.hpp"
 
 void safe_delay(millis_t ms) {
   while (ms > 50) {

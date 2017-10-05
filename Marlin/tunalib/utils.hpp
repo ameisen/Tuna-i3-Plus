@@ -2,6 +2,9 @@
 
 #include <stdint.h>
 
+#include "HardwareSerial.h"
+#include "avr/interrupt.h"
+
 #ifdef min
 #	undef min
 #endif

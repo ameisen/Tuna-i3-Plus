@@ -1,11 +1,9 @@
 #include "bi3_plus_lcd.h"
 
-#include "temperature.h"
-
 #include "Marlin.h"
 #include "language.h"
 #include "cardreader.h"
-#include "temperature.h"
+#include "temperature.hpp"
 #include "stepper.h"
 #include "configuration_store.h"
 #include "utility.h"

@@ -21,11 +21,10 @@
  */
 
  /**
-  * temperature.h - temperature controller
+  * temperature.hpp - temperature controller
   */
 
-#ifndef TEMPERATURE_H
-#define TEMPERATURE_H
+#pragma once
 
 #include "thermistortables.h"
 
@@ -250,4 +249,3 @@ private:
 
 extern Temperature thermalManager;
 
-#endif // TEMPERATURE_H

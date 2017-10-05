@@ -9,23 +9,33 @@
                         ╘ Default/tuna.hex
     Source Paths        ╒ .
                         ╘ D:/Tools/arduino/hardware/arduino/avr/cores/arduino
-  Build System Initialized (0.017s)
-  Directories Parsed. (0.035952s)
+  Build System Initialized (0.016003s)
+  Directories Parsed. (0.035949s)
   Determining which object files need to be rebuilt
-  Dependency Generation Complete. (0.628447s)
+  Dependency Generation Complete. (0.537178s)
   Compiling...
-  ./interrupt.cpp
-  Compilation Complete. (0.094187s)
+  ./bi3_plus_lcd.cpp
+  ./cardreader.cpp
+  ./configuration_store.cpp
+  ./endstops.cpp
+  ./interrupts.cpp
+  ./Marlin_main.cpp
+  ./planner.cpp
+  ./planner_bezier.cpp
+  ./stepper.cpp
+  ./temperature.cpp
+  ./utility.cpp
+  Compilation Complete. (0.315003s)
   Regenerating archive file.
-    D:/Tools/arduino/hardware/tools/avr/bin/avr-gcc-ar.exe rcs int/tuna.a int/1ugxrx8xol8a2/bi3_plus_lcd.cpp.o int/1ugxrx8xol8a2/cardreader.cpp.o int/1ugxrx8xol8a2/configuration_store.cpp.o int/1ugxrx8xol8a2/endstops.cpp.o int/1ugxrx8xol8a2/gcode.cpp.o int/1ugxrx8xol8a2/I2CPositionEncoder.cpp.o int/1ugxrx8xol8a2/interrupt.cpp.o int/1ugxrx8xol8a2/MarlinSerial.cpp.o int/1ugxrx8xol8a2/Marlin_main.cpp.o int/1ugxrx8xol8a2/pca9632.cpp.o int/1ugxrx8xol8a2/planner.cpp.o int/1ugxrx8xol8a2/planner_bezier.cpp.o int/1ugxrx8xol8a2/printcounter.cpp.o int/1ugxrx8xol8a2/Sd2Card.cpp.o int/1ugxrx8xol8a2/SdBaseFile.cpp.o int/1ugxrx8xol8a2/SdFatUtil.cpp.o int/1ugxrx8xol8a2/SdFile.cpp.o int/1ugxrx8xol8a2/SdVolume.cpp.o int/1ugxrx8xol8a2/serial.cpp.o int/1ugxrx8xol8a2/stepper.cpp.o int/1ugxrx8xol8a2/stepper_indirection.cpp.o int/1ugxrx8xol8a2/stopwatch.cpp.o int/1ugxrx8xol8a2/temperature.cpp.o int/1ugxrx8xol8a2/utility.cpp.o int/1ugxrx8xol8a2/watchdog.cpp.o int/foglvsslcsmv/abi.cpp.o int/foglvsslcsmv/CDC.cpp.o int/foglvsslcsmv/HardwareSerial.cpp.o int/foglvsslcsmv/HardwareSerial0.cpp.o int/foglvsslcsmv/HardwareSerial1.cpp.o int/foglvsslcsmv/HardwareSerial2.cpp.o int/foglvsslcsmv/HardwareSerial3.cpp.o int/foglvsslcsmv/hooks.c.o int/foglvsslcsmv/IPAddress.cpp.o int/foglvsslcsmv/main.cpp.o int/foglvsslcsmv/new.cpp.o int/foglvsslcsmv/PluggableUSB.cpp.o int/foglvsslcsmv/Print.cpp.o int/foglvsslcsmv/Stream.cpp.o int/foglvsslcsmv/Tone.cpp.o int/foglvsslcsmv/USBCore.cpp.o int/foglvsslcsmv/WInterrupts.c.o int/foglvsslcsmv/wiring.c.o int/foglvsslcsmv/wiring_analog.c.o int/foglvsslcsmv/wiring_digital.c.o int/foglvsslcsmv/wiring_pulse.c.o int/foglvsslcsmv/wiring_shift.c.o int/foglvsslcsmv/WMath.cpp.o int/foglvsslcsmv/WString.cpp.o
-  Archiving Complete. (0.085995s)
+    D:/Tools/arduino/hardware/tools/avr/bin/avr-gcc-ar.exe rcs int/tuna.a int/1ugxrx8xol8a2/bi3_plus_lcd.cpp.o int/1ugxrx8xol8a2/cardreader.cpp.o int/1ugxrx8xol8a2/configuration_store.cpp.o int/1ugxrx8xol8a2/endstops.cpp.o int/1ugxrx8xol8a2/gcode.cpp.o int/1ugxrx8xol8a2/I2CPositionEncoder.cpp.o int/1ugxrx8xol8a2/interrupts.cpp.o int/1ugxrx8xol8a2/MarlinSerial.cpp.o int/1ugxrx8xol8a2/Marlin_main.cpp.o int/1ugxrx8xol8a2/pca9632.cpp.o int/1ugxrx8xol8a2/planner.cpp.o int/1ugxrx8xol8a2/planner_bezier.cpp.o int/1ugxrx8xol8a2/printcounter.cpp.o int/1ugxrx8xol8a2/Sd2Card.cpp.o int/1ugxrx8xol8a2/SdBaseFile.cpp.o int/1ugxrx8xol8a2/SdFatUtil.cpp.o int/1ugxrx8xol8a2/SdFile.cpp.o int/1ugxrx8xol8a2/SdVolume.cpp.o int/1ugxrx8xol8a2/serial.cpp.o int/1ugxrx8xol8a2/stepper.cpp.o int/1ugxrx8xol8a2/stepper_indirection.cpp.o int/1ugxrx8xol8a2/stopwatch.cpp.o int/1ugxrx8xol8a2/temperature.cpp.o int/1ugxrx8xol8a2/utility.cpp.o int/1ugxrx8xol8a2/watchdog.cpp.o int/foglvsslcsmv/abi.cpp.o int/foglvsslcsmv/CDC.cpp.o int/foglvsslcsmv/HardwareSerial.cpp.o int/foglvsslcsmv/HardwareSerial0.cpp.o int/foglvsslcsmv/HardwareSerial1.cpp.o int/foglvsslcsmv/HardwareSerial2.cpp.o int/foglvsslcsmv/HardwareSerial3.cpp.o int/foglvsslcsmv/hooks.c.o int/foglvsslcsmv/IPAddress.cpp.o int/foglvsslcsmv/main.cpp.o int/foglvsslcsmv/new.cpp.o int/foglvsslcsmv/PluggableUSB.cpp.o int/foglvsslcsmv/Print.cpp.o int/foglvsslcsmv/Stream.cpp.o int/foglvsslcsmv/Tone.cpp.o int/foglvsslcsmv/USBCore.cpp.o int/foglvsslcsmv/WInterrupts.c.o int/foglvsslcsmv/wiring.c.o int/foglvsslcsmv/wiring_analog.c.o int/foglvsslcsmv/wiring_digital.c.o int/foglvsslcsmv/wiring_pulse.c.o int/foglvsslcsmv/wiring_shift.c.o int/foglvsslcsmv/WMath.cpp.o int/foglvsslcsmv/WString.cpp.o
+  Archiving Complete. (0.045996s)
   Output Binary is out of date, relinking.
     D:/Tools/arduino/hardware/tools/avr/bin/avr-gcc.exe -O2 -w -fpermissive -ffunction-sections -fdata-sections -fno-threadsafe-statics -flto -fno-keep-static-consts -fmerge-all-constants -funsafe-loop-optimizations -fpredictive-commoning -mmcu=atmega2560 -std=gnu++1z  -DF_CPU=16000000L -DARDUINO=10804 -DARDUINO_AVR_MEGA2560 -DARDUINO_ARCH_AVR -ID:/Tools/arduino/hardware/arduino/avr/cores/arduino -ID:/Tools/arduino/hardware/arduino/avr/variants/mega -I. -isystem./tuna -fdelete-dead-exceptions -fshort-enums -freg-struct-return -fno-common -funswitch-loops -fgcse-after-reload -fsplit-paths -ftree-partial-pre -fgcse-sm -fgcse-las -fgcse-after-reload -fdeclone-ctor-dtor -fdevirtualize-speculatively -fdevirtualize-at-ltrans -free -fsched-pressure -fsched-spec-load -fipa-pta -ftree-builtin-call-dce -ftree-loop-distribute-patterns -ftree-loop-ivcanon -fivopts -fvariable-expansion-in-unroller -fno-align-functions -fno-align-labels -fno-align-loops -fno-align-jumps -fassociative-math -freciprocal-math -fbranch-target-load-optimize -fbranch-target-load-optimize2 -fstdarg-opt -Wl,--sort-common -s -fuse-linker-plugin -Wl,--gc-sections,--relax -o "Default/tuna.elf" "int/tuna.a" -lm
-  Linking Complete (1.638483s)
+  Linking Complete (1.745017s)
   Beginning Custom Build Step.
     EEP file is out of date - rebuilding.
     D:/Tools/arduino/hardware/tools/avr/bin/avr-objcopy.exe -O ihex -j .eeprom --set-section-flags=.eeprom=alloc,load --no-change-warnings --change-section-lma .eeprom=0 Default/tuna.elf Default/tuna.elf.eep
     HEX file is out of date - rebuilding.
     D:/Tools/arduino/hardware/tools/avr/bin/avr-objcopy.exe -O ihex -R .eeprom Default/tuna.elf Default/tuna.elf.hex
-  Custom Build Step Complete (0.043004s)
-  Build Complete. (2.544122s)
+  Custom Build Step Complete (0.060026s)
+  Build Complete. (2.755172s)
