@@ -32,7 +32,7 @@ namespace marlin::lcd
 			Auto_PID
 		};
 
-		inline bool read_data();
+		inline void read_data();
 		void write_statistics();
 
 		uint16 fileIndex = 0;
@@ -43,91 +43,7 @@ namespace marlin::lcd
 		uint8 tempGraphUpdate = 0;
 		uint8 lastPage = type_trait<uint8>::max;
 
-		constexpr uint8 max_wait_iterations_lcd_read = 64;
-
-		using lcd_read_func = bool(*) ();
-
-		lcd_read_func read_coroutine = read_data;
-
-		inline void reset_read_coroutine()
-		{
-			read_coroutine = &read_data;
-		}
-
-		template <uint8 length, lcd_read_func read_functor>
-		bool await_lcd_readable()
-		{
-			uint cur_iteration = 0;
-			while (!serial<2>::available(length))
-			{
-				if (++cur_iteration == max_wait_iterations_lcd_read)
-				{
-					read_coroutine = read_functor;
-					return false;
-				}
-			}
-			read_coroutine = &read_data;
-			return true;
-		}
-
-		namespace coroutines
-		{
-			bool read_1();
-			bool read_2();
-			bool read_3();
-			void read_final();
-
-			bool read_1()
-			{
-				if (!await_lcd_readable<1, read_1>())
-				{
-					return false;
-				}
-
-				if (serial<2>::read() != 0xA5)
-				{
-					return true;
-				}
-
-				return read_2();
-			}
-
-			bool read_2()
-			{
-				if (!await_lcd_readable<3, read_2>())
-				{
-					return false;
-				}
-
-				serial<2>::read(); // data length
-				serial<2>::read(); // command
-
-				if (serial<2>::read() != 4) // VP MSB
-				{
-					return true;
-				}
-
-				return read_3();
-			}
-
-			bool read_3()
-			{
-				if (!await_lcd_readable<4, read_3>())
-				{
-					return false;
-				}
-
-				read_final();
-				return true;
-			}
-
-			void read_final();
-		}
-
-		inline bool read_data()
-		{
-			return coroutines::read_1();
-		}
+		constexpr millis_t update_period = { 100 }; // originally 500
 
 		void execute_looped_operation(millis_t ms)
 		{
@@ -151,7 +67,7 @@ namespace marlin::lcd
 			} break;
 			case OpMode::Unload_Filament:
 			{
-				if (Temperature::current_temperature[0] >= (Temperature::target_temperature[0] - 10))
+				if (Temperature::current_temperature >= (Temperature::target_temperature - 10))
 				{
 					enqueue_and_echo_commands_P(PSTR("G1 E-1 F120"));
 				}
@@ -159,7 +75,7 @@ namespace marlin::lcd
 			} break;
 			case OpMode::Load_Filament:
 			{
-				if (Temperature::current_temperature[0] >= (Temperature::target_temperature[0] - 10))
+				if (Temperature::current_temperature >= (Temperature::target_temperature - 10))
 				{
 					enqueue_and_echo_commands_P(PSTR("G1 E1 F120"));
 				}
@@ -175,27 +91,29 @@ namespace marlin::lcd
 				return;
 			}
 
-			nextLcdUpdate = ms + 500;
+			const millis_t difference = ms - nextLcdUpdate;
 
-			const auto target_hotend_temperature = Temperature::target_temperature[0];
+			nextLcdUpdate = ms + (update_period - min(difference, update_period));
+
+			const auto target_hotend_temperature = Temperature::target_temperature;
 			// TODO validate that float->uint conversion is correct
-			const auto hotend_temperature = static_cast<uint16>(roundf(Temperature::degHotend(0)));
+			const auto hotend_temperature = static_cast<int16>(roundf(Temperature::degHotend()));
 
 			const auto target_bed_temperature = Temperature::target_temperature_bed;
 			// TODO validate that float->uint conversion is correct
-			const auto bed_temperature = static_cast<uint16>(roundf(Temperature::degBed()));
+			const auto bed_temperature = static_cast<int16>(roundf(Temperature::degBed()));
 
 			const auto fan_speed = (fanSpeeds[0] * 100) / 256;
 
 			const auto card_progress = card.percentDone();
 
 			const uint8 buffer[18] = {
-				0x5Au8,
-				0xA5u8,
-				0x0Fu8, //data length
-				0x82u8, //write data to sram
-				0x00u8, //starting at 0 vp
-				0x00u8,
+				0x5A,
+				0xA5,
+				0x0F, //data length
+				0x82, //write data to sram
+				0x00, //starting at 0 vp
+				0x00,
 				hi(target_hotend_temperature), //0x00 target extruder temp
 				lo(target_hotend_temperature),
 				hi(hotend_temperature), //0x01 extruder temp
@@ -231,28 +149,24 @@ namespace marlin::lcd
 		{
 			{
 				constexpr const uint8 buffer[6] = {
-					0x5Au8,//frame header
-					0xA5u8,
+					0x5A,//frame header
+					0xA5,
 
-					0x03u8,//data length
+					0x03,//data length
 
-					0x81u8,//command - write read to register
-					0x03u8,//register 0x03
+					0x81,//command - write read to register
+					0x03,//register 0x03
 
-					0x02u8,//2bytes
+					0x02,//2bytes
 				};
 
 				serial<2>::write(buffer);
 			}
 
-			uint8 buffer[8] = {};
-			uint8 bytesRead = 0;
-			do
-			{
-				bytesRead += serial<2>::read_bytes(&buffer[bytesRead], sizeof(buffer) - bytesRead);
-			} while (bytesRead != 8u8);
+			uint8 buffer[8];
+			const uint8 bytesRead = serial<2>::read_bytes(buffer);
 
-			if ((buffer[0] == 0x5Au8) & (buffer[1] == 0xA5u8))
+			if ((bytesRead == 8) & (buffer[0] == 0x5A) & (buffer[1] == 0xA5))
 			{
 				return buffer[7];
 			}
@@ -261,8 +175,37 @@ namespace marlin::lcd
 		}
 
 		//receive data from lcd OK
-		void coroutines::read_final()
+		void read_data()
 		{
+			if (!serial<2>::available(1))
+			{
+				return;
+			}
+
+			if (serial<2>::read() != 0x5A)
+			{
+				return;
+			}
+
+			while (!serial<2>::available(1)) {}
+
+			if (serial<2>::read() != 0xA5)
+			{
+				return;
+			}
+
+			while (!serial<2>::available(3)) {}
+
+			serial<2>::read(); // data length
+			serial<2>::read(); // command
+
+			if (serial<2>::read() != 4) // VP MSB
+			{
+				return;
+			}
+
+			while (!serial<2>::available(4)) {}
+
 			const uint8 lcdCommand = serial<2>::read(); // VP LSB
 			serial<2>::read();// LEN ?
 			serial<2>::read(); //KEY VALUE MSB
@@ -270,7 +213,7 @@ namespace marlin::lcd
 
 			switch (lcdCommand)
 			{
-			case 0x32u8: {//SD list navigation up/down OK
+			case 0x32: {//SD list navigation up/down OK
 				if (card.sdprinting)
 				{
 					show_page(33); //show print menu
@@ -284,7 +227,7 @@ namespace marlin::lcd
 						if (card.cardOK)
 						{
 							fileCnt = card.getnrfilenames();
-							fileIndex = max(fileCnt, 1u16) - 1u16;
+							fileIndex = max(fileCnt, 1_u16) - 1;
 						}
 					}
 
@@ -313,12 +256,12 @@ namespace marlin::lcd
 
 						{
 							constexpr const uint8 buffer[6] = {
-								0x5Au8,
-								0xA5u8,
-								0x9Fu8,
-								0x82u8,
-								0x01u8,
-								0x00u8
+								0x5A,
+								0xA5,
+								0x9F,
+								0x82,
+								0x01,
+								0x00
 							};
 							serial<2>::write(buffer);
 						}
@@ -335,19 +278,19 @@ namespace marlin::lcd
 				}
 				break;
 			}
-			case 0x33u8: {//FILE SELECT OK
+			case 0x33: {//FILE SELECT OK
 				if (card.cardOK) {
 					if (((fileIndex + 10) - lcdData) >= 10)
 					{
 						card.getfilename(fileIndex - lcdData);
 
 						constexpr const uint8 buffer[6] = {
-							0x5Au8,
-							0xA5u8,
-							0x1Du8,
-							0x82u8,
-							0x01u8,
-							0x4Eu8
+							0x5A,
+							0xA5,
+							0x1D,
+							0x82,
+							0x01,
+							0x4E
 						};
 						serial<2>::write(buffer);
 						serial<2>::write(card.longFilename, 26);
@@ -363,7 +306,7 @@ namespace marlin::lcd
 				}
 				break;
 			}
-			case 0x35u8: {//print stop OK
+			case 0x35: {//print stop OK
 				card.stopSDPrint();
 				clear_command_queue();
 				quickstop_stepper();
@@ -379,7 +322,7 @@ namespace marlin::lcd
 				show_page(11); //main menu
 				break;
 			}
-			case 0x36u8: {//print pause OK
+			case 0x36: {//print pause OK
 				card.pauseSDPrint();
 				print_job_timer.pause();
 #if ENABLED(PARK_HEAD_ON_PAUSE)
@@ -387,7 +330,7 @@ namespace marlin::lcd
 #endif
 				break;
 			}
-			case 0x37u8: {//print start OK
+			case 0x37: {//print start OK
 #if ENABLED(PARK_HEAD_ON_PAUSE)
 				enqueue_and_echo_commands_P(PSTR("M24"));
 #else
@@ -396,7 +339,7 @@ namespace marlin::lcd
 #endif
 				break;
 			}
-			case 0x3Cu8: { //Preheat options
+			case 0x3C: { //Preheat options
 				if (lcdData == 0) {
 					//Serial.println(thermalManager.target_temperature[0]);
 					//writing preset temps to lcd
@@ -413,23 +356,23 @@ namespace marlin::lcd
 					};
 
 					const uint8 buffer[18] = {
-						 0x5Au8,
-						 0xA5u8,
-						 0x0Fu8, //data length
-						 0x82u8, //write data to sram
-						 0x05u8, //starting at 0x0570 vp
-						 0x70u8,
+						 0x5A,
+						 0xA5,
+						 0x0F, //data length
+						 0x82, //write data to sram
+						 0x05, //starting at 0x0570 vp
+						 0x70,
 						 hi(preset_hotend[0]),
 						 lo(preset_hotend[0]),
-						 0x00u8,
+						 0x00,
 						 preset_bed[0],
 						 hi(preset_hotend[1]),
 						 lo(preset_hotend[1]),
-						 0x00u8,
+						 0x00,
 						 preset_bed[1],
 						 hi(preset_hotend[2]),
 						 lo(preset_hotend[2]),
-						 0x00u8,
+						 0x00,
 						 preset_bed[2],
 					};
 
@@ -444,54 +387,55 @@ namespace marlin::lcd
 
 					{
 						constexpr const uint8 buffer[7] = {
-							0x5Au8,
-							0xA5u8,
-							0x04u8, //data length
-							0x83u8, //read sram
-							0x05u8, //vp 0570
-							0x70u8,
-							0x06u8, //length
+							0x5A,
+							0xA5,
+							0x04, //data length
+							0x83, //read sram
+							0x05, //vp 0570
+							0x70,
+							0x06, //length
 						};
 
 						serial<2>::write(buffer);
 					}
 
 					//read user entered values from sram
-					uint8 buffer[19] = {};
+					uint8 buffer[19];
 					uint8 bytesRead = serial<2>::read_bytes(buffer);
-					if ((bytesRead == 19) & (buffer[0] == 0x5A) & (buffer[1] == 0xA5))
+					if ((bytesRead != 19) | (buffer[0] != 0x5A) | (buffer[1] != 0xA5))
 					{
-						planner.preheat_preset1_hotend = int16{ buffer[7] } * 256i16 + buffer[8];
-						planner.preheat_preset1_bed = (int8)buffer[10];
-						planner.preheat_preset2_hotend = int16{ buffer[11] } * 256i16 + buffer[12];
-						planner.preheat_preset2_bed = int8{ buffer[14] };
-						planner.preheat_preset3_hotend = int16{ buffer[15] } * 256i16 + buffer[16];
-						planner.preheat_preset3_bed = int8{ buffer[18] };
-						enqueue_and_echo_commands_P(PSTR("M500"));
-						char command[20];
-						switch (lcdData)
-						{
-						case 1: {
-							//thermalManager.setTargetHotend(planner.preheat_preset1_hotend, 0);
-							//Serial.println(thermalManager.target_temperature[0]);
-							sprintf(command, "M104 S%d", planner.preheat_preset1_hotend); //build heat up command (extruder)
-							enqueue_and_echo_command((const char*)&command); //enque heat command
-							sprintf(command, "M140 S%d", planner.preheat_preset1_bed); //build heat up command (bed)
-							enqueue_and_echo_command((const char*)&command); //enque heat command
-						} break;
-						case 2: {
-							sprintf(command, "M104 S%d", planner.preheat_preset2_hotend); //build heat up command (extruder)
-							enqueue_and_echo_command((const char*)&command); //enque heat command
-							sprintf(command, "M140 S%d", planner.preheat_preset2_bed); //build heat up command (bed)
-							enqueue_and_echo_command((const char*)&command); //enque heat command
-						} break;
-						case 3: {
-							sprintf(command, "M104 S%d", planner.preheat_preset3_hotend); //build heat up command (extruder)
-							enqueue_and_echo_command((const char*)&command); //enque heat command
-							sprintf(command, "M140 S%d", planner.preheat_preset3_bed); //build heat up command (bed)
-							enqueue_and_echo_command((const char*)&command); //enque heat command
-						} break;
-						}
+						break;
+					}
+					planner.preheat_preset1_hotend = int16{ buffer[7] } * 256_i16 + buffer[8];
+					planner.preheat_preset1_bed = (int8)buffer[10];
+					planner.preheat_preset2_hotend = int16{ buffer[11] } * 256_i16 + buffer[12];
+					planner.preheat_preset2_bed = int8{ buffer[14] };
+					planner.preheat_preset3_hotend = int16{ buffer[15] } * 256_i16 + buffer[16];
+					planner.preheat_preset3_bed = int8{ buffer[18] };
+					enqueue_and_echo_commands_P(PSTR("M500"));
+					char command[20];
+					switch (lcdData)
+					{
+					case 1: {
+						//thermalManager.setTargetHotend(planner.preheat_preset1_hotend);
+						//Serial.println(thermalManager.target_temperature[0]);
+						sprintf(command, "M104 S%d", planner.preheat_preset1_hotend); //build heat up command (extruder)
+						enqueue_and_echo_command((const char*)&command); //enque heat command
+						sprintf(command, "M140 S%d", planner.preheat_preset1_bed); //build heat up command (bed)
+						enqueue_and_echo_command((const char*)&command); //enque heat command
+					} break;
+					case 2: {
+						sprintf(command, "M104 S%d", planner.preheat_preset2_hotend); //build heat up command (extruder)
+						enqueue_and_echo_command((const char*)&command); //enque heat command
+						sprintf(command, "M140 S%d", planner.preheat_preset2_bed); //build heat up command (bed)
+						enqueue_and_echo_command((const char*)&command); //enque heat command
+					} break;
+					case 3: {
+						sprintf(command, "M104 S%d", planner.preheat_preset3_hotend); //build heat up command (extruder)
+						enqueue_and_echo_command((const char*)&command); //enque heat command
+						sprintf(command, "M140 S%d", planner.preheat_preset3_bed); //build heat up command (bed)
+						enqueue_and_echo_command((const char*)&command); //enque heat command
+					} break;
 					}
 				}
 			}
@@ -508,17 +452,17 @@ namespace marlin::lcd
 					uint16{ planner.axis_steps_per_mm[E_AXIS] * 10.0f },
 				};
 
-				const uint16 Kp = uint16{ PID_PARAM(Kp, 0) * 10.0f };
-				const uint16 Ki = uint16{ unscalePID_i(PID_PARAM(Ki, 0)) * 10.0f };
-				const uint16 Kd = uint16{ unscalePID_d(PID_PARAM(Kd, 0)) * 10.0f };
+				const uint16 Kp = uint16{ PID_PARAM(Kp) * 10.0f };
+				const uint16 Ki = uint16{ unscalePID_i(PID_PARAM(Ki)) * 10.0f };
+				const uint16 Kd = uint16{ unscalePID_d(PID_PARAM(Kd)) * 10.0f };
 
 				const uint8 buffer[20] = {
-					0x5Au8,
-					0xA5u8,
-					0x11u8,
-					0x82u8,
-					0x03u8,
-					0x24u8,
+					0x5A,
+					0xA5,
+					0x11,
+					0x82,
+					0x03,
+					0x24,
 					hi(axis_steps_mm[0]),
 					lo(axis_steps_mm[0]),
 					hi(axis_steps_mm[1]),
@@ -543,13 +487,13 @@ namespace marlin::lcd
 			case 0x3F: {//save pid/motor config OK
 				{
 					constexpr const uint8 buffer[7] = {
-						0x5Au8,
-						0xA5u8,
-						0x04u8,
-						0x83u8,
-						0x03u8,
-						0x24u8,
-						0x07u8
+						0x5A,
+						0xA5,
+						0x04,
+						0x83,
+						0x03,
+						0x24,
+						0x07
 					};
 
 					serial<2>::write(buffer);
@@ -557,23 +501,24 @@ namespace marlin::lcd
 
 				uint8 buffer[21];
 				uint8 bytesRead = serial<2>::read_bytes(buffer);
-				if ((bytesRead == 21) & (buffer[0] == 0x5A) & (buffer[1] == 0xA5)) {
-					planner.axis_steps_per_mm[X_AXIS] = float{ ((uint16)buffer[7] * 256 + buffer[8]) } * 0.1f;
-					//Serial.println(lcdBuff[7]);
-					//Serial.println(lcdBuff[8]);
-					//Serial.println(lcdBuff[9]);
-					//Serial.println(lcdBuff[10]);
-					planner.axis_steps_per_mm[Y_AXIS] = float{ ((uint16)buffer[9] * 256 + buffer[10]) } * 0.1f;
-					planner.axis_steps_per_mm[Z_AXIS] = float{ ((uint16)buffer[11] * 256 + buffer[12]) } * 0.1f;
-					planner.axis_steps_per_mm[E_AXIS] = float{ ((uint16)buffer[13] * 256 + buffer[14]) } * 0.1f;
-
-					PID_PARAM(Kp, 0) = float{ ((uint16)buffer[15] * 256 + buffer[16]) } * 0.1f;
-					PID_PARAM(Ki, 0) = scalePID_i(float{ ((uint16)buffer[17] * 256 + buffer[18]) } * 0.1f);
-					PID_PARAM(Kd, 0) = scalePID_d(float{ ((uint16)buffer[19] * 256 + buffer[20]) } * 0.1f);
-
-					enqueue_and_echo_commands_P(PSTR("M500"));
-					show_page(43);//show system menu
+				if ((bytesRead != 21) | (buffer[0] != 0x5A) | (buffer[1] != 0xA5)) {
+					break;
 				}
+				planner.axis_steps_per_mm[X_AXIS] = float{ ((uint16)buffer[7] * 256 + buffer[8]) } * 0.1f;
+				//Serial.println(lcdBuff[7]);
+				//Serial.println(lcdBuff[8]);
+				//Serial.println(lcdBuff[9]);
+				//Serial.println(lcdBuff[10]);
+				planner.axis_steps_per_mm[Y_AXIS] = float{ ((uint16)buffer[9] * 256 + buffer[10]) } * 0.1f;
+				planner.axis_steps_per_mm[Z_AXIS] = float{ ((uint16)buffer[11] * 256 + buffer[12]) } * 0.1f;
+				planner.axis_steps_per_mm[E_AXIS] = float{ ((uint16)buffer[13] * 256 + buffer[14]) } * 0.1f;
+
+				PID_PARAM(Kp) = float{ ((uint16)buffer[15] * 256 + buffer[16]) } * 0.1f;
+				PID_PARAM(Ki) = scalePID_i(float{ ((uint16)buffer[17] * 256 + buffer[18]) } * 0.1f);
+				PID_PARAM(Kd) = scalePID_d(float{ ((uint16)buffer[19] * 256 + buffer[20]) } * 0.1f);
+
+				enqueue_and_echo_commands_P(PSTR("M500"));
+				show_page(43);//show system menu
 				break;
 			}
 			case 0x42: {//factory reset OK
@@ -582,17 +527,17 @@ namespace marlin::lcd
 				break;
 			}
 			case 0x47: {//print config open OK
-				const int16 hotend_target = Temperature::degTargetHotend(0);
+				const int16 hotend_target = Temperature::degTargetHotend();
 				const int16 bed_target = Temperature::degTargetBed();
 				const int16 fan_speed = (fanSpeeds[0] * 100) / 256;
 
 				const uint8 buffer[14] = {
-					0x5Au8,
-					0xA5u8,
-					0x0Bu8,
-					0x82u8,
-					0x03u8,
-					0x2Bu8,
+					0x5A,
+					0xA5,
+					0x0B,
+					0x82,
+					0x03,
+					0x2B,
 					hi(feedrate_percentage), //0x2B
 					lo(feedrate_percentage),
 					hi(hotend_target), //0x2C
@@ -611,17 +556,13 @@ namespace marlin::lcd
 			case 0x40: {//print config save OK
 				{
 					constexpr const uint8 buffer[7] = {
-						0x5Au8,
-						0xA5u8,
-
-						0x04u8,//4 byte
-
-						0x83u8,//command
-
-						0x03u8,// start addr
-						0x2Bu8,
-
-						0x04u8, //4 vp
+						0x5A,
+						0xA5,
+						0x04,//4 byte
+						0x83,//command
+						0x03,// start addr
+						0x2B,
+						0x04, //4 vp
 					};
 
 					serial<2>::write(buffer);
@@ -629,21 +570,22 @@ namespace marlin::lcd
 
 				uint8 buffer[15];
 				uint8 bytesRead = serial<2>::read_bytes(buffer);
-				if ((bytesRead == 15) & (buffer[0] == 0x5A) & (buffer[1] == 0xA5)) {
-					feedrate_percentage = (uint16)buffer[7] * 256 + buffer[8];
-					Temperature::setTargetHotend((uint16)buffer[9] * 256 + buffer[10], 0);
-
-					Temperature::setTargetBed(buffer[12]);
-					fanSpeeds[0] = (uint16)buffer[14] * 256 / 100;
-					show_page(33);// show print menu
+				if ((bytesRead != 15) | (buffer[0] != 0x5A) | (buffer[1] != 0xA5)) {
+					break;
 				}
+				feedrate_percentage = (uint16)buffer[7] * 256 + buffer[8];
+				Temperature::setTargetHotend((uint16)buffer[9] * 256 + buffer[10]);
+
+				Temperature::setTargetBed(buffer[12]);
+				fanSpeeds[0] = (uint16)buffer[14] * 256 / 100;
+				show_page(33);// show print menu
 				break;
 			}
 			case 0x4A: {//load/unload filament back OK
 				opMode = OpMode::None;
 				clear_command_queue();
 				enqueue_and_echo_commands_P(PSTR("G90")); // absolute mode
-				Temperature::setTargetHotend(0, 0);
+				Temperature::setTargetHotend(0);
 				show_page(49);//filament menu
 				break;
 			}
@@ -697,14 +639,14 @@ namespace marlin::lcd
 				case 0: {
 					//writing default temp to lcd
 					constexpr const uint8 buffer[8] = {
-						0x5Au8,
-						0xA5u8,
-						0x05u8, //data length
-						0x82u8, //write data to sram
-						0x05u8, //starting at 0x0500 vp
-						0x20u8,
-						0x00u8,
-						0xC8u8 //extruder temp (200)
+						0x5A,
+						0xA5,
+						0x05, //data length
+						0x82, //write data to sram
+						0x05, //starting at 0x0500 vp
+						0x20,
+						0x00,
+						0xC8 //extruder temp (200)
 					};
 					serial<2>::write(buffer);
 
@@ -715,13 +657,13 @@ namespace marlin::lcd
 					//read bed/hotend temp
 					{
 						constexpr const uint8 buffer[7] = {
-							0x5Au8,
-							0xA5u8,
-							0x04u8, //data length
-							0x83u8, //read sram
-							0x05u8, //vp 0520
-							0x20u8,
-							0x01u8 //length
+							0x5A,
+							0xA5,
+							0x04, //data length
+							0x83, //read sram
+							0x05, //vp 0520
+							0x20,
+							0x01 //length
 						};
 
 						serial<2>::write(buffer);
@@ -730,21 +672,22 @@ namespace marlin::lcd
 					//read user entered values from sram
 					uint8 buffer[9];
 					uint8 bytesRead = serial<2>::read_bytes(buffer);
-					if ((bytesRead == 9) & (buffer[0] == 0x5A) & (buffer[1] == 0xA5)) {
-						int16 hotendTemp = (int16)buffer[7] * 256 + buffer[8];
-						Serial.println(hotendTemp);
-						char command[20];
-						Temperature::setTargetHotend(hotendTemp, 0);
-						sprintf(command, "M104 S%d", hotendTemp); //build auto pid command (extruder)
-																  //enqueue_and_echo_command((const char*)&command); //enque pid command
-						enqueue_and_echo_commands_P(PSTR("G91")); // relative mode
-						nextOpTime = millis() + 500;
-						if (lcdData == 1) {
-							opMode = OpMode::Load_Filament;
-						}
-						else if (lcdData == 2) {
-							opMode = OpMode::Unload_Filament;
-						}
+					if ((bytesRead != 9) | (buffer[0] != 0x5A) | (buffer[1] != 0xA5)) {
+						break;
+					}
+					int16 hotendTemp = (int16)buffer[7] * 256 + buffer[8];
+					Serial.println(hotendTemp);
+					char command[20];
+					Temperature::setTargetHotend(hotendTemp);
+					sprintf(command, "M104 S%d", hotendTemp); //build auto pid command (extruder)
+																//enqueue_and_echo_command((const char*)&command); //enque pid command
+					enqueue_and_echo_commands_P(PSTR("G91")); // relative mode
+					nextOpTime = millis() + 500;
+					if (lcdData == 1) {
+						opMode = OpMode::Load_Filament;
+					}
+					else if (lcdData == 2) {
+						opMode = OpMode::Unload_Filament;
 					}
 				} break;
 				}
@@ -798,7 +741,7 @@ namespace marlin::lcd
 				break;
 			}
 			case 0x06: {
-				if (Temperature::degHotend(0) >= 180.0f) {
+				if (Temperature::degHotend() >= 180.0f) {
 					clear_command_queue();
 					enqueue_and_echo_commands_P(PSTR("G91"));
 					enqueue_and_echo_commands_P(PSTR("G1 E1 F120"));
@@ -807,7 +750,7 @@ namespace marlin::lcd
 				break;
 			}
 			case 0x07: {
-				if (Temperature::degHotend(0) >= 180.0f) {
+				if (Temperature::degHotend() >= 180.0f) {
 					clear_command_queue();
 					enqueue_and_echo_commands_P(PSTR("G91"));
 					enqueue_and_echo_commands_P(PSTR("G1 E-1 F120"));
@@ -848,14 +791,14 @@ namespace marlin::lcd
 				if (lcdData == 0) {
 					//writing default temp to lcd
 					constexpr const uint8 buffer[8] = {
-						0x5Au8,
-						0xA5u8,
-						0x05u8, //data length
-						0x82u8, //write data to sram
-						0x05u8, //starting at 0x0500 vp
-						0x20u8,
-						0x00u8,
-						0xC8u8, //extruder temp (200)
+						0x5A,
+						0xA5,
+						0x05, //data length
+						0x82, //write data to sram
+						0x05, //starting at 0x0500 vp
+						0x20,
+						0x00,
+						0xC8, //extruder temp (200)
 					};
 					serial<2>::write(buffer);
 
@@ -866,30 +809,30 @@ namespace marlin::lcd
 
 					{
 						constexpr const uint8 buffer[7] = {
-							0x5Au8,
-							0xA5u8,
-							0x04u8, //data length
-							0x83u8, //read sram
-							0x05u8, //vp 0520
-							0x20u8,
-							0x01u8, //length
+							0x5A,
+							0xA5,
+							0x04, //data length
+							0x83, //read sram
+							0x05, //vp 0520
+							0x20,
+							0x01, //length
 						};
 						serial<2>::write(buffer);
 					}
 
-					uint8 buffer[9] = {};
+					uint8 buffer[9];
 					//read user entered values from sram
 					uint8 bytesRead = serial<2>::read_bytes(buffer);
-					if ((bytesRead == 9) & (buffer[0] == 0x5A) & (buffer[1] == 0xA5)) {
-						uint16 hotendTemp = (uint16)buffer[7] * 256 + buffer[8];
-						//Serial.println(hotendTemp);
-						char command[20];
-						sprintf(command, "M303 S%d E0 C8 U1", hotendTemp); //build auto pid command (extruder)
-						enqueue_and_echo_command("M106 S255"); //Turn on fan
-						enqueue_and_echo_command(command); //enque pid command
-						tempGraphUpdate = 2;
-
+					if ((bytesRead != 9) | (buffer[0] != 0x5A) | (buffer[1] != 0xA5)) {
+						break;
 					}
+					uint16 hotendTemp = (uint16)buffer[7] * 256 + buffer[8];
+					//Serial.println(hotendTemp);
+					char command[20];
+					sprintf(command, "M303 S%d E0 C8 U1", hotendTemp); //build auto pid command (extruder)
+					enqueue_and_echo_command("M106 S255"); //Turn on fan
+					enqueue_and_echo_command(command); //enque pid command
+					tempGraphUpdate = 2;
 				}
 				break;
 			}
@@ -911,12 +854,12 @@ namespace marlin::lcd
 				if (card.sdprinting == false)
 				{
 					constexpr const uint8 buffer[6] = {
-						0x5Au8,
-						0xA5u8,
-						0x1Du8,
-						0x82u8,
-						0x01u8,
-						0x4Eu8
+						0x5A,
+						0xA5,
+						0x1D,
+						0x82,
+						0x01,
+						0x4E
 					};
 					serial<2>::write(buffer);
 					constexpr const char str_buffer[26] = "No SD print";
@@ -945,12 +888,12 @@ namespace marlin::lcd
 			struct final
 			{
 				const uint8 buffer[6] = {
-					0x5Au8,
-					0xA5u8,
-					0x12u8,
-					0x82u8,
-					0x05u8,
-					0x00u8
+					0x5A,
+					0xA5,
+					0x12,
+					0x82,
+					0x05,
+					0x00
 				};
 				const char version_str[15] = SHORT_BUILD_VERSION;
 			} constexpr const version_data;
@@ -960,9 +903,6 @@ namespace marlin::lcd
 
 		void write_statistics()
 		{
-			//char buffer[21];
-
-
 			printStatistics stats = print_job_timer.getStats();
 
 			{
@@ -972,12 +912,12 @@ namespace marlin::lcd
 				const uint16 finishedPrints = stats.finishedPrints;
 
 				const uint8 buffer[10] = {
-					0x5Au8, 
-					0xA5u8, 
-					0x07u8, //data length
-					0x82u8, //write data to sram
-					0x05u8,  //starting at 0x5040 vp
-					0x40u8, 
+					0x5A, 
+					0xA5, 
+					0x07, //data length
+					0x82, //write data to sram
+					0x05,  //starting at 0x5040 vp
+					0x40, 
 					hi(totalPrints),
 					lo(totalPrints),
 					hi(finishedPrints),
@@ -991,12 +931,12 @@ namespace marlin::lcd
 				struct final
 				{
 					const uint8 buffer[6] = {
-						0x5Au8,
-						0xA5u8,
-						0x12u8,
-						0x82u8,
-						0x05u8,
-						0x42u8
+						0x5A,
+						0xA5,
+						0x12,
+						0x82,
+						0x05,
+						0x42
 					};
 					char time_str[15];
 				} time_data;
@@ -1011,12 +951,12 @@ namespace marlin::lcd
 				struct final
 				{
 					const uint8 buffer[6] = {
-						0x5Au8,
-						0xA5u8,
-						0x12u8,
-						0x82u8,
-						0x05u8,
-						0x4Du8
+						0x5A,
+						0xA5,
+						0x12,
+						0x82,
+						0x05,
+						0x4D
 					};
 					char time_str[15];
 				} time_data;
@@ -1031,12 +971,12 @@ namespace marlin::lcd
 				struct final
 				{
 					const uint8 buffer[6] = {
-						0x5Au8,
-						0xA5u8,
-						0x12u8, //data length
-						0x82u8, //write data to sram
-						0x05u8, //starting at 0x0558 vp
-						0x58u8
+						0x5A,
+						0xA5,
+						0x12, //data length
+						0x82, //write data to sram
+						0x05, //starting at 0x0558 vp
+						0x58
 					};
 					char filament_str[15];
 				} filament_data;
@@ -1051,7 +991,7 @@ namespace marlin::lcd
 	//init OK
 	void initialize()
 	{
-		serial<2>::begin<115'200u32>();
+		serial<2>::begin<115'200_u32>();
 
 		lcdSendMarlinVersion();
 		show_page(0x01);
@@ -1060,10 +1000,7 @@ namespace marlin::lcd
 	//lcd status update OK
 	void update()
 	{
-		if (!read_coroutine())
-		{
-			return;
-		}
+		read_data();
 
 		const millis_t ms = millis();
 		execute_looped_operation(ms);
@@ -1074,12 +1011,12 @@ namespace marlin::lcd
 	void show_page(uint8 pageNumber)
 	{
 		const uint8 buffer[7] = {
-			0x5Au8,//frame header
-			0xA5u8,
-			0x04u8,//data length
-			0x80u8,//command - write data to register
-			0x03u8,
-			0x00u8,
+			0x5A,//frame header
+			0xA5,
+			0x04,//data length
+			0x80,//command - write data to register
+			0x03,
+			0x00,
 			pageNumber
 		};
 
@@ -1087,15 +1024,17 @@ namespace marlin::lcd
 	}
 
 	void update_graph() {
-		const int16 hotend = roundf(Temperature::degHotend(0));
-		const int16 bed = roundf(Temperature::degBed());
+		const int16 hotend = static_cast<int16>(roundf(Temperature::degHotend()));
+		const int16 bed = static_cast<int16>(roundf(Temperature::degBed()));
+
+		auto foo = type_trait<int16>::unsigned_type{ 0 };
 
 		const uint8 buffer[9] = {
-			0x5Au8,
-			0xA5u8,
-			0x06u8, //data length
-			0x84u8, //update curve
-			0x03u8, //channels 0,1
+			0x5A,
+			0xA5,
+			0x06, //data length
+			0x84, //update curve
+			0x03, //channels 0,1
 			hi(hotend), //TODOME
 			lo(hotend), //TODOME
 			hi(bed),

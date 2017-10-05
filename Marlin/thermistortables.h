@@ -26,7 +26,9 @@
 #include "Marlin.h"
 #include "macros.h"
 
-#define OVERSAMPLENR 16
+#include "tuna.h"
+
+constexpr const uint8 OVERSAMPLENR = 16;
 
 #define ANY_THERMISTOR_IS(n) (THERMISTORHEATER_0 == n || THERMISTORHEATER_1 == n || THERMISTORHEATER_2 == n || THERMISTORHEATER_3 == n || THERMISTORHEATER_4 == n || THERMISTORBED == n)
 
@@ -134,7 +136,7 @@
 #elif defined(HEATER_0_USES_THERMISTOR)
   #error "No heater 0 thermistor table specified"
 #else
-  #define HEATER_0_TEMPTABLE NULL
+  #define HEATER_0_TEMPTABLE nullptr
   #define HEATER_0_TEMPTABLE_LEN 0
 #endif
 
@@ -144,7 +146,7 @@
 #elif defined(HEATER_1_USES_THERMISTOR)
   #error "No heater 1 thermistor table specified"
 #else
-  #define HEATER_1_TEMPTABLE NULL
+  #define HEATER_1_TEMPTABLE nullptr
   #define HEATER_1_TEMPTABLE_LEN 0
 #endif
 
@@ -154,7 +156,7 @@
 #elif defined(HEATER_2_USES_THERMISTOR)
   #error "No heater 2 thermistor table specified"
 #else
-  #define HEATER_2_TEMPTABLE NULL
+  #define HEATER_2_TEMPTABLE nullptr
   #define HEATER_2_TEMPTABLE_LEN 0
 #endif
 
@@ -164,7 +166,7 @@
 #elif defined(HEATER_3_USES_THERMISTOR)
   #error "No heater 3 thermistor table specified"
 #else
-  #define HEATER_3_TEMPTABLE NULL
+  #define HEATER_3_TEMPTABLE nullptr
   #define HEATER_3_TEMPTABLE_LEN 0
 #endif
 
@@ -174,7 +176,7 @@
 #elif defined(HEATER_4_USES_THERMISTOR)
   #error "No heater 4 thermistor table specified"
 #else
-  #define HEATER_4_TEMPTABLE NULL
+  #define HEATER_4_TEMPTABLE nullptr
   #define HEATER_4_TEMPTABLE_LEN 0
 #endif
 
