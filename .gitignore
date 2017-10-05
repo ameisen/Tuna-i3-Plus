@@ -137,3 +137,5 @@ README.md
 *.log
 *.eep
 .bin
+.int
+.bin
