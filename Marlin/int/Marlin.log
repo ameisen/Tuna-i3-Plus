@@ -9,15 +9,15 @@
                         ╘ Default/tuna.hex
     Source Paths        ╒ .
                         ╘ D:/Tools/arduino/hardware/arduino/avr/cores/arduino
-  Build System Initialized (0.016001s)
-  Directories Parsed. (0.029041s)
+  Build System Initialized (0.017964s)
+  Directories Parsed. (0.037997s)
   Determining which object files need to be rebuilt
-  Dependency Generation Complete. (0.725518s)
+  Dependency Generation Complete. (0.744434s)
   No object files are out of date. (0.0s)
-  Archive file is not out of date. (0.001s)
+  Archive file is not out of date. (0.000959s)
   Output binary is not out of date. (0.0s)
   Beginning Custom Build Step.
     EEP file is not out of date.
     HEX file is not out of date.
-  Custom Build Step Complete (0.001001s)
-  Build Not Needed. (0.772561s)
+  Custom Build Step Complete (0.002042s)
+  Build Not Needed. (0.803396s)

@@ -74,14 +74,8 @@
     <ClCompile Include="bi3_plus_lcd.cpp" />
     <ClCompile Include="cardreader.cpp" />
     <ClCompile Include="configuration_store.cpp" />
-    <ClCompile Include="digipot_mcp4018.cpp" />
-    <ClCompile Include="digipot_mcp4451.cpp" />
     <ClCompile Include="endstops.cpp" />
-    <ClCompile Include="hex_print_routines.cpp" />
-    <ClCompile Include="least_squares_fit.cpp" />
-    <ClCompile Include="M100_Free_Mem_Chk.cpp" />
     <ClCompile Include="Marlin_main.cpp" />
-    <ClCompile Include="nozzle.cpp" />
     <ClCompile Include="planner.cpp" />
     <ClCompile Include="planner_bezier.cpp" />
     <ClCompile Include="printcounter.cpp" />
@@ -92,13 +86,10 @@
     <ClCompile Include="SdVolume.cpp" />
     <ClCompile Include="serial.cpp" />
     <ClCompile Include="stepper.cpp" />
-    <ClCompile Include="stepper_dac.cpp" />
     <ClCompile Include="stepper_indirection.cpp" />
     <ClCompile Include="stopwatch.cpp" />
     <ClCompile Include="temperature.cpp" />
-    <ClCompile Include="twibus.cpp" />
     <ClCompile Include="utility.cpp" />
-    <ClCompile Include="vector_3.cpp" />
     <ClCompile Include="watchdog.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -148,9 +139,6 @@
       <FileType>CppCode</FileType>
     </ClInclude>
     <ClInclude Include="MarlinConfig.h">
-      <FileType>CppCode</FileType>
-    </ClInclude>
-    <ClInclude Include="nozzle.h">
       <FileType>CppCode</FileType>
     </ClInclude>
     <ClInclude Include="pins.h">
@@ -207,9 +195,6 @@
     <ClInclude Include="stepper.h">
       <FileType>CppCode</FileType>
     </ClInclude>
-    <ClInclude Include="stepper_dac.h">
-      <FileType>CppCode</FileType>
-    </ClInclude>
     <ClInclude Include="stepper_indirection.h">
       <FileType>CppCode</FileType>
     </ClInclude>
@@ -217,9 +202,6 @@
       <FileType>CppCode</FileType>
     </ClInclude>
     <ClInclude Include="temperature.h">
-      <FileType>CppCode</FileType>
-    </ClInclude>
-    <ClInclude Include="thermistornames.h">
       <FileType>CppCode</FileType>
     </ClInclude>
     <ClInclude Include="thermistortables.h">
@@ -311,19 +293,10 @@
     </ClInclude>
     <ClInclude Include="tunalib\initializer_list.h" />
     <ClInclude Include="tunalib\utils.hpp" />
-    <ClInclude Include="twibus.h">
-      <FileType>CppCode</FileType>
-    </ClInclude>
     <ClInclude Include="types.h">
       <FileType>CppCode</FileType>
     </ClInclude>
-    <ClInclude Include="utf_mapper.h">
-      <FileType>CppCode</FileType>
-    </ClInclude>
     <ClInclude Include="utility.h">
-      <FileType>CppCode</FileType>
-    </ClInclude>
-    <ClInclude Include="vector_3.h">
       <FileType>CppCode</FileType>
     </ClInclude>
     <ClInclude Include="Version.h">

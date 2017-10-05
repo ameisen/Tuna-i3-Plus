@@ -1,0 +1,26 @@
+﻿  Probing COM Ports...
+  Probing \\.\COM9
+  
+  avrdude.exe: AVR device initialized and ready to accept instructions
+  
+  Reading | ################################################## | 100% 0.01s
+  
+  avrdude.exe: Device signature = 0x1e9801 (probably m2560)
+  avrdude.exe: reading input file "D:\Projects\i3PlusPlus\Marlin\Default\tuna.elf.hex"
+  avrdude.exe: writing flash (102502 bytes):
+  
+  Writing | ################################################## | 100% 15.20s
+  
+  avrdude.exe: 102502 bytes of flash written
+  avrdude.exe: verifying flash memory against D:\Projects\i3PlusPlus\Marlin\Default\tuna.elf.hex:
+  avrdude.exe: load data flash data from input file D:\Projects\i3PlusPlus\Marlin\Default\tuna.elf.hex:
+  avrdude.exe: input file D:\Projects\i3PlusPlus\Marlin\Default\tuna.elf.hex contains 102502 bytes
+  avrdude.exe: reading on-chip flash data:
+  
+  Reading | ################################################## | 100% 11.70s
+  
+  avrdude.exe: verifying ...
+  avrdude.exe: 102502 bytes of flash verified
+  
+  avrdude.exe done.  Thank you.
+  

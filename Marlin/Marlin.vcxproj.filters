@@ -31,13 +31,7 @@
     <ClCompile Include="configuration_store.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="digipot_mcp4451.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="endstops.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="M100_Free_Mem_Chk.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Marlin_main.cpp">
@@ -70,9 +64,6 @@
     <ClCompile Include="stepper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="stepper_dac.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="stepper_indirection.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -82,28 +73,10 @@
     <ClCompile Include="temperature.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="twibus.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="utility.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="vector_3.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="watchdog.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="digipot_mcp4018.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="hex_print_routines.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="least_squares_fit.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="nozzle.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="serial.cpp">
@@ -159,9 +132,6 @@
     <ClInclude Include="MarlinConfig.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="nozzle.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="pins.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -213,9 +183,6 @@
     <ClInclude Include="stepper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="stepper_dac.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="stepper_indirection.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -225,25 +192,13 @@
     <ClInclude Include="temperature.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="thermistornames.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="thermistortables.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="twibus.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="types.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="utf_mapper.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="utility.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vector_3.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Version.h">
