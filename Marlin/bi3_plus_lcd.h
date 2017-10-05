@@ -15,7 +15,6 @@ namespace marlin::lcd
 	constexpr inline void set_status_PGM(const char* const, const int8_t = 0) { }
 	constexpr inline void set_alert_status_PGM(const char*) { }
 	constexpr inline void statusf(const uint8_t, const char * const, ...) { }
-	constexpr inline void update_buttons() {}
 	constexpr inline void reset_alert_level() {}
 	constexpr inline void refresh() {}
 }

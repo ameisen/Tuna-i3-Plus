@@ -90,6 +90,54 @@ int16_t Temperature::bed_maxttemp_raw = HEATER_BED_RAW_HI_TEMP;
 uint8_t Temperature::soft_pwm_amount,
 Temperature::soft_pwm_amount_bed;
 
+namespace Thermal
+{
+	namespace
+	{
+		namespace adc
+		{
+			constexpr const uint8 delay_period = 10_u8;
+
+			enum class sensor : uint8
+			{
+				Extruder = 0,
+				Bed,
+				MAX,
+				FINAL = MAX - 1
+			};
+
+			sensor & __restrict operator ++ (sensor &enumerator)
+			{
+				uint8 value = (uint8 & __restrict)enumerator;
+				value = (value + 1_u8) % uint8(sensor::MAX);
+				(uint8 &)enumerator = value;
+				return enumerator;
+			}
+
+			enum class state : uint8
+			{
+				Charging = 0,
+				Delay,
+				Delay_End = Delay + (delay_period - 1_u8),
+				MAX,
+				FINAL = MAX - 1
+			};
+
+			state & __restrict operator ++ (state &enumerator)
+			{
+				uint8 value = (uint8 & __restrict)enumerator;
+				value = (value + 1_u8) % uint8(state::MAX);
+				(uint8 &)enumerator = value;
+				return enumerator;
+			}
+
+			sensor current_sensor = sensor::Extruder;
+			state current_state = state::Delay;
+			uint16 raw_temperatures[uint8(sensor::MAX)] {};
+		}
+	}
+}
+
 void Temperature::PID_autotune(float temp, int ncycles, bool set_result/*=false*/) {
 	float input = 0.0;
 	int cycles = 0;
@@ -668,6 +716,20 @@ ISR(TIMER0_COMPB_vect) { Temperature::isr(); }
 
 volatile bool Temperature::in_temp_isr = false;
 
+/**
+* States for ADC reading in the ISR
+*/
+enum ADCSensorState {
+	PrepareTemp_0 = 0,
+	MeasureTemp_0,
+	PrepareTemp_BED,
+	MeasureTemp_BED,
+	SensorsReady, // Temperatures ready. Delay the next round of readings to let ADC pins settle.
+	StartupDelay  // Startup, delay initial temp reading a tiny bit so the hardware can settle
+};
+
+static_assert(MIN_ADC_ISR_LOOPS >= uint(SensorsReady), "bad");
+
 void Temperature::isr() {
 	// The stepper ISR can interrupt this ISR. When it does it re-enables this ISR
 	// at the end of its run, potentially causing re-entry. This flag prevents it.
@@ -719,12 +781,6 @@ void Temperature::isr() {
 	// 4:                /  8 = 122.0703 Hz
 	// 5:                /  4 = 244.1406 Hz
 	pwm_count = pwm_count_tmp + _BV(SOFT_PWM_SCALE);
-
-	//
-	// Update lcd buttons 488 times per second
-	//
-	static bool do_buttons;
-	if ((do_buttons ^= true)) lcd::update_buttons();
 
 	/**
 	 * One sensor is sampled on every other call of the ISR.

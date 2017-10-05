@@ -32,27 +32,12 @@
 
 #include "tuna.h"
 
-#define HOTEND_INDEX  0
-#define EXTRUDER_IDX  0
-
-  /**
-   * States for ADC reading in the ISR
-   */
-enum ADCSensorState {
-	PrepareTemp_0,
-	MeasureTemp_0,
-	PrepareTemp_BED,
-	MeasureTemp_BED,
-	SensorsReady, // Temperatures ready. Delay the next round of readings to let ADC pins settle.
-	StartupDelay  // Startup, delay initial temp reading a tiny bit so the hardware can settle
-};
-
 // Minimum number of Temperature::ISR loops between sensor readings.
 // Multiplied by 16 (OVERSAMPLENR) to obtain the total time to
 // get all oversampled sensor readings
 #define MIN_ADC_ISR_LOOPS 10
 
-constexpr int ACTUAL_ADC_SAMPLES = max(int(MIN_ADC_ISR_LOOPS), int(SensorsReady));
+constexpr int ACTUAL_ADC_SAMPLES = int(MIN_ADC_ISR_LOOPS);
 
 class Temperature
 {
