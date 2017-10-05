@@ -2,7 +2,7 @@
 #define BI3PLUSLCD_H
 
 #include "Marlin.h"
-#include <tuna>
+#include "tuna.h"
 
 namespace marlin::lcd
 {

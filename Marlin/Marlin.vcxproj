@@ -36,9 +36,9 @@
     <LibraryWPath />
     <SourcePath>$(ARDUINO_PATH)hardware\arduino\avr\cores\arduino</SourcePath>
     <ExcludePath />
-    <NMakeBuildCommandLine>rbbuild\rbbuild.rb -n tuna -t build -I $(ProjectDir)int -s $(ProjectDir) -o $(ProjectDir)out\tuna.elf -d $(ProjectDir)out\tuna.hex -d $(ProjectDir)out\tuna.eep -s "$(ARDUINO_PATH)hardware/arduino/avr/cores/arduino/"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>rbbuild\rbbuild.rb -n tuna -t rebuild -I $(ProjectDir)int -s $(ProjectDir) -o $(ProjectDir)out\tuna.elf -d $(ProjectDir)out\tuna.hex -d $(ProjectDir)out\tuna.eep -s "$(ARDUINO_PATH)hardware/arduino/avr/cores/arduino/"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>rbbuild\rbbuild.rb -n tuna -t clean -I $(ProjectDir)int -s $(ProjectDir) -o $(ProjectDir)out\tuna.elf -d $(ProjectDir)out\tuna.hex -d $(ProjectDir)out\tuna.eep -s "$(ARDUINO_PATH)hardware/arduino/avr/cores/arduino/"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>rbbuild\rbbuild.rb -n tuna -t build -I $(ProjectDir)int -s $(ProjectDir) -o $(OutDir)tuna.elf -d $(OutDir)tuna.hex -d $(OutDir)tuna.eep -s "$(ARDUINO_PATH)hardware/arduino/avr/cores/arduino/"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>rbbuild\rbbuild.rb -n tuna -t rebuild -I $(ProjectDir)int -s $(ProjectDir) -o $(OutDir)tuna.elf -d $(OutDir)tuna.hex -d $(OutDir)tuna.eep -s "$(ARDUINO_PATH)hardware/arduino/avr/cores/arduino/"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>rbbuild\rbbuild.rb -n tuna -t clean -I $(ProjectDir)int -s $(ProjectDir) -o $(OutDir)tuna.elf -d $(OutDir)tuna.hex -d $(OutDir)tuna.eep -s "$(ARDUINO_PATH)hardware/arduino/avr/cores/arduino/"</NMakeCleanCommandLine>
     <OutDir>$(ProjectDir)bin\</OutDir>
     <IntDir>$(ProjectDir)int\</IntDir>
     <NMakeOutput>$(OutDir)tuna.elf</NMakeOutput>
@@ -67,7 +67,7 @@
     <None Include="Marlin.ino">
       <FileType>CppCode</FileType>
     </None>
-    <None Include="tuna" />
+    <None Include="tuna.h" />
     <None Include="tunalib\tunalib.hpp" />
   </ItemGroup>
   <ItemGroup>

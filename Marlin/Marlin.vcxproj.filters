@@ -16,6 +16,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Marlin.ino" />
+    <None Include="tunalib\tunalib.hpp">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="tuna.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="bi3_plus_lcd.cpp">
@@ -37,9 +41,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="M100_Free_Mem_Chk.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="MarlinSerial.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Marlin_main.cpp">
@@ -296,9 +297,6 @@
     <ClInclude Include="MarlinConfig.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MarlinSerial.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="mesh_bed_leveling.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -422,15 +420,6 @@
     <ClInclude Include="pinsDebug_list.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="pinsDebug_Teensyduino.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="pins_CHEAPTRONICv2.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="pins_SCOOVO_X9H.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="serial.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -524,7 +513,10 @@
     <ClInclude Include="thermistortable_999.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="__vm\.Marlin.vsarduino.h">
+    <ClInclude Include="tunalib\utils.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="__vm\.Marlin.vcarduino.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -254,16 +254,18 @@ $source_files.each { |handler, files|
 			dependencies = handler.get_dependencies(src.path)
 			dependencies.each { |dep|
 				deptime = $dependency_times[dep]
-				if (deptime == nil)
-					deptime = File.mtime(dep).to_f
-					$dependency_times[dep] = deptime
-				end
-				if (deptime > obj_time)
-					# A dependency is newer than the source file. It needs to be rebuilt.
-					vputs("\"#{src.path}\" being rebuilt because object file is older than dependency \"#{dep}\"", 1)
-					src.build = true
-					any_rebuild = true
-					break
+				if (File.file? dep)
+					if (deptime == nil)
+						deptime = File.mtime(dep).to_f
+						$dependency_times[dep] = deptime
+					end
+					if (deptime > obj_time)
+						# A dependency is newer than the source file. It needs to be rebuilt.
+						vputs("\"#{src.path}\" being rebuilt because object file is older than dependency \"#{dep}\"", 1)
+						src.build = true
+						any_rebuild = true
+						break
+					end
 				end
 			}
 		},
