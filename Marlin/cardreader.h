@@ -59,7 +59,7 @@ public:
     void printLongPath(char *path);
   #endif
 
-  void getfilename(uint16_t nr, const char* const match=NULL);
+  void getfilename(uint16_t nr, const char* const match=nullptr);
   uint16_t getnrfilenames();
 
   void getAbsFilename(char *t);
@@ -157,7 +157,7 @@ private:
   LsAction lsAction; //stored for recursion.
   uint16_t nrFiles; //counter for the files in the current directory and recycled as position counter for getting the nrFiles'th name in the directory.
   char* diveDirName;
-  void lsDive(const char *prepend, SdFile parent, const char * const match=NULL);
+  void lsDive(const char *prepend, SdFile parent, const char * const match=nullptr);
 
   #if ENABLED(SDCARD_SORT_ALPHA)
     void flush_presort();

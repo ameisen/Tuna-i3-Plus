@@ -262,7 +262,7 @@ void Planner::reverse_pass() {
 
   if (movesplanned() > 3) {
 
-    block_t* block[3] = { NULL, NULL, NULL };
+    block_t* block[3] = { nullptr, nullptr, nullptr };
 
     // Make a local copy of block_buffer_tail, because the interrupt can alter it
     // Is a critical section REALLY needed for a single byte change?
@@ -308,7 +308,7 @@ void Planner::forward_pass_kernel(const block_t* previous, block_t* const curren
  * Once in reverse and once forward. This implements the forward pass.
  */
 void Planner::forward_pass() {
-  block_t* block[3] = { NULL, NULL, NULL };
+  block_t* block[3] = { nullptr, nullptr, nullptr };
 
   for (uint8_t b = block_buffer_tail; b != block_buffer_head; b = next_block_index(b)) {
     block[0] = block[1];
@@ -326,7 +326,7 @@ void Planner::forward_pass() {
  */
 void Planner::recalculate_trapezoids() {
   int8_t block_index = block_buffer_tail;
-  block_t *current, *next = NULL;
+  block_t *current, *next = nullptr;
 
   while (block_index != block_buffer_head) {
     current = next;

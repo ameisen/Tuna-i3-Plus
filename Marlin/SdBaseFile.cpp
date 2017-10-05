@@ -874,7 +874,7 @@ bool SdBaseFile::openParent(SdBaseFile* dir) {
   }
   // search for parent in '../..'
   do {
-    if (file.readDir(&entry, NULL) != 32) goto fail;
+    if (file.readDir(&entry, nullptr) != 32) goto fail;
     c = entry.firstClusterLow;
     c |= (uint32_t)entry.firstClusterHigh << 16;
   } while (c != cluster);
@@ -1123,7 +1123,7 @@ int8_t SdBaseFile::readDir(dir_t* dir, char* longFilename) {
   if (!isDir() || (0X1F & curPosition_)) return -1;
 
   //If we have a longFilename buffer, mark it as invalid. If we find a long filename it will be filled automaticly.
-  if (longFilename != NULL) longFilename[0] = '\0';
+  if (longFilename != nullptr) longFilename[0] = '\0';
 
   while (1) {
 
@@ -1138,7 +1138,7 @@ int8_t SdBaseFile::readDir(dir_t* dir, char* longFilename) {
 
     // Fill the long filename if we have a long filename entry.
     // Long filename entries are stored before the short filename.
-    if (longFilename != NULL && DIR_IS_LONG_NAME(dir)) {
+    if (longFilename != nullptr && DIR_IS_LONG_NAME(dir)) {
       vfat_t* VFAT = (vfat_t*)dir;
       // Sanity-check the VFAT entry. The first cluster is always set to zero. And the sequence number should be higher than 0
       if (VFAT->firstClusterLow == 0 && (VFAT->sequenceNumber & 0x1F) > 0 && (VFAT->sequenceNumber & 0x1F) <= MAX_VFAT_ENTRIES) {

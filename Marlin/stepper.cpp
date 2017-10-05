@@ -62,7 +62,7 @@ Stepper stepper; // Singleton
 
 // public:
 
-block_t* Stepper::current_block = NULL;  // A pointer to the block currently being traced
+block_t* Stepper::current_block = nullptr;  // A pointer to the block currently being traced
 
 #if ENABLED(ABORT_ON_ENDSTOP_HIT_FEATURE_ENABLED)
   bool Stepper::abort_on_endstop_hit = false;
@@ -411,7 +411,7 @@ void Stepper::isr() {
 
   if (cleaning_buffer_counter) {
     --cleaning_buffer_counter;
-    current_block = NULL;
+    current_block = nullptr;
     planner.discard_current_block();
     #ifdef SD_FINISHED_RELEASECOMMAND
       if (!cleaning_buffer_counter && (SD_FINISHED_STEPPERRELEASE)) enqueue_and_echo_commands_P(PSTR(SD_FINISHED_RELEASECOMMAND));
@@ -841,7 +841,7 @@ void Stepper::isr() {
 
   // If current block is finished, reset pointer
   if (all_steps_done) {
-    current_block = NULL;
+    current_block = nullptr;
     planner.discard_current_block();
   }
   #if DISABLED(ADVANCE) && DISABLED(LIN_ADVANCE)
@@ -1284,7 +1284,7 @@ void Stepper::quick_stop() {
   cleaning_buffer_counter = 5000;
   DISABLE_STEPPER_DRIVER_INTERRUPT();
   while (planner.blocks_queued()) planner.discard_current_block();
-  current_block = NULL;
+  current_block = nullptr;
   ENABLE_STEPPER_DRIVER_INTERRUPT();
   #if ENABLED(ULTRA_LCD)
     planner.clear_block_buffer_runtime();

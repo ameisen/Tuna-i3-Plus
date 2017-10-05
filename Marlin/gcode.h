@@ -136,7 +136,7 @@ public:
       const uint8_t ind = LETTER_OFF(c);
       if (ind >= COUNT(param)) return false; // Only A-Z
       const bool b = TEST(codebits[PARAM_IND(ind)], PARAM_BIT(ind));
-      if (b) value_ptr = param[ind] ? command_ptr + param[ind] : (char*)NULL;
+      if (b) value_ptr = param[ind] ? command_ptr + param[ind] : (char*)nullptr;
       return b;
     }
 
@@ -152,7 +152,7 @@ public:
     static volatile bool seen(const char c) {
       const char *p = strchr(command_args, c);
       const bool b = !!p;
-      if (b) value_ptr = DECIMAL_SIGNED(p[1]) ? &p[1] : (char*)NULL;
+      if (b) value_ptr = DECIMAL_SIGNED(p[1]) ? &p[1] : (char*)nullptr;
       return b;
     }
 
@@ -172,7 +172,7 @@ public:
   static void parse(char * p);
 
   // The code value pointer was set
-  FORCE_INLINE static bool has_value() { return value_ptr != NULL; }
+  FORCE_INLINE static bool has_value() { return value_ptr != nullptr; }
 
   // Seen a parameter with a value
   inline static bool seenval(const char c) { return seen(c) && has_value(); }
@@ -186,20 +186,20 @@ public:
         if (c == '\0' || c == ' ') break;
         if (c == 'E' || c == 'e') {
           *e = '\0';
-          const float ret = strtod(value_ptr, NULL);
+          const float ret = strtod(value_ptr, nullptr);
           *e = c;
           return ret;
         }
         ++e;
       }
-      return strtod(value_ptr, NULL);
+      return strtod(value_ptr, nullptr);
     }
     return 0.0;
   }
 
   // Code value as a long or ulong
-  inline static int32_t value_long() { return value_ptr ? strtol(value_ptr, NULL, 10) : 0L; }
-  inline static uint32_t value_ulong() { return value_ptr ? strtoul(value_ptr, NULL, 10) : 0UL; }
+  inline static int32_t value_long() { return value_ptr ? strtol(value_ptr, nullptr, 10) : 0L; }
+  inline static uint32_t value_ulong() { return value_ptr ? strtoul(value_ptr, nullptr, 10) : 0UL; }
 
   // Code value for use as time
   FORCE_INLINE static millis_t value_millis() { return value_ulong(); }

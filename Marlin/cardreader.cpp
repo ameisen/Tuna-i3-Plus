@@ -76,7 +76,7 @@ char *createFilename(char *buffer, const dir_t &p) { //buffer > 12characters
  *   LS_GetFilename - Get the filename of the file indexed by nrFiles
  *   LS_SerialPrint - Print the full path and size of each file to serial output
  */
-void CardReader::lsDive(const char *prepend, SdFile parent, const char * const match/*=NULL*/) {
+void CardReader::lsDive(const char *prepend, SdFile parent, const char * const match/*=nullptr*/) {
   dir_t p;
   uint8_t cnt = 0;
 
@@ -144,7 +144,7 @@ void CardReader::lsDive(const char *prepend, SdFile parent, const char * const m
 
         case LS_GetFilename:
           createFilename(filename, p);
-          if (match != NULL) {
+          if (match != nullptr) {
             if (strcasecmp(match, filename) == 0) return;
           }
           else if (cnt == nrFiles) return;
@@ -373,11 +373,11 @@ void CardReader::openFile(char* name, bool read, bool push_current/*=false*/) {
 
   if (name[0] == '/') {
     dirname_start = &name[1];
-    while (dirname_start != NULL) {
+    while (dirname_start != nullptr) {
       dirname_end = strchr(dirname_start, '/');
       //SERIAL_ECHOPGM("start:");SERIAL_ECHOLN((int)(dirname_start - name));
       //SERIAL_ECHOPGM("end  :");SERIAL_ECHOLN((int)(dirname_end - name));
-      if (dirname_end != NULL && dirname_end > dirname_start) {
+      if (dirname_end != nullptr && dirname_end > dirname_start) {
         char subdirname[FILENAME_LENGTH];
         strncpy(subdirname, dirname_start, dirname_end - dirname_start);
         subdirname[dirname_end - dirname_start] = 0;
@@ -450,11 +450,11 @@ void CardReader::removeFile(char* name) {
   char *dirname_start, *dirname_end;
   if (name[0] == '/') {
     dirname_start = strchr(name, '/') + 1;
-    while (dirname_start != NULL) {
+    while (dirname_start != nullptr) {
       dirname_end = strchr(dirname_start, '/');
       //SERIAL_ECHOPGM("start:");SERIAL_ECHOLN((int)(dirname_start - name));
       //SERIAL_ECHOPGM("end  :");SERIAL_ECHOLN((int)(dirname_end - name));
-      if (dirname_end != NULL && dirname_end > dirname_start) {
+      if (dirname_end != nullptr && dirname_end > dirname_start) {
         char subdirname[FILENAME_LENGTH];
         strncpy(subdirname, dirname_start, dirname_end - dirname_start);
         subdirname[dirname_end - dirname_start] = 0;
@@ -517,7 +517,7 @@ void CardReader::write_command(char *buf) {
   char* end = buf + strlen(buf) - 1;
 
   file.writeError = false;
-  if ((npos = strchr(buf, 'N')) != NULL) {
+  if ((npos = strchr(buf, 'N')) != nullptr) {
     begin = strchr(npos, ' ') + 1;
     end = strchr(npos, '*') - 1;
   }
@@ -551,7 +551,7 @@ void CardReader::checkautostart(bool force) {
   root.rewind();
 
   bool found = false;
-  while (root.readDir(p, NULL) > 0) {
+  while (root.readDir(p, nullptr) > 0) {
     for (int8_t i = (int8_t)strlen((char*)p.name); i--;) p.name[i] = tolower(p.name[i]);
     if (p.name[9] != '~' && strncmp((char*)p.name, autoname, 5) == 0) {
       openAndPrintFile(autoname);
@@ -578,9 +578,9 @@ void CardReader::closefile(bool store_location) {
 /**
  * Get the name of a file in the current directory by index
  */
-void CardReader::getfilename(uint16_t nr, const char * const match/*=NULL*/) {
+void CardReader::getfilename(uint16_t nr, const char * const match/*=nullptr*/) {
   #if ENABLED(SDSORT_CACHE_NAMES)
-    if (match != NULL) {
+    if (match != nullptr) {
       while (nr < sort_count) {
         if (strcasecmp(match, sortshort[nr]) == 0) break;
         nr++;

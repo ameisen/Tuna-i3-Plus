@@ -380,7 +380,7 @@ class Planner {
     }
 
     /**
-     * The current block. NULL if the buffer is empty.
+     * The current block. nullptr if the buffer is empty.
      * This also marks the block as busy.
      */
     static block_t* get_current_block() {
@@ -396,7 +396,7 @@ class Planner {
         #if ENABLED(ULTRA_LCD)
           clear_block_buffer_runtime(); // paranoia. Buffer is empty now - so reset accumulated time to zero.
         #endif
-        return NULL;
+        return nullptr;
       }
     }
 
