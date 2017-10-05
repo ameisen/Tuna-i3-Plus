@@ -3,10 +3,10 @@ init_time = Time.now
 
 require 'fileutils'
 require 'pathname'
-require File.expand_path(File.dirname(__FILE__) + '/path_support.rb')
-require File.expand_path(File.dirname(__FILE__) + '/buildopts.rb')
-require File.expand_path(File.dirname(__FILE__) + '/gcc_buildhandler.rb')
-require File.expand_path(File.dirname(__FILE__) + '/thread_exec.rb')
+require_relative 'path_support.rb'
+require_relative 'buildopts.rb'
+require_relative 'gcc_buildhandler.rb'
+require_relative 'thread_exec.rb'
 
 def duration (timediff)
 	out = ""

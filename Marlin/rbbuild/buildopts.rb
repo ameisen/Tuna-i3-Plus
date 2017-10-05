@@ -1,7 +1,10 @@
 require 'optparse'
 require 'etc'
-require File.expand_path(File.dirname(__FILE__) + '/path_support.rb')
-require File.expand_path(File.dirname(__FILE__) + '/gcc_buildhandler.rb')
+require_relative 'path_support.rb'
+require_relative 'gcc_buildhandler.rb'
+require_relative 'ascii.rb'
+
+$environment = []
 
 $BuildOptions = Class.new do
 	class << self
@@ -117,13 +120,14 @@ $BuildOptions = Class.new do
 		to_print["Source Paths"] = @src_dirs;
 		
 		max_length = 0
-		@Terminator ||= " : "
-		@Array_Unique ||= " ═ "
-		@Array_Kicker ||= " ╒ "
-		@Array_Line ||= " │ "
-		@Array_Footer ||= " ╘ "
+		
+		@Terminator ||= " #{$Ascii['═']} "
+		@Array_Unique ||= " #{$Ascii['═']} "
+		@Array_Kicker ||= " #{$Ascii['╒']} "
+		@Array_Line ||= " #{$Ascii['│']} "
+		@Array_Footer ||= " #{$Ascii['╘']} "
 		if !([@Terminator, @Array_Kicker, @Array_Line, @Array_Footer].all? {|v| v.length == @Terminator.length})
-			raise SyntaxError.new("Configuration Print Terminators are not equivalent in length.")
+			#raise SyntaxError.new("Configuration Print Terminators are not equivalent in length.")
 		end
 		
 		to_print.each { |name, src|
@@ -178,6 +182,7 @@ OptionParser.new do |opts|
 	opts.on("-w", "--workers NUM", "Number of Worker Threads") { |v| $BuildOptions.threads = v.to_i }
 	opts.on("-s", "--source PATH", "Source Path [required]") { |v| $BuildOptions.src_dirs << File.expand_path(normalize_path(v)) }
 	opts.on("-v", "--verbose", "Show Diagnostic Data") { $BuildOptions.verbose = true }
+	opts.on(nil, "--env ENV", "Specify the environment.") { |v| $environment << v }
 end.parse!
 
 config_error = $BuildOptions.validate

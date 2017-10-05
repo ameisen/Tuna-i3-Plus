@@ -1,5 +1,5 @@
 require 'etc'
-require File.expand_path(File.dirname(__FILE__) + '/atomic_int.rb')
+require_relative 'atomic_int.rb'
 
 class Threader
 	@num_threads

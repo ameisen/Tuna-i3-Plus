@@ -44,6 +44,8 @@
 #ifndef STEPPER_DAC_H
 #define STEPPER_DAC_H
 
+//static_assert(false, "file is included");
+
 #include "dac_mcp4728.h"
 
 int dac_init();

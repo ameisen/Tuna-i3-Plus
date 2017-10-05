@@ -1,4 +1,4 @@
-require File.expand_path(File.dirname(__FILE__) + '/path_support.rb')
+require_relative 'path_support.rb'
 
 $ARDUINO_BIN_PATH = best_path(ENV["ARDUINO_PATH"] + "hardware/tools/avr/bin", Dir.pwd) + "/"
 

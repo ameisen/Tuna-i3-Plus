@@ -43,9 +43,6 @@
     <ClCompile Include="Marlin_main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="mesh_bed_leveling.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="planner.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -53,9 +50,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="printcounter.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="qr_solve.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Sd2Card.cpp">
@@ -71,9 +65,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SdVolume.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="servo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="stepper.cpp">
@@ -147,9 +138,6 @@
     <ClInclude Include="endstops.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="endstop_interrupts.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="enum.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -159,91 +147,7 @@
     <ClInclude Include="language.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="language_an.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="language_bg.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="language_ca.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="language_cn.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="language_cz.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="language_da.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="language_de.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="language_el-gr.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="language_el.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="language_en.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="language_es.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="language_eu.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="language_fi.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="language_fr.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="language_gl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="language_hr.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="language_it.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="language_kana.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="language_kana_utf8.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="language_nl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="language_pl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="language_pt-br.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="language_pt-br_utf8.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="language_pt.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="language_pt_utf8.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="language_ru.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="language_test.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="language_tr.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="language_uk.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="macros.h">
@@ -255,16 +159,10 @@
     <ClInclude Include="MarlinConfig.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="mesh_bed_leveling.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="nozzle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="pins.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="pinsDebug.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="pins_BI3_PLUS.h">
@@ -280,9 +178,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="printcounter.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="qr_solve.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SanityCheck.h">
@@ -310,9 +205,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SdVolume.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="servo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="speed_lookuptable.h">
@@ -360,28 +252,7 @@
     <ClInclude Include="watchdog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="hex_print_routines.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="language_zh_CN.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="language_zh_TW.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="least_squares_fit.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="pinsDebug_list.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="serial.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="softspi.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="spi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="thermistortable_1.h">

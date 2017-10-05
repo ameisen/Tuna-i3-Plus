@@ -1,4 +1,4 @@
-require File.expand_path(File.dirname(__FILE__) + '/rbbuild/path_support.rb')
+require_relative 'rbbuild/path_support.rb'
 require 'open3'
 require 'optparse'
 
