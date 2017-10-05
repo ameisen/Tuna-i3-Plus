@@ -65,8 +65,46 @@ $gpp_buildhandler = Class.new do
 			"-I#{quote_wrap(best_path(ENV["ARDUINO_PATH"] + "hardware/arduino/avr/cores/arduino", Dir.pwd))}",
 			"-I#{quote_wrap(best_path(ENV["ARDUINO_PATH"] + "hardware/arduino/avr/variants/mega", Dir.pwd))}",
 			"-I.",
-			"-isystem./tuna"
+			"-isystem./tuna",
+			"-fdelete-dead-exceptions",
+			"-fshort-enums",
+			"-freg-struct-return",
+			"-fno-common",
+			"-funswitch-loops",
+			"-fgcse-after-reload",
+			"-fsplit-paths",
+			"-ftree-partial-pre",
+			"-fgcse-sm",
+			"-fgcse-las",
+			"-fgcse-after-reload",
+			"-fdeclone-ctor-dtor",
+			"-fdevirtualize-speculatively",
+			"-fdevirtualize-at-ltrans",
+			"-free",
+			"-fsched-pressure",
+			"-fsched-spec-load",
+			"-fipa-pta",
+			"-ftree-builtin-call-dce",
+			"-ftree-loop-distribute-patterns",
+			"-ftree-loop-ivcanon",
+			"-fivopts",
+			"-fvariable-expansion-in-unroller",
+			"-fno-align-functions",
+			"-fno-align-labels",
+			"-fno-align-loops",
+			"-fno-align-jumps",
+			"-fassociative-math",
+			"-freciprocal-math",
+			"-fbranch-target-load-optimize",
+			"-fbranch-target-load-optimize2",
+			"-fstdarg-opt"
 		]
+		
+		# -fdelete-dead-exceptions
+		# -fshort-enums
+		# -freg-struct-return
+		# -fno-common
+		# 
 		
 		return_opts = ""
 		buildopts.each { |opt|
@@ -127,19 +165,39 @@ $gpp_buildhandler = Class.new do
 		return output.uniq
 	end
 	
-	def self.archive(archive, object, print_cmd = true)
-		command = archiver_path() + " rcs " + quote_wrap(archive) + " " + quote_wrap(object)
-		if (print_cmd)
-			puts $TAB + command
-			STDOUT.flush
-		end
+	def self.archive(archive, objects, print_cmd = true)
+		@MaxCmd = 8191
+	
+		baseCmd = archiver_path() + " rcs " + quote_wrap(archive) + " ";
 		
-		pipe = IO.popen(command)
-		output = pipe.readlines(nil)
-		pipe.close
-		if ($? != 0)
-			raise RuntimeError.new("Failed to archive \"#{object}\" - return code #{$?.to_s}")
+		commands = []
+		command = baseCmd.dup
+		objects.each { |object|
+			object = quote_wrap(object.object_path)
+			if ((command.length + object.length) >= @MaxCmd)
+				# Flush command and start a new one.
+				commands << command.dup.chop
+				command = baseCmd.dup
+			end
+			command = command + object + " "
+		}
+		if (command != baseCmd)
+			commands << command.dup.chop
 		end
+	
+		commands.each { |command|
+			if (print_cmd)
+				puts $TAB + command
+				STDOUT.flush
+			end
+			
+			pipe = IO.popen(command)
+			output = pipe.readlines(nil)
+			pipe.close
+			if ($? != 0)
+				raise RuntimeError.new("Failed to archive \"#{object}\" - return code #{$?.to_s}")
+			end
+		}
 	end
 	
 	def self.link(outfile, archive, library_paths, print_cmd = true)
@@ -149,7 +207,7 @@ $gpp_buildhandler = Class.new do
 			lib_str += "-L#{quote_wrap(dir)} "
 		}
 
-		command = gcc_path() + " " + buildline() +  "-fuse-linker-plugin -Wl,--gc-sections,--relax -o \"#{outfile}\" \"#{archive}\" #{lib_str}-lm"
+		command = gcc_path() + " " + buildline() +  "-Wl,--sort-common -s -fuse-linker-plugin -Wl,--gc-sections,--relax -o \"#{outfile}\" \"#{archive}\" #{lib_str}-lm"
 		if (print_cmd)
 			puts $TAB + command
 			STDOUT.flush

@@ -74,7 +74,6 @@
     <ClCompile Include="bi3_plus_lcd.cpp" />
     <ClCompile Include="cardreader.cpp" />
     <ClCompile Include="configuration_store.cpp" />
-    <ClCompile Include="dac_mcp4728.cpp" />
     <ClCompile Include="digipot_mcp4018.cpp" />
     <ClCompile Include="digipot_mcp4451.cpp" />
     <ClCompile Include="endstops.cpp" />
@@ -125,48 +124,6 @@
       <FileType>CppCode</FileType>
     </ClInclude>
     <ClInclude Include="configuration_store.h">
-      <FileType>CppCode</FileType>
-    </ClInclude>
-    <ClInclude Include="dac_mcp4728.h">
-      <FileType>CppCode</FileType>
-    </ClInclude>
-    <ClInclude Include="dogm_bitmaps.h">
-      <FileType>CppCode</FileType>
-    </ClInclude>
-    <ClInclude Include="dogm_font_data_6x9_marlin.h">
-      <FileType>CppCode</FileType>
-    </ClInclude>
-    <ClInclude Include="dogm_font_data_HD44780_C.h">
-      <FileType>CppCode</FileType>
-    </ClInclude>
-    <ClInclude Include="dogm_font_data_HD44780_J.h">
-      <FileType>CppCode</FileType>
-    </ClInclude>
-    <ClInclude Include="dogm_font_data_HD44780_W.h">
-      <FileType>CppCode</FileType>
-    </ClInclude>
-    <ClInclude Include="dogm_font_data_ISO10646_1.h">
-      <FileType>CppCode</FileType>
-    </ClInclude>
-    <ClInclude Include="dogm_font_data_ISO10646_1_PL.h">
-      <FileType>CppCode</FileType>
-    </ClInclude>
-    <ClInclude Include="dogm_font_data_ISO10646_1_tr.h">
-      <FileType>CppCode</FileType>
-    </ClInclude>
-    <ClInclude Include="dogm_font_data_ISO10646_5_Cyrillic.h">
-      <FileType>CppCode</FileType>
-    </ClInclude>
-    <ClInclude Include="dogm_font_data_ISO10646_CN.h">
-      <FileType>CppCode</FileType>
-    </ClInclude>
-    <ClInclude Include="dogm_font_data_ISO10646_Greek.h">
-      <FileType>CppCode</FileType>
-    </ClInclude>
-    <ClInclude Include="dogm_font_data_ISO10646_Kana.h">
-      <FileType>CppCode</FileType>
-    </ClInclude>
-    <ClInclude Include="dogm_font_data_Marlin_symbols.h">
       <FileType>CppCode</FileType>
     </ClInclude>
     <ClInclude Include="duration_t.h">
@@ -475,6 +432,7 @@
     <ClInclude Include="thermistortable_999.h">
       <FileType>CppCode</FileType>
     </ClInclude>
+    <ClInclude Include="tunalib\initializer_list.h" />
     <ClInclude Include="tunalib\utils.hpp" />
     <ClInclude Include="twibus.h">
       <FileType>CppCode</FileType>

@@ -31,9 +31,6 @@
     <ClCompile Include="configuration_store.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="dac_mcp4728.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="digipot_mcp4451.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -142,45 +139,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="configuration_store.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="dac_mcp4728.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="dogm_bitmaps.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="dogm_font_data_6x9_marlin.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="dogm_font_data_HD44780_C.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="dogm_font_data_HD44780_J.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="dogm_font_data_HD44780_W.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="dogm_font_data_ISO10646_1.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="dogm_font_data_ISO10646_1_tr.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="dogm_font_data_ISO10646_5_Cyrillic.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="dogm_font_data_ISO10646_CN.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="dogm_font_data_ISO10646_Greek.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="dogm_font_data_ISO10646_Kana.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="dogm_font_data_Marlin_symbols.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="duration_t.h">
@@ -402,9 +360,6 @@
     <ClInclude Include="watchdog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="dogm_font_data_ISO10646_1_PL.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="hex_print_routines.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -517,6 +472,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="__vm\.Marlin.vcarduino.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tunalib\initializer_list.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

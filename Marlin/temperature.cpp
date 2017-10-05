@@ -32,6 +32,7 @@
 #include "language.h"
 #include "configuration_store.h"
 #include "watchdog.h"
+#include "tunalib/initializer_list.h"
 
 #define K2 (1.0-K1)
 
@@ -433,15 +434,38 @@ void Temperature::updateTemperaturesFromRawValues() {
 
 	int16 temperature_raw;
 	int16 temperature_bed_raw;
+	if (temp_meas_ready)
 	{
 		marlin::utils::critical_section _critsec;
 		temperature_raw = current_temperature_raw;
 		temperature_bed_raw = current_temperature_bed_raw;
 		temp_meas_ready = false;
-	}
 
-	current_temperature = Temperature::analog2temp(temperature_raw);
-	current_temperature_bed = Temperature::analog2tempBed(temperature_bed_raw);
+		if constexpr (HEATER_0_RAW_LO_TEMP < HEATER_0_RAW_HI_TEMP)
+		{
+			if (temperature_raw >= maxttemp_raw && target_temperature > 0) { max_temp_error<Manager::Hotend>(); }
+			if (minttemp_raw >= temperature_raw && !is_preheating() && target_temperature > 0) { min_temp_error<Manager::Hotend>(); }
+		}
+		else
+		{
+			if (temperature_raw <= maxttemp_raw && target_temperature > 0) { max_temp_error<Manager::Hotend>(); }
+			if (minttemp_raw <= temperature_raw && !is_preheating() && target_temperature > 0) { min_temp_error<Manager::Hotend>(); }
+		}
+
+		if constexpr (HEATER_BED_RAW_LO_TEMP < HEATER_BED_RAW_HI_TEMP)
+		{
+			if (temperature_bed_raw >= bed_maxttemp_raw && target_temperature_bed > 0) { max_temp_error<Manager::Bed>(); }
+			if (bed_minttemp_raw >= temperature_bed_raw && target_temperature_bed > 0) { min_temp_error<Manager::Bed>(); }
+		}
+		else
+		{
+			if (temperature_bed_raw <= bed_maxttemp_raw && target_temperature_bed > 0) { max_temp_error<Manager::Bed>(); }
+			if (bed_minttemp_raw <= temperature_bed_raw && target_temperature_bed > 0) { min_temp_error<Manager::Bed>(); }
+		}
+
+		current_temperature = Temperature::analog2temp(temperature_raw);
+		current_temperature_bed = Temperature::analog2tempBed(temperature_bed_raw);
+	}
 
 	// Reset the watchdog after we know we have a temperature measurement.
 	watchdog_reset();
@@ -619,10 +643,12 @@ void Temperature::disable_all_heaters() {
  * Get raw temperatures
  */
 void Temperature::set_current_temp_raw() {
-	marlin::utils::critical_section _critsec;
-	current_temperature_raw = raw_temp_value;
-	current_temperature_bed_raw = raw_temp_bed_value;
-	temp_meas_ready = true;
+	{
+		marlin::utils::critical_section _critsec;
+		current_temperature_raw = raw_temp_value;
+		current_temperature_bed_raw = raw_temp_bed_value;
+		temp_meas_ready = true;
+	}
 }
 
 /**
@@ -642,23 +668,6 @@ void Temperature::set_current_temp_raw() {
 ISR(TIMER0_COMPB_vect) { Temperature::isr(); }
 
 volatile bool Temperature::in_temp_isr = false;
-
-//template <typename... ClearISRs>
-//class scoped_interrupt_state final
-//{
-//	constexpr static const auto ClearMask = []()-> auto {
-//		auto or_mask = { 0 };
-//
-//	}();
-//
-//public:
-//	inline scoped_interrupt_state()
-//	{
-//	}
-//	inline ~scoped_interrupt_state()
-//	{
-//	}
-//};
 
 void Temperature::isr() {
 	// The stepper ISR can interrupt this ISR. When it does it re-enables this ISR
@@ -728,8 +737,20 @@ void Temperature::isr() {
 	 * This gives each ADC 0.9765ms to charge up.
 	 */
 
-#define SET_ADMUX_ADCSRA(pin) ADMUX = _BV(REFS0) | (pin & 0x07); SBI(ADCSRA, ADSC)
-#define START_ADC(pin) if (pin > 7) ADCSRB = _BV(MUX5); else ADCSRB = 0; SET_ADMUX_ADCSRA(pin)
+	const auto set_admux_adcsra = [](uint8 pin)
+	{
+		ADMUX = _BV(REFS0) | (pin & 0x07);
+		SBI(ADCSRA, ADSC);
+	};
+
+	const auto start_adc = [&set_admux_adcsra](uint8 pin)
+	{
+		if (pin > 7)
+			ADCSRB = _BV(MUX5);
+		else
+			ADCSRB = 0_u8;
+		set_admux_adcsra(pin);
+	};
 
 	switch (adc_sensor_state) {
 
@@ -749,14 +770,14 @@ void Temperature::isr() {
 	}
 
 	case PrepareTemp_0:
-		START_ADC(TEMP_0_PIN);
+		start_adc(TEMP_0_PIN);
 		break;
 	case MeasureTemp_0:
 		raw_temp_value += ADC;
 		break;
 
 	case PrepareTemp_BED:
-		START_ADC(TEMP_BED_PIN);
+		start_adc(TEMP_BED_PIN);
 		break;
 	case MeasureTemp_BED:
 		raw_temp_bed_value += ADC;
@@ -772,28 +793,6 @@ void Temperature::isr() {
 
 		// Update the raw values.
 		set_current_temp_raw();
-
-		if constexpr (HEATER_0_RAW_LO_TEMP < HEATER_0_RAW_HI_TEMP)
-		{
-			if (raw_temp_value >= maxttemp_raw && target_temperature > 0) { max_temp_error<Manager::Hotend>(); }
-			if (minttemp_raw >= raw_temp_value && !is_preheating() && target_temperature > 0) { min_temp_error<Manager::Hotend>(); }
-		}
-		else
-		{
-			if (raw_temp_value <= maxttemp_raw && target_temperature > 0) { max_temp_error<Manager::Hotend>(); }
-			if (minttemp_raw <= raw_temp_value && !is_preheating() && target_temperature > 0) { min_temp_error<Manager::Hotend>(); }
-		}
-
-		if constexpr (HEATER_BED_RAW_LO_TEMP < HEATER_BED_RAW_HI_TEMP)
-		{
-			if (raw_temp_bed_value >= bed_maxttemp_raw && target_temperature_bed > 0) { max_temp_error<Manager::Bed>(); }
-			if (bed_minttemp_raw >= raw_temp_bed_value && target_temperature_bed > 0) { min_temp_error<Manager::Bed>(); }
-		}
-		else
-		{
-			if (raw_temp_bed_value <= bed_maxttemp_raw && target_temperature_bed > 0) { max_temp_error<Manager::Bed>(); }
-			if (bed_minttemp_raw <= raw_temp_bed_value && target_temperature_bed > 0) { min_temp_error<Manager::Bed>(); }
-		}
 
 		raw_temp_value = 0;
 		raw_temp_bed_value = 0;

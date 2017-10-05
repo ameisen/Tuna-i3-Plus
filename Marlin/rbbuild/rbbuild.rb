@@ -335,10 +335,7 @@ if (build_archive)
 	end
 	
 	$source_files.each { |handler, files|
-		files.each { |src|
-			obj_path = src.object_path
-			handler.archive(archive_path, obj_path)
-		}
+		handler.archive(archive_path, files)
 	}
 	archiving_time = Time.now - archiving_time
 	puts "Archiving Complete. (#{duration(archiving_time)})"

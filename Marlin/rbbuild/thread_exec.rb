@@ -13,10 +13,14 @@ class Threader
 			@num_threads = num_threads
 		end
 		
+		mutex = Mutex.new
+		mutex.lock
 		@threads = Array.new(@num_threads)
 		atomic_idx = AtomicInt.new
 		(0 .. (@num_threads - 1)).each { |idx|
 			@threads[idx] = Thread.new {
+				mutex.lock
+				mutex.unlock
 				loop do
 					work_idx = atomic_idx.fetch_increment!
 					if (work_idx >= final_idx)
@@ -26,6 +30,7 @@ class Threader
 				end
 			}
 		}
+		mutex.unlock
 	end
 	
 	def join

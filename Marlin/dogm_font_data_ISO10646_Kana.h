@@ -20,6 +20,8 @@
  *
  */
 
+static_assert(false, "file is hit")
+
 /**
   Fontname: ISO10646_Kana
   Copyright: A. Hardtung, public domain
