@@ -124,10 +124,9 @@ tags
 *.sln
 *.vcxproj
 *.vcxproj.filters
-Marlin/Release/
-Marlin/Debug/
-Marlin/__vm/
-Marlin/.vs/
+Tuna/Release/
+Tuna/Debug/
+Tuna/.vs/
 
 #cmake
 CMakeLists.txt
@@ -139,5 +138,7 @@ README.md
 .bin
 .int
 .bin
-/Marlin/.bin/*.eep
-/Marlin/.int/Marlin.log
+/Tuna/.bin/*.eep
+/Tuna/.int/Marlin.log
+/Tuna/.bin/
+/Tuna/.int/
