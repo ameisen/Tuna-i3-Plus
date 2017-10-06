@@ -12,7 +12,7 @@
 #	undef clamp
 #endif
 
-namespace marlin
+namespace tuna
 {
 	using uint8 = uint8_t;
 	using uint16 = uint16_t;
@@ -74,7 +74,7 @@ namespace marlin
 	}
 }
 
-namespace marlin::utils
+namespace tuna::utils
 {
 #if 0
 	template <typename T, uint SZ>
@@ -455,5 +455,5 @@ namespace marlin::utils
 }
 
 // TODO remove when done
-using namespace marlin;
-using namespace marlin::utils;
+using namespace tuna;
+using namespace tuna::utils;

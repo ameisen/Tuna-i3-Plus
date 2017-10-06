@@ -261,6 +261,46 @@ struct fat_boot {
 } PACKED;
 /** Type name for FAT Boot Sector */
 typedef struct fat_boot fat_boot_t;
+
+struct exfat_boot
+{
+	uint8_t  jump[3];
+	char     fsname[8]; // "ExFAT  "
+	uint8_t  MustBeZero[53]; // all zeroes
+	uint64_t PartitionOffset;
+	uint64_t VolumeLength;
+	uint32_t FatOffset;
+	uint32_t FatLength;
+	uint32_t ClusterHeapOffset;
+	uint32_t ClusterCount;
+	uint32_t RootDirectoryCluster;
+	uint32_t VolumeSerialNumber;
+	uint16_t FileSystemRevision;
+	struct
+	{
+		uint16_t ActiveFat : 1;
+		uint16_t VolumeDirty : 1;
+		uint16_t MediaFailure : 1;
+		uint16_t ClearToZero : 1;
+		uint16_t Reserved : 12;
+	} VolumeFlags;
+	uint8_t BytesPerSectorShift;
+	uint8_t SectorsPerClusterShift;
+	uint8_t NumberOfFats;
+	uint8_t DriveSelect;
+	uint8_t PercentInUse;
+	uint8_t Reserved[7];
+	uint8_t BootCode[390];
+	uint16_t BootSignature;
+
+	uint64_t ExcessSpace() const
+	{
+		return (1 << BytesPerSectorShift) - 512;
+	}
+};
+
+static_assert(sizeof(exfat_boot) == 512, "wtf");
+
 //------------------------------------------------------------------------------
 /**
  * \struct fat32_boot

@@ -479,35 +479,37 @@ float Temperature::analog2tempBed(const int raw)
  */
 void Temperature::updateTemperaturesFromRawValues() {
 
-	int16 temperature_raw;
-	int16 temperature_bed_raw;
 	if (temp_meas_ready)
 	{
-		marlin::utils::critical_section _critsec;
-		temperature_raw = current_temperature_raw;
-		temperature_bed_raw = current_temperature_bed_raw;
-		temp_meas_ready = false;
+		int16 temperature_raw;
+		int16 temperature_bed_raw;
+		{
+			tuna::utils::critical_section _critsec;
+			temperature_raw = current_temperature_raw;
+			temperature_bed_raw = current_temperature_bed_raw;
+			temp_meas_ready = false;
+		}
 
 		if constexpr (HEATER_0_RAW_LO_TEMP < HEATER_0_RAW_HI_TEMP)
 		{
-			if (temperature_raw >= maxttemp_raw && target_temperature > 0) { max_temp_error<Manager::Hotend>(); }
-			if (minttemp_raw >= temperature_raw && !is_preheating() && target_temperature > 0) { min_temp_error<Manager::Hotend>(); }
+			if ((temperature_raw >= maxttemp_raw) & (target_temperature > 0)) { max_temp_error<Manager::Hotend>(); }
+			if ((minttemp_raw >= temperature_raw) & (!is_preheating()) & (target_temperature > 0)) { min_temp_error<Manager::Hotend>(); }
 		}
 		else
 		{
-			if (temperature_raw <= maxttemp_raw && target_temperature > 0) { max_temp_error<Manager::Hotend>(); }
-			if (minttemp_raw <= temperature_raw && !is_preheating() && target_temperature > 0) { min_temp_error<Manager::Hotend>(); }
+			if ((temperature_raw <= maxttemp_raw) & (target_temperature > 0)) { max_temp_error<Manager::Hotend>(); }
+			if ((minttemp_raw <= temperature_raw) & (!is_preheating()) & (target_temperature > 0)) { min_temp_error<Manager::Hotend>(); }
 		}
 
 		if constexpr (HEATER_BED_RAW_LO_TEMP < HEATER_BED_RAW_HI_TEMP)
 		{
-			if (temperature_bed_raw >= bed_maxttemp_raw && target_temperature_bed > 0) { max_temp_error<Manager::Bed>(); }
-			if (bed_minttemp_raw >= temperature_bed_raw && target_temperature_bed > 0) { min_temp_error<Manager::Bed>(); }
+			if ((temperature_bed_raw >= bed_maxttemp_raw) & (target_temperature_bed > 0)) { max_temp_error<Manager::Bed>(); }
+			if ((bed_minttemp_raw >= temperature_bed_raw) & (target_temperature_bed > 0)) { min_temp_error<Manager::Bed>(); }
 		}
 		else
 		{
-			if (temperature_bed_raw <= bed_maxttemp_raw && target_temperature_bed > 0) { max_temp_error<Manager::Bed>(); }
-			if (bed_minttemp_raw <= temperature_bed_raw && target_temperature_bed > 0) { min_temp_error<Manager::Bed>(); }
+			if ((temperature_bed_raw <= bed_maxttemp_raw) & (target_temperature_bed > 0)) { max_temp_error<Manager::Bed>(); }
+			if ((bed_minttemp_raw <= temperature_bed_raw) & (target_temperature_bed > 0)) { min_temp_error<Manager::Bed>(); }
 		}
 
 		current_temperature = Temperature::analog2temp(temperature_raw);
@@ -691,7 +693,7 @@ void Temperature::disable_all_heaters() {
  */
 void Temperature::set_current_temp_raw() {
 	{
-		marlin::utils::critical_section _critsec;
+		tuna::utils::critical_section _critsec;
 		current_temperature_raw = raw_temp_value;
 		current_temperature_bed_raw = raw_temp_bed_value;
 		temp_meas_ready = true;

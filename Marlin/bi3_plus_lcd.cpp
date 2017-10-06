@@ -14,9 +14,9 @@
 # include "duration_t.h"
 #endif
 
-using namespace marlin::utils;
+using namespace tuna::utils;
 
-namespace marlin::lcd
+namespace tuna::lcd
 {
 	namespace
 	{

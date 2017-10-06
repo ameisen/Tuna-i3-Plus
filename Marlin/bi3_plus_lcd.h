@@ -4,7 +4,7 @@
 #include "Marlin.h"
 #include "tuna.h"
 
-namespace marlin::lcd
+namespace tuna::lcd
 {
 	void initialize();
 	void update();
