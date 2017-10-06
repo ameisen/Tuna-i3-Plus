@@ -3230,14 +3230,14 @@ void kill(const char* lcd_msg) {
 	UNUSED(lcd_msg);
 
 	_delay_ms(600); // Wait a short time (allows messages to get out before shutting down.
-	cli(); // Stop interrupts
+	tuna::cli(); // Stop interrupts
 
 	_delay_ms(250); //Wait to ensure all interrupts routines stopped
 	thermalManager.disable_all_heaters(); //turn off heaters again
 
 	suicide();
 	while (1) {
-		watchdog_reset();
+		tuna::wdr();
 	} // Wait for reset
 }
 

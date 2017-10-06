@@ -872,7 +872,7 @@ namespace tuna::lcd
 					   /*case 0xFF: {
 					   show_page(58); //enable lcd bridge mode
 					   while (1) {
-					   watchdog_reset();
+					   tuna::wdr();
 					   if (Serial.available())
 					   Serial2.write(Serial.read());
 					   if (Serial2.available())

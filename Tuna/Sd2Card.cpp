@@ -27,6 +27,7 @@
  * This file is part of the Arduino Sd2Card Library
  */
 #include "Marlin.h"
+#include "tuna.h"
 
 #if ENABLED(SDSUPPORT)
 #include "Sd2Card.h"
@@ -102,7 +103,7 @@
   static uint8_t spiRec() {
     uint8_t data = 0;
     // no interrupts during byte receive - about 8 us
-    cli();
+	tuna::cli();
     // output pin high - like sending 0XFF
     WRITE(SPI_MOSI_PIN, HIGH);
 
@@ -120,7 +121,7 @@
       WRITE(SPI_SCK_PIN, LOW);
     }
     // enable interrupts
-    sei();
+    tuna::sei();
     return data;
   }
   //------------------------------------------------------------------------------
@@ -133,7 +134,7 @@
   /** Soft SPI send byte */
   static void spiSend(uint8_t data) {
     // no interrupts during byte send - about 8 us
-    cli();
+    tuna::cli();
     for (uint8_t i = 0; i < 8; i++) {
       WRITE(SPI_SCK_PIN, LOW);
 
@@ -151,7 +152,7 @@
 
     WRITE(SPI_SCK_PIN, LOW);
     // enable interrupts
-    sei();
+	tuna::sei();
   }
   //------------------------------------------------------------------------------
   /** Soft SPI send block */
@@ -305,9 +306,7 @@ bool Sd2Card::init(uint8_t sckRateID, uint8_t chipSelectPin) {
 
   // If init takes more than 4s it could trigger
   // watchdog leading to a reboot loop.
-  #if ENABLED(USE_WATCHDOG)
-    watchdog_reset();
-  #endif
+  tuna::wdr();
 
   // set pin modes
   pinMode(chipSelectPin_, OUTPUT);

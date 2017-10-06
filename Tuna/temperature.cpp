@@ -471,6 +471,14 @@ float Temperature::analog2tempBed(const int raw)
 	return PGM_RD_W(BEDTEMPTABLE[BEDTEMPTABLE_LEN - 1][1]);
 }
 
+template <typename T>
+class atomic final
+{
+	T m_Value;
+
+public:
+};
+
 /**
  * Get the raw values into the actual temperatures.
  * The raw values are created in interrupt context,
@@ -479,7 +487,7 @@ float Temperature::analog2tempBed(const int raw)
  */
 void Temperature::updateTemperaturesFromRawValues() {
 
-	if (temp_meas_ready)
+	if (temp_meas_ready) // TODO replace with CAS.
 	{
 		int16 temperature_raw;
 		int16 temperature_bed_raw;
@@ -517,7 +525,7 @@ void Temperature::updateTemperaturesFromRawValues() {
 	}
 
 	// Reset the watchdog after we know we have a temperature measurement.
-	watchdog_reset();
+	tuna::wdr();
 }
 
 /**
@@ -691,13 +699,12 @@ void Temperature::disable_all_heaters() {
 /**
  * Get raw temperatures
  */
-void Temperature::set_current_temp_raw() {
-	{
-		tuna::utils::critical_section _critsec;
-		current_temperature_raw = raw_temp_value;
-		current_temperature_bed_raw = raw_temp_bed_value;
-		temp_meas_ready = true;
-	}
+void Temperature::set_current_temp_raw()
+{
+	tuna::utils::critical_section _critsec;
+	current_temperature_raw = raw_temp_value;
+	current_temperature_bed_raw = raw_temp_bed_value;
+	temp_meas_ready = true;
 }
 
 /**
@@ -740,7 +747,7 @@ void Temperature::isr() {
 
 	// Allow UART and stepper ISRs
 	CBI(TIMSK0, OCIE0B); //Disable Temperature ISR
-	sei();
+	tuna::sei();
 
 	static int8_t oversample_count = 0;
 	static ADCSensorState adc_sensor_state = StartupDelay;
@@ -859,7 +866,7 @@ void Temperature::isr() {
 	// Go to the next state, up to SensorsReady
 	adc_sensor_state = (ADCSensorState)((int(adc_sensor_state) + 1) % int(StartupDelay));
 
-	cli();
+	tuna::cli();
 	in_temp_isr = false;
 	SBI(TIMSK0, OCIE0B); //re-enable Temperature ISR
 }

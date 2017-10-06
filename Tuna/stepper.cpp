@@ -359,7 +359,7 @@ ISR(TIMER1_COMPA_vect) {
   #endif
 }
 
-#define _ENABLE_ISRs() do { cli(); if (thermalManager.in_temp_isr) CBI(TIMSK0, OCIE0B); else SBI(TIMSK0, OCIE0B); ENABLE_STEPPER_DRIVER_INTERRUPT(); } while(0)
+#define _ENABLE_ISRs() do { tuna::cli(); if (thermalManager.in_temp_isr) CBI(TIMSK0, OCIE0B); else SBI(TIMSK0, OCIE0B); ENABLE_STEPPER_DRIVER_INTERRUPT(); } while(0)
 
 void Stepper::isr() {
 
@@ -372,7 +372,7 @@ void Stepper::isr() {
     // Disable Timer0 ISRs and enable global ISR again to capture UART events (incoming chars)
     CBI(TIMSK0, OCIE0B); // Temperature ISR
     DISABLE_STEPPER_DRIVER_INTERRUPT();
-    sei();
+	tuna::sei();
   #endif
 
   #define _SPLIT(L) (ocr_val = (uint16_t)L)
@@ -949,7 +949,7 @@ void Stepper::isr() {
     // Disable Timer0 ISRs and enable global ISR again to capture UART events (incoming chars)
     CBI(TIMSK0, OCIE0B); // Temperature ISR
     DISABLE_STEPPER_DRIVER_INTERRUPT();
-    sei();
+	tuna::sei();
 
     // Run main stepping ISR if flagged
     if (!nextMainISR) isr();
@@ -1174,7 +1174,7 @@ void Stepper::init() {
   #endif // ADVANCE || LIN_ADVANCE
 
   endstops.enable(true); // Start with endstops active. After homing they can be disabled
-  sei();
+  tuna::sei();
 
   set_directions(); // Init directions to last_direction_bits = 0
 }
@@ -1384,7 +1384,7 @@ void Stepper::report_positions() {
   // MUST ONLY BE CALLED BY AN ISR,
   // No other ISR should ever interrupt this!
   void Stepper::babystep(const AxisEnum axis, const bool direction) {
-    cli();
+	  tuna::cli();
 
     switch (axis) {
 
@@ -1445,7 +1445,7 @@ void Stepper::report_positions() {
 
       default: break;
     }
-    sei();
+	tuna::sei();
   }
 
 #endif // BABYSTEPPING

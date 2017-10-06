@@ -5,15 +5,11 @@
 #include "HardwareSerial.h"
 #include "avr/interrupt.h"
 
-#ifdef min
-#	undef min
-#endif
-#ifdef max
-#	undef max
-#endif
-#ifdef clamp
-#	undef clamp
-#endif
+#undef min
+#undef max
+#undef clamp
+#undef cli
+#undef sei
 
 namespace tuna
 {
@@ -82,6 +78,61 @@ namespace tuna
 namespace tuna::utils
 {
 	using namespace tuna;
+
+	constexpr inline __attribute__((always_inline)) void sei()
+	{
+		__builtin_avr_sei();
+	}
+
+	constexpr inline __attribute__((always_inline)) void cli()
+	{
+		__builtin_avr_cli();
+	}
+
+	constexpr inline __attribute__((always_inline)) void _nop()
+	{
+		__builtin_avr_nop();
+	}
+
+	constexpr inline __attribute__((always_inline)) void _sleep()
+	{
+		__builtin_avr_sleep();
+	}
+
+	constexpr inline __attribute__((always_inline)) void wdr()
+	{
+		__builtin_avr_wdr();
+	}
+
+	constexpr inline __attribute__((always_inline)) uint8 swap(uint8 val)
+	{
+		return __builtin_avr_swap(val);
+	}
+
+	constexpr inline __attribute__((always_inline)) uint16 fmul(uint8 val0, uint8 val1)
+	{
+		return __builtin_avr_fmul(val0, val1);
+	}
+
+	constexpr inline __attribute__((always_inline)) int16 fmuls(int8 val0, int8 val1)
+	{
+		return __builtin_avr_fmuls(val0, val1);
+	}
+
+	constexpr inline __attribute__((always_inline)) int16 fmulsu(int8 val0, uint8 val1)
+	{
+		return __builtin_avr_fmulsu(val0, val1);
+	}
+
+	constexpr inline __attribute__((always_inline)) void delay_cycles(uint32 ticks)
+	{
+		__builtin_avr_delay_cycles(ticks);
+	}
+
+	constexpr inline __attribute__((always_inline)) uint8 insert_bits(uint32 map, uint8 bits, uint8 val)
+	{
+		return __builtin_avr_insert_bits(map, bits, val);
+	}
 
 #if 0
 	template <typename T, uint SZ>
@@ -507,6 +558,11 @@ namespace tuna::utils
 
 }
 
+namespace tuna
+{
+	using namespace utils;
+}
+
 // TODO remove when done
 using namespace tuna;
-using namespace tuna::utils;
+
