@@ -33,9 +33,6 @@
     <ClInclude Include="tunalib\utils.hpp">
       <Filter>tunalib</Filter>
     </ClInclude>
-    <ClInclude Include="__vm\.Marlin.vsarduino.h">
-      <Filter>__vm</Filter>
-    </ClInclude>
     <ClInclude Include="bi3_plus_lcd.h" />
     <ClInclude Include="cardreader.h" />
     <ClInclude Include="Conditionals_LCD.h" />
@@ -167,6 +164,9 @@
     </ClInclude>
     <ClInclude Include="thermistors\thermistortable_12.h">
       <Filter>thermistors</Filter>
+    </ClInclude>
+    <ClInclude Include="__vm\.Tuna.vsarduino.h">
+      <Filter>__vm</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
