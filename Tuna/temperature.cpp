@@ -39,13 +39,12 @@ Temperature thermalManager;
 
 // public:
 
-float Temperature::current_temperature = 0.0f,
-Temperature::current_temperature_bed = 0.0f;
-volatile int16_t Temperature::current_temperature_raw = 0_u16;
-int16_t Temperature::target_temperature = 0_u16;
-volatile int16_t Temperature::current_temperature_bed_raw = 0;
-
-int16_t Temperature::target_temperature_bed = 0;
+uint16 Temperature::current_temperature = 0,
+Temperature::current_temperature_bed = 0;
+volatile uint16_t Temperature::current_temperature_raw = 0_u16;
+uint16_t Temperature::target_temperature = 0_u16;
+volatile uint16_t Temperature::current_temperature_bed_raw = 0;
+uint16_t Temperature::target_temperature_bed = 0;
 
 float Temperature::Kp = DEFAULT_Kp,
 Temperature::Ki = (DEFAULT_Ki) * (PID_dT),
@@ -79,13 +78,13 @@ uint16_t Temperature::raw_temp_value = 0_u16,
 Temperature::raw_temp_bed_value = 0;
 
 // Init min and max temp with extreme values to prevent false errors during startup
-int16_t Temperature::minttemp_raw = HEATER_0_RAW_LO_TEMP,
-Temperature::maxttemp_raw = HEATER_0_RAW_HI_TEMP,
-Temperature::minttemp = 0,
-Temperature::maxttemp = 16383;
+int16_t Temperature::minttemp_raw = temp_table[temp_table_size - 1].Adc,
+Temperature::maxttemp_raw = temp_table[0].Adc,
+Temperature::minttemp = temp_table[temp_table_size - 1].Temperature,
+Temperature::maxttemp = temp_table[0].Temperature;
 
-int16_t Temperature::bed_minttemp_raw = HEATER_BED_RAW_LO_TEMP;
-int16_t Temperature::bed_maxttemp_raw = HEATER_BED_RAW_HI_TEMP;
+int16_t Temperature::bed_minttemp_raw = temp_table[temp_table_size - 1].Adc;
+int16_t Temperature::bed_maxttemp_raw = temp_table[0].Adc;
 
 uint8_t Temperature::soft_pwm_amount,
 Temperature::soft_pwm_amount_bed;
@@ -439,8 +438,28 @@ void Temperature::manage_heater() {
 
 // Derived from RepRap FiveD extruder::getTemperature()
 // For hot end temperature measurement.
-float Temperature::analog2temp(const int raw)
+float Temperature::analog2temp(uint16 raw)
 {
+	//if (raw < temp_table[0].Adc)
+	//	return temp_table[0].Temperature;
+
+#if 1
+	return thermistor::adc_to_temperature(raw);
+	//return get_temperaturef(raw);
+
+#elif 1
+	for (uint8 i = 1; i < temp_table_size; ++i) {
+		if (PGM_RD_W(temp_table[i].Adc) > raw) {
+			return PGM_RD_W(temp_table[i - 1].Temperature) +
+				(raw - PGM_RD_W(temp_table[i - 1].Adc)) *
+				(float)(PGM_RD_W(temp_table[i].Temperature) - PGM_RD_W(temp_table[i - 1].Temperature)) /
+				(float)(PGM_RD_W(temp_table[i].Adc) - PGM_RD_W(temp_table[i - 1].Adc));
+		}
+	}
+
+	// Overflow: Set to last value in the table
+	return PGM_RD_W(temp_table[temp_table_size - 1].Temperature);
+#else
 	for (uint8 i = 1; i < HEATER_0_TEMPTABLE_LEN; ++i) {
 		if (PGM_RD_W(HEATER_0_TEMPTABLE[i][0]) > raw) {
 			return PGM_RD_W(HEATER_0_TEMPTABLE[i - 1][1]) +
@@ -452,12 +471,33 @@ float Temperature::analog2temp(const int raw)
 
 	// Overflow: Set to last value in the table
 	return PGM_RD_W(HEATER_0_TEMPTABLE[HEATER_0_TEMPTABLE_LEN - 1][1]);
+#endif
 }
 
 // Derived from RepRap FiveD extruder::getTemperature()
 // For bed temperature measurement.
-float Temperature::analog2tempBed(const int raw)
+float Temperature::analog2tempBed(uint16 raw)
 {
+	//if (raw < temp_table[0].Adc)
+	//	return temp_table[0].Temperature;
+
+#if 1
+	return thermistor::adc_to_temperature(raw);
+	//return get_temperaturef(raw);
+
+#elif 1
+	for (uint8 i = 1; i < temp_table_size; ++i) {
+		if (PGM_RD_W(temp_table[i].Adc) > raw) {
+			return PGM_RD_W(temp_table[i - 1].Temperature) +
+				(raw - PGM_RD_W(temp_table[i - 1].Adc)) *
+				(float)(PGM_RD_W(temp_table[i].Temperature) - PGM_RD_W(temp_table[i - 1].Temperature)) /
+				(float)(PGM_RD_W(temp_table[i].Adc) - PGM_RD_W(temp_table[i - 1].Adc));
+		}
+	}
+
+	// Overflow: Set to last value in the table
+	return PGM_RD_W(temp_table[temp_table_size - 1].Temperature);
+#else
 	for (uint8 i = 1; i < BEDTEMPTABLE_LEN; i++) {
 		if (PGM_RD_W(BEDTEMPTABLE[i][0]) > raw) {
 			return PGM_RD_W(BEDTEMPTABLE[i - 1][1]) +
@@ -469,6 +509,7 @@ float Temperature::analog2tempBed(const int raw)
 
 	// Overflow: Set to last value in the table
 	return PGM_RD_W(BEDTEMPTABLE[BEDTEMPTABLE_LEN - 1][1]);
+#endif
 }
 
 template <typename T>
@@ -489,14 +530,21 @@ void Temperature::updateTemperaturesFromRawValues() {
 
 	if (temp_meas_ready) // TODO replace with CAS.
 	{
-		int16 temperature_raw;
-		int16 temperature_bed_raw;
+		uint16 temperature_raw;
+		uint16 temperature_bed_raw;
 		{
 			tuna::utils::critical_section _critsec;
 			temperature_raw = current_temperature_raw;
 			temperature_bed_raw = current_temperature_bed_raw;
 			temp_meas_ready = false;
 		}
+
+		constexpr const uint16 minADC = (temp_table[0].Adc < temp_table[temp_table_size - 1].Adc) ? temp_table[0].Adc : temp_table[temp_table_size - 1].Adc;
+		constexpr const uint16 maxADC = (temp_table[0].Adc > temp_table[temp_table_size - 1].Adc) ? temp_table[0].Adc : temp_table[temp_table_size - 1].Adc;
+
+		// reading from constexpr here.
+		temperature_raw = clamp(temperature_raw, minADC, maxADC);
+		temperature_bed_raw = clamp(temperature_bed_raw, minADC, maxADC);
 
 		if constexpr (HEATER_0_RAW_LO_TEMP < HEATER_0_RAW_HI_TEMP)
 		{
@@ -555,6 +603,7 @@ void Temperature::init()
 	// Wait for temperature measurement to settle
 	delay(250);
 
+	/*
 	minttemp = HEATER_0_MINTEMP;
 	while (analog2temp(minttemp_raw) < HEATER_0_MINTEMP)
 	{
@@ -593,6 +642,7 @@ void Temperature::init()
 			bed_maxttemp_raw += OVERSAMPLENR;
 		}
 	}
+	*/
 }
 
 /**
@@ -816,6 +866,14 @@ void Temperature::isr() {
 		set_admux_adcsra(pin);
 	};
 
+	// oversamples = 16, thus (2^16)/16 is the greatest temperature we can represent without overflowing (4096).
+	// We should set a peak limit below that. 512 seems OK.
+	// 512 is nice as we actually don't have to mask the lower byte, only the upper byte, as the mask is 0x1FF.
+	constexpr const uint16 MaxTemp = 512_u16;
+	constexpr const uint16 MaxTempMask = MaxTemp - 1_u16;
+	constexpr const uint8 MaxTempMaskLower = uint8(MaxTempMask & 0xFF);
+	static_assert(MaxTempMaskLower == 0xFF, "The lower byte of the MaxTempMask must be 0xFF");
+
 	switch (adc_sensor_state) {
 
 	case SensorsReady: {
@@ -837,8 +895,9 @@ void Temperature::isr() {
 		start_adc(TEMP_0_PIN);
 		break;
 	case MeasureTemp_0:
+	{
 		raw_temp_value += ADC;
-		break;
+	} break;
 
 	case PrepareTemp_BED:
 		start_adc(TEMP_BED_PIN);
@@ -852,7 +911,6 @@ void Temperature::isr() {
 	} // switch(adc_sensor_state)
 
 	if (!adc_sensor_state && ++oversample_count >= OVERSAMPLENR) { // 10 * 16 * 1/(16000000/64/256)  = 164ms.
-
 		oversample_count = 0;
 
 		// Update the raw values.

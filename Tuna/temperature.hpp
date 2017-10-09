@@ -49,13 +49,12 @@ public:
 		Bed = 1
 	};
 
-	static float current_temperature,
+	static uint16 current_temperature,
 		current_temperature_bed;
-	static volatile int16_t current_temperature_raw;
-	static int16_t target_temperature;
-	static volatile int16_t current_temperature_bed_raw;
-
-	static int16_t target_temperature_bed;
+	static volatile uint16_t current_temperature_raw;
+	static uint16_t target_temperature;
+	static volatile uint16_t current_temperature_bed_raw;
+	static uint16_t target_temperature_bed;
 
 	static volatile bool in_temp_isr;
 
@@ -126,8 +125,8 @@ public:
 	/**
 	 * Static (class) methods
 	 */
-	static float analog2temp(const int raw);
-	static float analog2tempBed(const int raw);
+	static float analog2temp(uint16 raw);
+	static float analog2tempBed(uint16 raw);
 
 	/**
 	 * Called from the Temperature ISR
