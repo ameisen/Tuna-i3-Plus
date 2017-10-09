@@ -387,7 +387,7 @@ void Planner::recalculate() {
     static float oldt = 0;
 
     if (!autotemp_enabled) return;
-    if (thermalManager.degTargetHotend() + 2 < autotemp_min) return; // probably temperature set to zero.
+    if (float(thermalManager.degTargetHotend() + 2) < autotemp_min) return; // probably temperature set to zero.
 
     float high = 0.0;
     for (uint8_t b = block_buffer_tail; b != block_buffer_head; b = next_block_index(b)) {

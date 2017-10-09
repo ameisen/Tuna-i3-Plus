@@ -29,7 +29,8 @@ struct TablePair final
 
 	constexpr TablePair() = default;
 	constexpr TablePair(uint16_t _ADC, uint16_t _Temperature) :
-		Adc(_ADC * OVERSAMPLENR), Temperature(_Temperature) {}
+		Adc(_ADC * OVERSAMPLENR), Temperature(_Temperature)
+	{}
 
 	constexpr TablePair & operator = (const TablePair &pair)
 	{
@@ -258,10 +259,111 @@ inline uint16_t pgm_read<uint16_t>(const uint16_t &var)
 	return pgm_read_word((uint16_t)&var);
 }
 
+constexpr uint8 low_temp_idx = temp_table_size - 1;
+constexpr uint8 hi_temp_idx = 0;
+constexpr uint16 min_temperature = temp_table[low_temp_idx].Temperature;
+constexpr uint16 max_temperature = temp_table[hi_temp_idx].Temperature;
+constexpr uint8 low_adc_idx = 0;
+constexpr uint8 hi_adc_idx = temp_table_size - 1;
+constexpr uint16 min_adc = temp_table[low_adc_idx].Adc;
+constexpr uint16 max_adc = temp_table[hi_temp_idx].Adc;
+constexpr int8 higher_temp_idx = (low_temp_idx < hi_temp_idx) ? 1 : -1;
+constexpr int8 higher_adc_idx = (low_adc_idx < hi_adc_idx) ? 1 : -1;
+
 namespace thermistor
 {
+	template <typename T>
+	struct interpolator
+	{
+		const T delta;
+		const T max;
+	};
+
+	template <uint16 x, uint16 a, uint16 b>
+	constexpr interpolator<uint16> interpoland()
+	{
+		uint16 delta = x - a;
+		uint16 max_diff = b - a;
+
+		return { delta, max_diff };
+	}
+
+	template <uint16 delta, uint16 max, uint16 b, uint16 a>
+	constexpr uint16 interpolate()
+	{
+		uint32_t a_lambda = (uint32_t(a) * uint32_t(delta));
+		uint32_t b_lambda = (uint32_t(b) * uint32_t(max - delta));
+		return (a_lambda + b_lambda) / max;
+	}
+
+	template <uint16 temperature, uint8 cur_idx = 0, uint8 best_le = low_temp_idx>
+	constexpr uint16_t ce_convert_temp_to_adc()
+	{
+		static_assert(temperature <= max_temperature && temperature >= min_temperature, "temperature is out of range.");
+
+		if constexpr (cur_idx == temp_table_size)
+		{
+			if constexpr (best_le == temp_table_size - 1)
+			{
+				return temp_table[best_le].Adc;
+			}
+			else
+			{
+				constexpr auto best_value = temp_table[best_le];
+				constexpr auto next_value = temp_table[best_le + higher_temp_idx];
+				constexpr auto interp = interpoland<temperature, best_value.Temperature, next_value.Temperature>();
+				return interpolate<
+					interp.delta, interp.max, best_value.Adc, next_value.Adc
+				>();
+			}
+		}
+		else
+		{
+			constexpr auto cur_value = temp_table[cur_idx];
+			constexpr auto best_value = temp_table[best_le];
+			return ce_convert_temp_to_adc<
+				temperature, cur_idx + 1,
+				(cur_value.Temperature <= temperature && cur_value.Temperature > best_value.Temperature) ?
+					cur_idx : best_le
+			>();
+		}
+	}
+
+	template <uint16 adc, uint8 cur_idx = 0, uint8 best_le = low_temp_idx>
+	constexpr temp_t ce_convert_adc_to_temp()
+	{
+		static_assert(adc <= max_adc && adc >= min_adc, "adc is out of range.");
+
+		if constexpr (cur_idx == temp_table_size)
+		{
+			if constexpr (best_le == temp_table_size - 1)
+			{
+				return temp_table[best_le].Temperature;
+			}
+			else
+			{
+				constexpr auto best_value = temp_table[best_le];
+				constexpr auto next_value = temp_table[best_le + higher_adc_idx];
+				constexpr auto interp = interpoland<adc, best_value.Adc, next_value.Adc>();
+				return temp_t::_from(interpolate<
+					interp.delta, interp.max, best_value.Temperature << temp_t::frac_bits, next_value.Temperature << temp_t::frac_bits
+				>());
+			}
+		}
+		else
+		{
+			constexpr auto cur_value = temp_table[cur_idx];
+			constexpr auto best_value = temp_table[best_le];
+			return ce_convert_adc_to_temp<
+				adc, cur_idx + 1,
+				(cur_value.Adc <= adc && cur_value.Adc > best_value.Adc) ?
+				cur_idx : best_le
+			>();
+		}
+	}
+
 	template <bool small_adc, bool small_temp>
-	inline uint16_t binsearch_temp_get_branched(typename delta_type<small_adc>::type adc)
+	inline temp_t binsearch_temp_get_branched(typename delta_type<small_adc>::type adc)
 	{
 		constexpr const uint8_t max_idx = small_adc ? max_adc_uint8_idx : (temp_table_size - 1);
 		constexpr const uint8_t min_idx = small_temp ? min_adc_uint8_temp_idx : 0;
@@ -269,7 +371,7 @@ namespace thermistor
 		static_assert(uint16_t(max_idx * 2) <= 0xFF, "otherwise halving won't work, and I don't want to add extra code for it.");
 
 		using adc_t = typename delta_type<small_adc>::type;
-		using temp_t = uint16_t; // typename delta_type<small_temp>::type;
+		using deltatemp_t = typename delta_type<small_temp>::type;
 
 		uint8_t L = min_idx;
 		uint8_t R = max_idx;
@@ -288,7 +390,7 @@ namespace thermistor
 			}
 			else
 			{
-				return pgm_read<temp_t>(temp_table[m].Temperature);
+				return { pgm_read<deltatemp_t>(temp_table[m].Temperature) };
 			}
 		} while (L <= R);
 
@@ -300,13 +402,7 @@ namespace thermistor
 		//assert(le_value <= adc);
 		//assert(g_value > adc);
 
-		struct interpolator
-		{
-			delta_t delta;
-			delta_t max;
-		};
-
-		const auto get_interpoland = [](adc_t a, adc_t b, adc_t x) -> interpolator
+		const auto get_interpoland = [](adc_t a, adc_t b, adc_t x) -> interpolator<delta_t>
 		{
 			delta_t delta = x - a;
 			delta_t max_diff = b - a;
@@ -316,7 +412,7 @@ namespace thermistor
 
 
 
-		const auto interpolate = [](temp_t b, temp_t a, const interpolator &delta) -> temp_t
+		const auto interpolate = [](deltatemp_t b, deltatemp_t a, const interpolator<delta_t> &delta) -> deltatemp_t
 		{
 			//lambda = interpolation_value - lambda;
 			// 16 bits is a safe interpolation size.
@@ -325,58 +421,50 @@ namespace thermistor
 			constexpr const uint16_t MaxTemp = temp_table[0].Temperature;
 			constexpr const uint64_t DeltaTimesTemp = uint64(max_adc_delta_local) * MaxTemp;
 
-			//if constexpr (DeltaTimesTemp <= tuna::type_trait<uint8>::max)
-			//{
-			//	uint8_t a_lambda = (a * (delta.delta));
-			//	uint8_t b_lambda = (b * (delta.max - delta.delta));
-			//	if constexpr ((DeltaTimesTemp * 2) <= tuna::type_trait<uint8>::max)
-			//	{
-			//		return (a_lambda + b_lambda) / delta.max;
-			//	}
-			//	else
-			//	{
-			//		return (uint16_t(a_lambda) + b_lambda) / delta.max;
-			//	}
-			//}
-			//else if constexpr (DeltaTimesTemp <= tuna::type_trait<uint16>::max)
-			//{
-			//	uint16_t a_lambda = (uint16_t(a) * (delta.delta));
-			//	uint16_t b_lambda = (uint16_t(b) * (delta.max - delta.delta));
-			//	if constexpr ((DeltaTimesTemp * 2) <= tuna::type_trait<uint16>::max)
-			//	{
-			//		return (a_lambda + b_lambda) / delta.max;
-			//	}
-			//	else
-			//	{
-			//		return (uint32_t(a_lambda) + b_lambda) / delta.max;
-			//	}
-			//}
-			//else if constexpr (DeltaTimesTemp <= tuna::type_trait<uint32>::max)
-			//{
-			//	uint32_t a_lambda = (uint32_t(a) * (delta.delta));
-			//	uint32_t b_lambda = (uint32_t(b) * (delta.max - delta.delta));
-			//	if constexpr ((DeltaTimesTemp * 2) <= tuna::type_trait<uint32>::max)
-			//	{
-			//		return (a_lambda + b_lambda) / delta.max;
-			//	}
-			//	else
-			//	{
-			//		return (uint64_t(a_lambda) + b_lambda) / delta.max;
-			//	}
-			//}
-			//else
+			static_assert(DeltaTimesTemp <= tuna::type_trait<uint32>::max, "ridiculous temperature values in table.");
+			if constexpr (DeltaTimesTemp <= tuna::type_trait<uint8>::max)
 			{
-				uint64_t a_lambda = (uint64_t(a) * uint64_t(delta.delta));
-				uint64_t b_lambda = (uint64_t(b) * uint64_t(delta.max - delta.delta));
-				static_assert((DeltaTimesTemp * 2) <= tuna::type_trait<uint64>::max, "can't go larger than this.");
-				return (a_lambda + b_lambda) / delta.max;
+				uint8_t a_lambda = (a * (delta.delta));
+				uint8_t b_lambda = (b * (delta.max - delta.delta));
+				if constexpr ((DeltaTimesTemp * 2) <= tuna::type_trait<uint8>::max)
+				{
+					return (a_lambda + b_lambda) / delta.max;
+				}
+				else
+				{
+					return (uint16_t(a_lambda) + b_lambda) / delta.max;
+				}
+			}
+			else if constexpr (DeltaTimesTemp <= tuna::type_trait<uint16>::max)
+			{
+				uint16_t a_lambda = (uint16_t(a) * (delta.delta));
+				uint16_t b_lambda = (uint16_t(b) * (delta.max - delta.delta));
+				static_assert((DeltaTimesTemp * 2) <= tuna::type_trait<uint8>::max, "ridiculous temperature values in table.");
+				if constexpr ((DeltaTimesTemp * 2) <= tuna::type_trait<uint16>::max)
+				{
+					return (uint16_t(a_lambda) + b_lambda) / delta.max;
+				}
+				else
+				{
+					return (uint32_t(a_lambda) + b_lambda) / delta.max;
+				}
+			}
+			else
+			{
+				uint32_t a_lambda = (uint32_t(a) * (delta.delta));
+				uint32_t b_lambda = (uint32_t(b) * (delta.max - delta.delta));
+				static_assert((DeltaTimesTemp * 2) <= tuna::type_trait<uint32>::max, "ridiculous temperature values in table.");
+				if constexpr ((DeltaTimesTemp * 2) <= tuna::type_trait<uint32>::max)
+				{
+					return (a_lambda + b_lambda) / delta.max;
+				}
 			}
 		};
 
 		interpolator interpoland = get_interpoland(le_value, g_value, adc);
 
-		const temp_t g_value_t = pgm_read<temp_t>(temp_table[L].Temperature);
-		const temp_t le_value_t = [&, L]()->temp_t
+		const deltatemp_t g_value_t = pgm_read<deltatemp_t>(temp_table[L].Temperature);
+		const deltatemp_t le_value_t = [&, L]()->deltatemp_t
 		{
 			// Save on a load when we can derive it from something already loaded.
 			if constexpr (IsFixedStepTable_Temperature)
@@ -385,73 +473,45 @@ namespace thermistor
 			}
 			else
 			{
-				return pgm_read<temp_t>(temp_table[L - 1].Temperature);
+				return pgm_read<deltatemp_t>(temp_table[L - 1].Temperature);
 			}
 		}();
 
-		temp_t interpolated = interpolate(le_value_t, g_value_t, interpoland);
-		return interpolated;
+		return interpolate(le_value_t, g_value_t, interpoland);
 	}
 
-	inline uint16_t binsearch_temp_get(uint16_t adc)
+	inline temp_t binsearch_temp_get(uint16_t adc)
 	{
 		static constexpr bool branched_binsearch = false;
 
-		if constexpr (branched_binsearch)
-		{
-			if constexpr (max_adc_uint8 != 0)
-			{
-				if (adc <= max_adc_uint8)
-				{
-					constexpr const bool small_adc = true;
-					if (adc >= min_adc_uint8_temp)
-					{
-						constexpr const bool small_temp = true;
-						return binsearch_temp_get_branched<small_adc, small_temp>(adc);
-					}
-					else
-					{
-						constexpr const bool small_temp = false;
-						return binsearch_temp_get_branched<small_adc, small_temp>(adc);
-					}
-				}
-				else
-				{
-					constexpr const bool small_adc = false;
-					if (adc >= min_adc_uint8_temp)
-					{
-						constexpr const bool small_temp = true;
-						return binsearch_temp_get_branched<small_adc, small_temp>(adc);
-					}
-					else
-					{
-						constexpr const bool small_temp = false;
-						return binsearch_temp_get_branched<small_adc, small_temp>(adc);
-					}
-				}
-			}
-			else
-			{
-				constexpr const bool small_adc = false;
-				if (adc >= min_adc_uint8_temp)
-				{
-					constexpr const bool small_temp = true;
-					return binsearch_temp_get_branched<small_adc, small_temp>(adc);
-				}
-				else
-				{
-					constexpr const bool small_temp = false;
-					return binsearch_temp_get_branched<small_adc, small_temp>(adc);
-				}
-			}
-		}
-		else
+		if constexpr (!branched_binsearch)
 		{
 			return binsearch_temp_get_branched<false, false>(adc);
 		}
+		else
+		{
+			const bool small_adc = (adc <= max_adc_uint8);
+			constexpr const uint8 small_adc_bit = 0b01;
+			const bool small_temp = (adc >= min_adc_uint8_temp);
+			constexpr const uint8 small_temp_bit = 0b10;
+
+			const uint8 bit = (small_adc ? small_adc_bit : 0b00) | (small_temp ? small_temp_bit : 0b00);
+
+			switch (bit)
+			{
+			case 0b00:
+				return binsearch_temp_get_branched<false, false>(adc);
+			case small_adc_bit:
+				return binsearch_temp_get_branched<true, false>(adc);
+			case small_temp_bit:
+				return binsearch_temp_get_branched<false, true>(adc);
+			case small_adc_bit | small_temp_bit:
+				return binsearch_temp_get_branched<true, true>(adc);
+			}
+		}
 	}
 
-	inline uint16_t adc_to_temperature(uint16_t adc)
+	inline temp_t adc_to_temperature(uint16_t adc)
 	{
 		return binsearch_temp_get(adc);
 	}

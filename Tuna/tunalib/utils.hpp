@@ -198,6 +198,8 @@ namespace tuna::utils
 
 		constexpr static bool is_signed = false;
 		constexpr static bool is_unsigned = !is_signed;
+		constexpr static bool is_integral = true;
+		constexpr static bool is_float = false;
 
 		constexpr inline static unsigned_type as_unsigned(type val) { return { val }; }
 		constexpr inline static unsigned_type as_safe_unsigned(type val) { return { val }; }
@@ -227,6 +229,8 @@ namespace tuna::utils
 
 		constexpr static bool is_signed = true;
 		constexpr static bool is_unsigned = !is_signed;
+		constexpr static bool is_integral = true;
+		constexpr static bool is_float = false;
 
 		constexpr inline static unsigned_type as_unsigned(type val) { return val; }
 		constexpr inline static typename type_trait<unsigned_type>::larger_type as_safe_unsigned(type val) { return val; }
@@ -256,6 +260,8 @@ namespace tuna::utils
 
 		constexpr static bool is_signed = false;
 		constexpr static bool is_unsigned = !is_signed;
+		constexpr static bool is_integral = true;
+		constexpr static bool is_float = false;
 
 		constexpr inline static unsigned_type as_unsigned(type val) { return { val }; }
 		constexpr inline static unsigned_type as_safe_unsigned(type val) { return { val }; }
@@ -285,6 +291,8 @@ namespace tuna::utils
 
 		constexpr static bool is_signed = true;
 		constexpr static bool is_unsigned = !is_signed;
+		constexpr static bool is_integral = true;
+		constexpr static bool is_float = false;
 
 		constexpr inline static unsigned_type as_unsigned(type val) { return val; }
 		constexpr inline static typename type_trait<unsigned_type>::larger_type as_safe_unsigned(type val) { return val; }
@@ -314,6 +322,8 @@ namespace tuna::utils
 
 		constexpr static bool is_signed = true;
 		constexpr static bool is_unsigned = !is_signed;
+		constexpr static bool is_integral = true;
+		constexpr static bool is_float = false;
 
 		constexpr inline static unsigned_type as_unsigned(type val) { return val; }
 		constexpr inline static typename type_trait<unsigned_type>::larger_type as_safe_unsigned(type val) { return val; }
@@ -343,6 +353,8 @@ namespace tuna::utils
 
 		constexpr static bool is_signed = false;
 		constexpr static bool is_unsigned = !is_signed;
+		constexpr static bool is_integral = true;
+		constexpr static bool is_float = false;
 
 		constexpr inline static unsigned_type as_unsigned(type val) { return { val }; }
 		constexpr inline static unsigned_type as_safe_unsigned(type val) { return { val }; }
@@ -372,6 +384,8 @@ namespace tuna::utils
 
 		constexpr static bool is_signed = true;
 		constexpr static bool is_unsigned = !is_signed;
+		constexpr static bool is_integral = true;
+		constexpr static bool is_float = false;
 
 		constexpr inline static unsigned_type as_unsigned(type val) { return val; }
 		constexpr inline static typename type_trait<unsigned_type>::larger_type as_safe_unsigned(type val) { return val; }
@@ -401,6 +415,8 @@ namespace tuna::utils
 
 		constexpr static bool is_signed = false;
 		constexpr static bool is_unsigned = !is_signed;
+		constexpr static bool is_integral = true;
+		constexpr static bool is_float = false;
 
 		constexpr inline static unsigned_type as_unsigned(type val) { return { val }; }
 		constexpr inline static unsigned_type as_safe_unsigned(type val) { return { val }; }
@@ -430,6 +446,8 @@ namespace tuna::utils
 
 		constexpr static bool is_signed = true;
 		constexpr static bool is_unsigned = !is_signed;
+		constexpr static bool is_integral = true;
+		constexpr static bool is_float = false;
 
 		constexpr inline static unsigned_type as_unsigned(type val) { return val; }
 		constexpr inline static signed_type as_signed(type val) { return { val }; }
@@ -439,6 +457,63 @@ namespace tuna::utils
 		constexpr static type ones = { 0xFFFFFFFFFFFFFFFF };
 		constexpr static type zeros = { 0x0000000000000000 };
 	};
+
+	template <>
+	struct type_trait<float> final
+	{
+		type_trait() = delete;
+
+		constexpr static const char name[] = "float";
+
+		using type = float;
+		using signed_type = type;
+		using unsigned_type = void;
+		using larger_type = void;
+		using smaller_type = void;
+
+		constexpr static uint8 size = sizeof(type);
+		constexpr static uint8 bits = sizeof(type) * 8;
+
+		constexpr static bool is_signed = true;
+		constexpr static bool is_unsigned = !is_signed;
+		constexpr static bool is_integral = false;
+		constexpr static bool is_float = true;
+
+		constexpr inline static signed_type as_signed(type val) { return { val }; }
+
+		//constexpr static type max = { FLT_MAX };
+		//constexpr static type min = { FLT_MIN };
+	};
+
+	template <uint64 value>
+	class _uint_type final
+	{
+		uint_type() = delete;
+		constexpr static auto typer()
+		{
+			if constexpr (value <= type_trait<uint8>::max)
+			{
+				return uint8{};
+			}
+			else if constexpr (value <= type_trait<uint16>::max)
+			{
+				return uint16{};
+			}
+			else if constexpr (value <= type_trait<uint32>::max)
+			{
+				return uint32{};
+			}
+			else if constexpr (value <= type_trait<uint64>::max)
+			{
+				return uint64{};
+			}
+			else
+				return;
+		}
+	public:
+		using type = decltype(typer());
+	};
+	template <uint64 value> using uint_type = typename _uint_type<value>::type;
 
 	template <typename T, typename R = typename type_trait<typename type_trait<T>::unsigned_type>::smaller_type>
 	constexpr inline R hi(T value)
@@ -555,7 +630,6 @@ namespace tuna::utils
 			SREG = m_sReg;
 		}
 	};
-
 }
 
 namespace tuna

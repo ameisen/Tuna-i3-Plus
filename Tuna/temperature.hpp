@@ -26,11 +26,23 @@
 
 #pragma once
 
-#include "thermistors/thermistortables.h"
-
 #include "MarlinConfig.h"
 
 #include "tuna.h"
+
+using temp_t = tuna::fixed<uint16, 2>;
+constexpr temp_t operator "" _C(long double temperature)
+{
+	return {float(temperature)};
+}
+
+using temp_t = tuna::fixed<uint16, 2>;
+constexpr temp_t operator "" _C(unsigned long long int temperature)
+{
+	return { (typename temp_t::type)(temperature) };
+}
+
+#include "thermistors/thermistortables.h"
 
 // Minimum number of Temperature::ISR loops between sensor readings.
 // Multiplied by 16 (OVERSAMPLENR) to obtain the total time to
@@ -49,12 +61,41 @@ public:
 		Bed = 1
 	};
 
-	static uint16 current_temperature,
+	static constexpr uint8 num_hotends = 1;
+	static constexpr uint8 num_beds = 1;
+
+	static constexpr temp_t min_extrude_temp { (typename temp_t::type)EXTRUDE_MINTEMP };
+
+	template <uint16 Celcius>
+	struct TemperatureValueConverter final
+	{
+		TemperatureValueConverter() = delete;
+		static constexpr const uint_type<Celcius> Temperature = Celcius;
+		static constexpr const uint_type<thermistor::ce_convert_temp_to_adc<Celcius>()> Adc = thermistor::ce_convert_temp_to_adc<Celcius>();
+	};
+
+	class Hotend final
+	{
+		Hotend() = delete;
+	public:
+		using max_temperature = TemperatureValueConverter<HEATER_0_MAXTEMP>;
+		using min_temperature = TemperatureValueConverter<HEATER_0_MINTEMP>;
+	};
+
+	class Bed final
+	{
+		Bed() = delete;
+	public:
+		using max_temperature = TemperatureValueConverter<BED_MAXTEMP>;
+		using min_temperature = TemperatureValueConverter<BED_MINTEMP>;
+	};
+
+	static temp_t current_temperature,
 		current_temperature_bed;
 	static volatile uint16_t current_temperature_raw;
-	static uint16_t target_temperature;
+	static temp_t target_temperature;
 	static volatile uint16_t current_temperature_bed_raw;
-	static uint16_t target_temperature_bed;
+	static temp_t target_temperature_bed;
 
 	static volatile bool in_temp_isr;
 
@@ -79,9 +120,8 @@ public:
 	static millis_t watch_bed_next_ms;
 
 	static bool allow_cold_extrude;
-	static int16_t extrude_min_temp;
 	static bool tooColdToExtrude() {
-		return allow_cold_extrude ? false : degHotend() < extrude_min_temp;
+		return allow_cold_extrude ? false : degHotend() < min_extrude_temp;
 	}
 
 private:
@@ -103,16 +143,6 @@ private:
 	static uint16_t raw_temp_value,
 		raw_temp_bed_value;
 
-	// Init min and max temp with extreme values to prevent false errors during startup
-	static int16_t minttemp_raw,
-		maxttemp_raw,
-		minttemp,
-		maxttemp;
-
-	static int16_t bed_minttemp_raw;
-
-	static int16_t bed_maxttemp_raw;
-
 public:
 	/**
 	 * Instance Methods
@@ -125,8 +155,8 @@ public:
 	/**
 	 * Static (class) methods
 	 */
-	static float analog2temp(uint16 raw);
-	static float analog2tempBed(uint16 raw);
+	static temp_t analog2temp(uint16 raw);
+	static temp_t analog2tempBed(uint16 raw);
 
 	/**
 	 * Called from the Temperature ISR
@@ -147,12 +177,12 @@ public:
 	 //inline so that there is no performance decrease.
 	 //deg=degreeCelsius
 
-	static float degHotend() { return current_temperature; }
-	static float degBed() { return current_temperature_bed; }
+	static temp_t degHotend() { return current_temperature; }
+	static temp_t degBed() { return current_temperature_bed; }
 
-	static int16_t degTargetHotend() { return target_temperature; }
+	static temp_t degTargetHotend() { return target_temperature; }
 
-	static int16_t degTargetBed() { return target_temperature_bed; }
+	static temp_t degTargetBed() { return target_temperature_bed; }
 
 	static void start_watching_heater();
 
@@ -171,14 +201,14 @@ public:
 	}
 
 	static bool isHeatingHotend() {
-		return target_temperature > current_temperature;
+		return current_temperature <= target_temperature;
 	}
-	static bool isHeatingBed() { return target_temperature_bed > current_temperature_bed; }
+	static bool isHeatingBed() { return current_temperature_bed <= target_temperature_bed; }
 
 	static bool isCoolingHotend() {
-		return target_temperature < current_temperature;
+		return current_temperature > target_temperature;
 	}
-	static bool isCoolingBed() { return target_temperature_bed < current_temperature_bed; }
+	static bool isCoolingBed() { return current_temperature_bed > target_temperature_bed; }
 
 	/**
 	 * The software PWM power for a heater

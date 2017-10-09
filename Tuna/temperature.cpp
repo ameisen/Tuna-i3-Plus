@@ -39,12 +39,12 @@ Temperature thermalManager;
 
 // public:
 
-uint16 Temperature::current_temperature = 0,
+temp_t Temperature::current_temperature = 0,
 Temperature::current_temperature_bed = 0;
 volatile uint16_t Temperature::current_temperature_raw = 0_u16;
-uint16_t Temperature::target_temperature = 0_u16;
+temp_t Temperature::target_temperature = 0_u16;
 volatile uint16_t Temperature::current_temperature_bed_raw = 0;
-uint16_t Temperature::target_temperature_bed = 0;
+temp_t Temperature::target_temperature_bed = 0;
 
 float Temperature::Kp = DEFAULT_Kp,
 Temperature::Ki = (DEFAULT_Ki) * (PID_dT),
@@ -57,7 +57,6 @@ uint16_t Temperature::watch_target_bed_temp = 0;
 millis_t Temperature::watch_bed_next_ms = 0;
 
 bool Temperature::allow_cold_extrude = false;
-int16_t Temperature::extrude_min_temp = EXTRUDE_MINTEMP;
 
 // private:
 
@@ -76,15 +75,6 @@ millis_t Temperature::next_bed_check_ms;
 
 uint16_t Temperature::raw_temp_value = 0_u16,
 Temperature::raw_temp_bed_value = 0;
-
-// Init min and max temp with extreme values to prevent false errors during startup
-int16_t Temperature::minttemp_raw = temp_table[temp_table_size - 1].Adc,
-Temperature::maxttemp_raw = temp_table[0].Adc,
-Temperature::minttemp = temp_table[temp_table_size - 1].Temperature,
-Temperature::maxttemp = temp_table[0].Temperature;
-
-int16_t Temperature::bed_minttemp_raw = temp_table[temp_table_size - 1].Adc;
-int16_t Temperature::bed_maxttemp_raw = temp_table[0].Adc;
 
 uint8_t Temperature::soft_pwm_amount,
 Temperature::soft_pwm_amount_bed;
@@ -344,13 +334,13 @@ float Temperature::get_pid_output() {
 #define _HOTEND_TEST     true
 	float pid_output;
 	pid_error = target_temperature - current_temperature;
-	dTerm = K2 * PID_PARAM(Kd) * (current_temperature - temp_dState) + K1 * dTerm;
+	dTerm = K2 * PID_PARAM(Kd) * (float(current_temperature) - temp_dState) + K1 * dTerm;
 	temp_dState = current_temperature;
 	if (pid_error > PID_FUNCTIONAL_RANGE) {
 		pid_output = BANG_MAX;
 		pid_reset = true;
 	}
-	else if (pid_error < -(PID_FUNCTIONAL_RANGE) || target_temperature == 0
+	else if (pid_error < -(PID_FUNCTIONAL_RANGE) || target_temperature == 0_C
 		) {
 		pid_output = 0;
 		pid_reset = true;
@@ -399,7 +389,7 @@ void Temperature::manage_heater() {
 	// Check for thermal runaway
 	thermal_runaway_protection<Manager::Hotend>(&thermal_runaway_state_machine, &thermal_runaway_timer, current_temperature, target_temperature, THERMAL_PROTECTION_PERIOD, THERMAL_PROTECTION_HYSTERESIS);
 
-	soft_pwm_amount = (current_temperature > minttemp || is_preheating()) && current_temperature < maxttemp ? (int)get_pid_output() >> 1 : 0;
+	soft_pwm_amount = (current_temperature > Hotend::min_temperature::Adc || is_preheating()) && current_temperature < Hotend::max_temperature::Adc ? (int)get_pid_output() >> 1 : 0;
 
 	// Make sure temperature is increasing
 	if (watch_heater_next_ms && ELAPSED(ms, watch_heater_next_ms)) { // Time to check this extruder?
@@ -424,7 +414,7 @@ void Temperature::manage_heater() {
 
 	{
 		// Check if temperature is within the correct range
-		if (WITHIN(current_temperature_bed, BED_MINTEMP, BED_MAXTEMP)) {
+		if (WITHIN(current_temperature_bed, temp_t(Bed::min_temperature::Temperature), temp_t(Bed::max_temperature::Temperature))) {
 			soft_pwm_amount_bed = current_temperature_bed < target_temperature_bed ? MAX_BED_POWER >> 1 : 0;
 		}
 		else {
@@ -438,7 +428,7 @@ void Temperature::manage_heater() {
 
 // Derived from RepRap FiveD extruder::getTemperature()
 // For hot end temperature measurement.
-float Temperature::analog2temp(uint16 raw)
+temp_t Temperature::analog2temp(uint16 raw)
 {
 	//if (raw < temp_table[0].Adc)
 	//	return temp_table[0].Temperature;
@@ -476,7 +466,7 @@ float Temperature::analog2temp(uint16 raw)
 
 // Derived from RepRap FiveD extruder::getTemperature()
 // For bed temperature measurement.
-float Temperature::analog2tempBed(uint16 raw)
+temp_t Temperature::analog2tempBed(uint16 raw)
 {
 	//if (raw < temp_table[0].Adc)
 	//	return temp_table[0].Temperature;
@@ -548,24 +538,24 @@ void Temperature::updateTemperaturesFromRawValues() {
 
 		if constexpr (HEATER_0_RAW_LO_TEMP < HEATER_0_RAW_HI_TEMP)
 		{
-			if ((temperature_raw >= maxttemp_raw) & (target_temperature > 0)) { max_temp_error<Manager::Hotend>(); }
-			if ((minttemp_raw >= temperature_raw) & (!is_preheating()) & (target_temperature > 0)) { min_temp_error<Manager::Hotend>(); }
+			if ((temperature_raw >= Hotend::max_temperature::Adc) & (target_temperature > 0_C)) { max_temp_error<Manager::Hotend>(); }
+			if ((Hotend::min_temperature::Adc >= temperature_raw) & (!is_preheating()) & (target_temperature > 0_C)) { min_temp_error<Manager::Hotend>(); }
 		}
 		else
 		{
-			if ((temperature_raw <= maxttemp_raw) & (target_temperature > 0)) { max_temp_error<Manager::Hotend>(); }
-			if ((minttemp_raw <= temperature_raw) & (!is_preheating()) & (target_temperature > 0)) { min_temp_error<Manager::Hotend>(); }
+			if ((temperature_raw <= Hotend::max_temperature::Adc) & (target_temperature > 0_C)) { max_temp_error<Manager::Hotend>(); }
+			if ((Hotend::min_temperature::Adc <= temperature_raw) & (!is_preheating()) & (target_temperature > 0_C)) { min_temp_error<Manager::Hotend>(); }
 		}
 
 		if constexpr (HEATER_BED_RAW_LO_TEMP < HEATER_BED_RAW_HI_TEMP)
 		{
-			if ((temperature_bed_raw >= bed_maxttemp_raw) & (target_temperature_bed > 0)) { max_temp_error<Manager::Bed>(); }
-			if ((bed_minttemp_raw >= temperature_bed_raw) & (target_temperature_bed > 0)) { min_temp_error<Manager::Bed>(); }
+			if ((temperature_bed_raw >= Bed::max_temperature::Adc) & (target_temperature_bed > 0_C)) { max_temp_error<Manager::Bed>(); }
+			if ((Bed::min_temperature::Adc >= temperature_bed_raw) & (target_temperature_bed > 0_C)) { min_temp_error<Manager::Bed>(); }
 		}
 		else
 		{
-			if ((temperature_bed_raw <= bed_maxttemp_raw) & (target_temperature_bed > 0)) { max_temp_error<Manager::Bed>(); }
-			if ((bed_minttemp_raw <= temperature_bed_raw) & (target_temperature_bed > 0)) { min_temp_error<Manager::Bed>(); }
+			if ((temperature_bed_raw <= Bed::max_temperature::Adc) & (target_temperature_bed > 0_C)) { max_temp_error<Manager::Bed>(); }
+			if ((Bed::min_temperature::Adc <= temperature_bed_raw) & (target_temperature_bed > 0_C)) { min_temp_error<Manager::Bed>(); }
 		}
 
 		current_temperature = Temperature::analog2temp(temperature_raw);
@@ -602,47 +592,6 @@ void Temperature::init()
 
 	// Wait for temperature measurement to settle
 	delay(250);
-
-	/*
-	minttemp = HEATER_0_MINTEMP;
-	while (analog2temp(minttemp_raw) < HEATER_0_MINTEMP)
-	{
-		if constexpr (HEATER_0_RAW_LO_TEMP < HEATER_0_RAW_HI_TEMP)
-			minttemp_raw += OVERSAMPLENR;
-		else
-			minttemp_raw -= OVERSAMPLENR;
-	}
-
-	maxttemp = HEATER_0_MAXTEMP;
-	while (analog2temp(maxttemp_raw) > HEATER_0_MAXTEMP)
-	{
-		if constexpr (HEATER_0_RAW_LO_TEMP < HEATER_0_RAW_HI_TEMP)
-			maxttemp_raw += OVERSAMPLENR;
-		else
-			maxttemp_raw -= OVERSAMPLENR;
-	}
-
-	while (analog2tempBed(bed_minttemp_raw) < BED_MINTEMP) {
-		if constexpr (HEATER_BED_RAW_LO_TEMP < HEATER_BED_RAW_HI_TEMP)
-		{
-			bed_minttemp_raw += OVERSAMPLENR;
-		}
-		else
-		{
-			bed_minttemp_raw -= OVERSAMPLENR;
-		}
-	}
-	while (analog2tempBed(bed_maxttemp_raw) > BED_MAXTEMP) {
-		if constexpr (HEATER_BED_RAW_LO_TEMP < HEATER_BED_RAW_HI_TEMP)
-		{
-			bed_maxttemp_raw -= OVERSAMPLENR;
-		}
-		else
-		{
-			bed_maxttemp_raw += OVERSAMPLENR;
-		}
-	}
-	*/
 }
 
 /**

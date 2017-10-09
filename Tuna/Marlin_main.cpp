@@ -1532,7 +1532,7 @@ inline void gcode_M104() {
 			LCD_MESSAGEPGM(WELCOME_MSG);
 		}
 
-		if (parser.value_celsius() > thermalManager.degHotend())
+		if (parser.value_celsius() > float(thermalManager.degHotend()))
 			lcd::statusf(0, PSTR("E%i %s"), target_extruder + 1, MSG_HEATING);
 	}
 
@@ -1690,9 +1690,9 @@ inline void gcode_M109() {
 
 	do {
 		// Target temperature might be changed during the loop
-		if (target_temp != thermalManager.degTargetHotend()) {
+		if (target_temp != float(thermalManager.degTargetHotend())) {
 			wants_to_cool = thermalManager.isCoolingHotend();
-			target_temp = thermalManager.degTargetHotend();
+			target_temp = float(thermalManager.degTargetHotend());
 
 			// Exit if S<lower>, continue if S<higher>, R<lower>, or R<higher>
 			if (no_wait_for_cooling && wants_to_cool) break;
@@ -1780,9 +1780,9 @@ inline void gcode_M190() {
 
 	do {
 		// Target temperature might be changed during the loop
-		if (target_temp != thermalManager.degTargetBed()) {
+		if (target_temp != float(thermalManager.degTargetBed())) {
 			wants_to_cool = thermalManager.isCoolingBed();
-			target_temp = thermalManager.degTargetBed();
+			target_temp = float(thermalManager.degTargetBed());
 
 			// Exit if S<lower>, continue if S<higher>, R<lower>, or R<higher>
 			if (no_wait_for_cooling && wants_to_cool) break;
@@ -2329,17 +2329,17 @@ inline void gcode_M301() {
 inline void gcode_M302() {
 	const bool seen_S = parser.seen('S');
 	if (seen_S) {
-		thermalManager.extrude_min_temp = parser.value_celsius();
-		thermalManager.allow_cold_extrude = (thermalManager.extrude_min_temp == 0);
+		thermalManager.min_extrude_temp = parser.value_celsius();
+		thermalManager.allow_cold_extrude = (thermalManager.min_extrude_temp == 0_C);
 	}
 
 	if (parser.seen('P'))
-		thermalManager.allow_cold_extrude = (thermalManager.extrude_min_temp == 0) || parser.value_bool();
+		thermalManager.allow_cold_extrude = (thermalManager.min_extrude_temp == 0_C) || parser.value_bool();
 	else if (!seen_S) {
 		// Report current state
 		SERIAL_ECHO_START();
 		SERIAL_ECHOPAIR("Cold extrudes are ", (thermalManager.allow_cold_extrude ? "en" : "dis"));
-		SERIAL_ECHOPAIR("abled (min temp ", thermalManager.extrude_min_temp);
+		SERIAL_ECHOPAIR("abled (min temp ", float(thermalManager.min_extrude_temp));
 		SERIAL_ECHOLNPGM("C)");
 	}
 }

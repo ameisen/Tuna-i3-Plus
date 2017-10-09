@@ -168,6 +168,12 @@
     <ClInclude Include="__vm\.Tuna.vsarduino.h">
       <Filter>__vm</Filter>
     </ClInclude>
+    <ClInclude Include="tunalib\fixed.hpp">
+      <Filter>tunalib</Filter>
+    </ClInclude>
+    <ClInclude Include="tunalib\math.hpp">
+      <Filter>tunalib</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tunalib">

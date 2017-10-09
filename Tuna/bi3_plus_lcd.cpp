@@ -66,7 +66,7 @@ namespace tuna::lcd
 			} break;
 			case OpMode::Unload_Filament:
 			{
-				if (Temperature::current_temperature >= (Temperature::target_temperature - 10))
+				if (Temperature::current_temperature >= (Temperature::target_temperature - 10_u16))
 				{
 					enqueue_and_echo_commands_P(PSTR("G1 E-1 F120"));
 				}
@@ -74,7 +74,7 @@ namespace tuna::lcd
 			} break;
 			case OpMode::Load_Filament:
 			{
-				if (Temperature::current_temperature >= (Temperature::target_temperature - 10))
+				if (Temperature::current_temperature >= (Temperature::target_temperature - 10_u16))
 				{
 					enqueue_and_echo_commands_P(PSTR("G1 E1 F120"));
 				}
@@ -94,13 +94,13 @@ namespace tuna::lcd
 
 			nextLcdUpdate = ms + (update_period - min(difference, update_period));
 
-			const auto target_hotend_temperature = Temperature::target_temperature;
+			const auto target_hotend_temperature = uint16(tuna::round(Temperature::target_temperature));
 			// TODO validate that float->uint conversion is correct
-			const auto hotend_temperature = static_cast<int16>(roundf(Temperature::degHotend()));
+			const auto hotend_temperature = uint16(tuna::round(Temperature::degHotend()));
 
-			const auto target_bed_temperature = Temperature::target_temperature_bed;
+			const auto target_bed_temperature = uint16(tuna::round(Temperature::target_temperature_bed));
 			// TODO validate that float->uint conversion is correct
-			const auto bed_temperature = static_cast<int16>(roundf(Temperature::degBed()));
+			const auto bed_temperature = uint16(tuna::round(Temperature::degBed()));
 
 			const auto fan_speed = (fanSpeeds[0] * 100) / 256;
 
@@ -530,8 +530,8 @@ namespace tuna::lcd
 				break;
 			}
 			case 0x47: {//print config open OK
-				const int16 hotend_target = Temperature::degTargetHotend();
-				const int16 bed_target = Temperature::degTargetBed();
+				const uint16 hotend_target = uint16(Temperature::degTargetHotend());
+				const uint16 bed_target = uint16(Temperature::degTargetBed());
 				const int16 fan_speed = (fanSpeeds[0] * 100) / 256;
 
 				const uint8 buffer[14] = {
@@ -744,7 +744,7 @@ namespace tuna::lcd
 				break;
 			}
 			case 0x06: {
-				if (Temperature::degHotend() >= 180.0f) {
+				if (Temperature::degHotend() >= 180_C) {
 					clear_command_queue();
 					enqueue_and_echo_commands_P(PSTR("G91"));
 					enqueue_and_echo_commands_P(PSTR("G1 E1 F120"));
@@ -753,7 +753,7 @@ namespace tuna::lcd
 				break;
 			}
 			case 0x07: {
-				if (Temperature::degHotend() >= 180.0f) {
+				if (Temperature::degHotend() >= 180_C) {
 					clear_command_queue();
 					enqueue_and_echo_commands_P(PSTR("G91"));
 					enqueue_and_echo_commands_P(PSTR("G1 E-1 F120"));
@@ -1037,8 +1037,8 @@ namespace tuna::lcd
 	}
 
 	void update_graph() {
-		const int16 hotend = static_cast<int16>(roundf(Temperature::degHotend()));
-		const int16 bed = static_cast<int16>(roundf(Temperature::degBed()));
+		const uint16 hotend = static_cast<uint16>(tuna::round(Temperature::degHotend()));
+		const uint16 bed = static_cast<uint16>(tuna::round(Temperature::degBed()));
 
 		auto foo = type_trait<int16>::unsigned_type{ 0 };
 
