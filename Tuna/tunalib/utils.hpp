@@ -54,6 +54,18 @@ namespace tuna
 		return value;
 	}
 
+	constexpr uint24 operator"" _u24(unsigned long long int value)
+	{
+		// static_assert(value > uint8(-1), "out of range u8 literal");
+		return value;
+	}
+
+	constexpr int24 operator"" _i24(unsigned long long int value)
+	{
+		// static_assert(value > uint8(-1), "out of range u8 literal");
+		return value;
+	}
+
 	constexpr uint32 operator"" _u32(unsigned long long int value)
 	{
 		// static_assert(value > uint8(-1), "out of range u8 literal");
@@ -112,12 +124,12 @@ namespace tuna::utils
 		__builtin_avr_cli();
 	}
 
-	constexpr inline __attribute__((always_inline)) void _nop()
+	constexpr inline __attribute__((always_inline)) void nop()
 	{
 		__builtin_avr_nop();
 	}
 
-	constexpr inline __attribute__((always_inline)) void _sleep()
+	constexpr inline __attribute__((always_inline)) void sleep()
 	{
 		__builtin_avr_sleep();
 	}
@@ -619,8 +631,8 @@ namespace tuna::utils
 		//constexpr static type min = { FLT_MIN };
 	};
 	// On AVR, float == double == long double, though the compiler doesn't always agree due to strict typing.
-	template <> struct type_trait<double> : type_trait<float> {};
-	template <> struct type_trait<long double> : type_trait<float> {};
+	template <> struct type_trait<double> final : type_trait<float> {};
+	template <> struct type_trait<long double> final : type_trait<float> {};
 
 	template <typename T, typename R = typename type_trait<typename type_trait<T>::unsigned_type>::smaller_type>
 	constexpr inline R hi(T value)
