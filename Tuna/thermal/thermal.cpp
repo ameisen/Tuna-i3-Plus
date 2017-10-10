@@ -267,7 +267,7 @@ void Temperature::PID_autotune(temp_t temp, int ncycles, bool set_result/*=false
 			if (set_result) {
 				_SET_EXTRUDER_PID();
 			}
-			lcd::show_page(66);
+			lcd::show_page(lcd::Page::PID_Finished);
 			enqueue_and_echo_command("M106 S0");
 			settings.save();
 			in_autotune = false;
@@ -307,7 +307,7 @@ template int Temperature::getHeaterPower<Temperature::Manager::Bed>();
 template <Temperature::Manager manager_type>
 void Temperature::_temp_error(const char * const serial_msg, const char * const lcd_msg) {
 	static bool killed = false;
-	lcd::show_page(68);
+	lcd::show_page(lcd::Page::Thermal_Runaway);
 	if (IsRunning()) {
 		SERIAL_ERROR_START();
 		serialprintPGM(serial_msg);

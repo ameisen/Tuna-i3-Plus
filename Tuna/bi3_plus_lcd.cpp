@@ -38,8 +38,8 @@ namespace tuna::lcd
 		uint16 fileIndex = 0;
 		OpMode opMode = OpMode::None;
 		uint8 tempGraphUpdate = 0;
-		uint8 currentPage = 11; // main menu
-		uint8 lastPage = 11; // main menu
+		Page currentPage = Page::Main_Menu;
+		Page lastPage = Page::Main_Menu; // main menu
 
 		constexpr const millis24_t update_period = { 100 }; // originally 500
 
@@ -62,7 +62,7 @@ namespace tuna::lcd
 				if (axis_homed[X_AXIS] & axis_homed[Y_AXIS] & axis_homed[Z_AXIS]) //stuck if levelling problem?
 				{
 					opMode = OpMode::None;
-					show_page(56);//level 2 menu
+					show_page(Page::Level2);//level 2 menu
 				}
 				else
 				{
@@ -149,37 +149,9 @@ namespace tuna::lcd
 		}
 
 		//show page OK
-		uint8 get_current_page()
+		Page get_current_page()
 		{
 			return currentPage;
-#if 0
-
-			{
-				constexpr const uint8 buffer[6] = {
-					0x5A,//frame header
-					0xA5,
-
-					0x03,//data length
-
-					0x81,//command - write read to register
-					0x03,//register 0x03
-
-					0x02,//2bytes
-				};
-
-				serial<2>::write(buffer);
-			}
-
-			uint8 buffer[8];
-			const uint8 bytesRead = serial<2>::read_bytes(buffer);
-
-			if ((bytesRead == 8) & (buffer[0] == 0x5A) & (buffer[1] == 0xA5))
-			{
-				return buffer[7];
-			}
-
-			return 0;
-#endif
 		}
 
 		//receive data from lcd OK
@@ -224,7 +196,7 @@ namespace tuna::lcd
 			case 0x32: {//SD list navigation up/down OK
 				if (card.sdprinting)
 				{
-					show_page(33); //show print menu
+					show_page(Page::Print); //show print menu
 				}
 				else
 				{
@@ -281,7 +253,7 @@ namespace tuna::lcd
 							serial<2>::write(card.longFilename, 26); // TODO why 26? No '\0'?
 						}
 
-						show_page(31); //show sd card menu
+						show_page(Page::SD_Card); //show sd card menu
 					}
 				}
 				break;
@@ -309,7 +281,7 @@ namespace tuna::lcd
 
 						tempGraphUpdate = 2;
 
-						show_page(33);//print menu
+						show_page(Page::Print);//print menu
 					}
 				}
 				break;
@@ -327,7 +299,7 @@ namespace tuna::lcd
 				}
 #endif
 				tempGraphUpdate = 0;
-				show_page(11); //main menu
+				show_page(Page::Main_Menu); //main menu
 				break;
 			}
 			case 0x36: {//print pause OK
@@ -386,7 +358,7 @@ namespace tuna::lcd
 
 					serial<2>::write(buffer);
 
-					show_page(39);//open preheat screen
+					show_page(Page::Preheat);//open preheat screen
 									//Serial.println(thermalManager.target_temperature[0]);
 				}
 				else {
@@ -489,7 +461,7 @@ namespace tuna::lcd
 
 				serial<2>::write(buffer);
 
-				show_page(lcdData ? 45 : 47); //show pid screen or motor screen
+				show_page(lcdData ? Page::PID : Page::Motor); //show pid screen or motor screen
 				break;
 			}
 			case 0x3F: {//save pid/motor config OK
@@ -526,7 +498,7 @@ namespace tuna::lcd
 				PID_PARAM(Kd) = scalePID_d(float{ ((uint16)buffer[19] * 256 + buffer[20]) } * 0.1f);
 
 				enqueue_and_echo_commands_P(PSTR("M500"));
-				show_page(43);//show system menu
+				show_page(Page::System_Menu);//show system menu
 				break;
 			}
 			case 0x42: {//factory reset OK
@@ -558,7 +530,7 @@ namespace tuna::lcd
 
 				serial<2>::write(buffer);
 
-				show_page(35);//print config
+				show_page(Page::Print_Config);//print config
 				break;
 			}
 			case 0x40: {//print config save OK
@@ -586,7 +558,7 @@ namespace tuna::lcd
 
 				Temperature::setTargetBed(buffer[12]);
 				fanSpeeds[0] = (uint16)buffer[14] * 256 / 100;
-				show_page(33);// show print menu
+				show_page(Page::Print);// show print menu
 				break;
 			}
 			case 0x4A: {//load/unload filament back OK
@@ -594,14 +566,14 @@ namespace tuna::lcd
 				clear_command_queue();
 				enqueue_and_echo_commands_P(PSTR("G90")); // absolute mode
 				Temperature::setTargetHotend(0);
-				show_page(49);//filament menu
+				show_page(Page::Filament);//filament menu
 				break;
 			}
 			case 0x4C: {//level menu OK
 				switch (lcdData)
 				{
 				case 0: {
-					show_page(55); //level 1
+					show_page(Page::Level1); //level 1
 					axis_homed[X_AXIS] = axis_homed[Y_AXIS] = axis_homed[Z_AXIS] = false;
 					enqueue_and_echo_commands_P(PSTR("G90")); //absolute mode
 					enqueue_and_echo_commands_P((PSTR("G28")));//homeing
@@ -635,7 +607,7 @@ namespace tuna::lcd
 				} break;
 				case 6: { //back
 					enqueue_and_echo_commands_P((PSTR("G1 Z30 F2000")));
-					show_page(37); //tool menu
+					show_page(Page::Tool_Menu); //tool menu
 				} break;
 				}
 				break;
@@ -658,7 +630,7 @@ namespace tuna::lcd
 					};
 					serial<2>::write(buffer);
 
-					show_page(49);//open load/unload_menu
+					show_page(Page::Filament);//open load/unload_menu
 				} break;
 				case 1:
 				case 2: {
@@ -791,7 +763,7 @@ namespace tuna::lcd
 						 //sending stats to lcd
 				write_statistics();
 
-				show_page(59);//open stats screen on lcd
+				show_page(Page::Statistics);//open stats screen on lcd
 				break;
 			}
 			case 0x5C: { //auto pid menu
@@ -810,7 +782,7 @@ namespace tuna::lcd
 					};
 					serial<2>::write(buffer);
 
-					show_page(61);//open auto pid screen
+					show_page(Page::Auto_PID);//open auto pid screen
 				}
 				else if (lcdData == 1) { //auto pid start button pressed (1=hotend,2=bed)
 										 //read bed/hotend temp
@@ -847,13 +819,13 @@ namespace tuna::lcd
 				if (lcdData == 1) // back
 				{
 					tempGraphUpdate = 0;
-					Serial.println(lastPage);
+					Serial.println(uint8(lastPage));
 					show_page(lastPage);
 				}
 				else // open temp screen
 				{
 					tempGraphUpdate = 2;
-					show_page(63);
+					show_page(Page::Temperature_Graph);
 				}
 			} break;
 			case 0x55: { //enter print menu without selecting file
@@ -872,7 +844,7 @@ namespace tuna::lcd
 					constexpr const char str_buffer[26] = "No SD print";
 					serial<2>::write(str_buffer);
 				}
-				show_page(33);//print menu
+				show_page(Page::Print);//print menu
 			} break;
 					   /*case 0xFF: {
 					   show_page(58); //enable lcd bridge mode
@@ -1001,7 +973,7 @@ namespace tuna::lcd
 		serial<2>::begin<115'200_u32>();
 
 		lcdSendMarlinVersion();
-		show_page(0x01);
+		show_page(Page::Boot_Animation);
 	}
 
 	//lcd status update OK
@@ -1015,17 +987,17 @@ namespace tuna::lcd
 	}
 
 	//show page OK
-	constexpr void show_page(uint8 pageNumber)
+	constexpr void show_page(Page pageNumber)
 	{
-		if (pageNumber >= 11) //main menu
+		if (pageNumber >= Page::Main_Menu) //main menu
 		{
 			lastPage = currentPage;
 			currentPage = pageNumber;
 		}
 		else
 		{
-			lastPage = 11;
-			currentPage = 11;
+			lastPage = Page::Main_Menu;
+			currentPage = Page::Main_Menu;
 		}
 
 		const uint8 buffer[7] = {
@@ -1035,7 +1007,7 @@ namespace tuna::lcd
 			0x80,//command - write data to register
 			0x03,
 			0x00,
-			pageNumber
+			uint8(pageNumber)
 		};
 
 		serial<2>::write(buffer);
