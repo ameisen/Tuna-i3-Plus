@@ -739,19 +739,21 @@ namespace tuna::utils
 	};
 
 	template <uint64 v, bool _canary = false, uint8 r = 0, bool pow2 = true>
-	constexpr uint8 ce_log2()
+	constexpr uint8 _ce_log2()
 	{
 		static_assert(!_canary, "Please do not use parameters past the first in ce_log2. The rest are used internally.");
 		if constexpr (v != 0)
 		{
 			constexpr uint64 new_v = v >> 1;
-			return ce_log2<new_v, _canary, r + 1, (new_v != 0 && (v & 1) != 0) ? false : pow2>();
+			return _ce_log2<new_v, _canary, r + 1, (new_v != 0 && (v & 1) != 0) ? false : pow2>();
 		}
 		else
 		{
 			return r - (pow2 ? 1 : 0);
 		}
 	}
+
+	template <uint64 v> constexpr uint8 ce_log2 = _ce_log2<v>();
 
 	template <uint64 value>
 	class _uintsz final : ce_only
@@ -808,6 +810,35 @@ namespace tuna::utils
 
 	extern uint24 millis24();
 	extern uint16 millis16();
+
+	// WIP
+#if 0
+	template <typename T>
+	alignas(T) class __flash final
+	{
+		T PROGMEM m_Data;
+	public:
+		constexpr __flash() = default;
+		constexpr __flash(const __flash &data) : m_Data(data.m_Data) {}
+		constexpr __flash(const T &data) : m_Data(data) {}
+
+		constexpr operator T () const
+		{
+			if constexpr (sizeof(T) == 1)
+			{
+				return (T &)pgm_read_byte((uint16)&m_Data);
+			}
+			else if constexpr (sizeof(T) == 2)
+			{
+				return (T &)pgm_read_word((uint16)&m_Data);
+			}
+			else if constexpr (sizeof(T) == 3)
+			{
+				return pgm_read_word((uint16)&m_Data);
+			}
+		}
+	};
+#endif
 }
 
 namespace tuna

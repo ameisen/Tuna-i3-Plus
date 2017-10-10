@@ -109,7 +109,7 @@ namespace Thermistor
 	constexpr uint8_t temp_table_size = sizeof(temp_table) / sizeof(temp_table[0]);
 
 	constexpr const bool IsFixedStepTable_Temperature = true;
-	constexpr const uint8_t FixedStepTable_Temperature = 5 << temp_t::fractional_bits;
+	constexpr const uintsz<5 << temp_t::fractional_bits> FixedStepTable_Temperature = 5 << temp_t::fractional_bits;
 	constexpr const bool IsFixedStepTable_ADC = false;
 
 	template <uint8_t i = 0, uint8_t end = temp_table_size - 1>
@@ -164,16 +164,16 @@ namespace Thermistor
 		}
 	}
 
-	constexpr const uint16 max_adc = get_max_adc<>();
-	constexpr const uint16 min_adc = get_min_adc<>();
+	constexpr const uintsz<get_max_adc<>()> max_adc = get_max_adc<>();
+	constexpr const uintsz<get_min_adc<>()> min_adc = get_min_adc<>();
 	constexpr const temp_t max_temperature{ temp_t::from(get_max_temperature<>()) };
 	constexpr const temp_t min_temperature{ temp_t::from(get_min_temperature<>()) };
-	constexpr const uint16 max_temperature_integer{ get_max_temperature<>() >> temp_t::fractional_bits };
-	constexpr const uint16 min_temperature_integer{ get_min_temperature<>() >> temp_t::fractional_bits };
+	constexpr const uintsz<(get_max_temperature<>() >> temp_t::fractional_bits)> max_temperature_integer{ get_max_temperature<>() >> temp_t::fractional_bits };
+	constexpr const uintsz<(get_min_temperature<>() >> temp_t::fractional_bits)> min_temperature_integer{ get_min_temperature<>() >> temp_t::fractional_bits };
 
 	constexpr inline uint16 clamp_adc(uint16 adc)
 	{
-		return clamp(adc, min_adc, max_adc);
+		return clamp(adc, uint16(min_adc), max_adc);
 	}
 
 	static_assert(Thermistor::max_temperature_integer >= Thermal::max_temperature, "the system max temperature must be representable in the temperature table.");
@@ -202,7 +202,7 @@ namespace Thermistor
 		}
 	}
 
-	constexpr uint16_t max_adc_delta = get_max_adc_delta();
+	constexpr uintsz<get_max_adc_delta()> max_adc_delta = get_max_adc_delta();
 
 	template <uint8_t i = 0>
 	constexpr uint16_t get_max_adc_uint8_temp(uint16_t max_adc = 0)
@@ -231,8 +231,8 @@ namespace Thermistor
 		}
 	}
 
-	constexpr uint16_t max_adc_uint8_temp = get_max_adc_uint8_temp();
-	constexpr uint16_t max_adc_uint8_temp_idx = get_max_adc_uint8_temp_idx();
+	constexpr uintsz<get_max_adc_uint8_temp()> max_adc_uint8_temp = get_max_adc_uint8_temp();
+	constexpr uintsz<get_max_adc_uint8_temp_idx()> max_adc_uint8_temp_idx = get_max_adc_uint8_temp_idx();
 
 	template <uint8_t i = 0>
 	constexpr uint16_t get_min_adc_uint8_temp(uint16_t min_adc = 0xFFFF)
@@ -261,8 +261,8 @@ namespace Thermistor
 		}
 	}
 
-	constexpr uint16_t min_adc_uint8_temp = get_min_adc_uint8_temp();
-	constexpr uint16_t min_adc_uint8_temp_idx = get_min_adc_uint8_temp_idx();
+	constexpr uintsz<get_min_adc_uint8_temp()> min_adc_uint8_temp = get_min_adc_uint8_temp();
+	constexpr uintsz<get_min_adc_uint8_temp_idx()> min_adc_uint8_temp_idx = get_min_adc_uint8_temp_idx();
 
 	template <uint8_t i = 0>
 	constexpr uint16_t get_max_adc_uint8(uint8_t adc = 0)
@@ -291,25 +291,10 @@ namespace Thermistor
 		}
 	}
 
-	constexpr uint16_t max_adc_uint8 = get_max_adc_uint8();
-	constexpr uint16_t max_adc_uint8_idx = get_max_adc_uint8_idx();
+	constexpr uintsz<get_max_adc_uint8()> max_adc_uint8 = get_max_adc_uint8();
+	constexpr uintsz<get_max_adc_uint8_idx()> max_adc_uint8_idx = get_max_adc_uint8_idx();
 
-	template <bool bits8>
-	struct delta_type;
-
-	template <>
-	struct delta_type<true> final
-	{
-		using type = uint8_t;
-	};
-
-	template <>
-	struct delta_type<false> final
-	{
-		using type = uint16_t;
-	};
-
-	using delta_t = delta_type<max_adc_delta <= 0xFF>::type;
+	using delta_t = uintsz<max_adc_delta>;
 
 	constexpr uint8 low_temp_idx = temp_table_size - 1;
 	constexpr uint8 hi_temp_idx = 0;
@@ -343,7 +328,7 @@ namespace Thermistor
 	}
 
 	template <uint16 temperature, bool first = true, uint8 cur_idx = 0, uint8 best_le = low_temp_idx>
-	constexpr uint16_t ce_convert_temp_to_adc()
+	constexpr uintsz<temperature> ce_convert_temp_to_adc()
 	{
 		static_assert(temperature <= max_temperature_integer && temperature >= min_temperature_integer, "temperature is out of range.");
 
@@ -409,15 +394,15 @@ namespace Thermistor
 	}
 
 	template <bool small_adc, bool small_temp>
-	inline temp_t binsearch_temp_get_branched(typename delta_type<small_adc>::type adc)
+	inline temp_t binsearch_temp_get_branched(uintsz<small_adc ? 0xFF : 0xFFFF> adc)
 	{
 		constexpr const uint8_t max_idx = small_adc ? max_adc_uint8_idx : (temp_table_size - 1);
 		constexpr const uint8_t min_idx = small_temp ? min_adc_uint8_temp_idx : 0;
-		constexpr const uint16_t max_adc_delta_local = get_max_adc_delta<min_idx ? min_idx - 1 : 0, max_idx>();
+		constexpr const uintsz<get_max_adc_delta<min_idx ? min_idx - 1 : 0, max_idx>()> max_adc_delta_local = get_max_adc_delta<min_idx ? min_idx - 1 : 0, max_idx>();
 		static_assert(uint16_t(max_idx * 2) <= 0xFF, "otherwise halving won't work, and I don't want to add extra code for it.");
 
-		using adc_t = typename delta_type<small_adc>::type;
-		using deltatemp_t = typename delta_type<small_temp>::type;
+		using adc_t = uintsz<small_adc ? 0xFF : 0xFFFF>;
+		using deltatemp_t = uintsz<small_temp ? 0xFF : 0xFFFF>;
 
 		uint8_t L = min_idx;
 		uint8_t R = max_idx;
@@ -464,8 +449,8 @@ namespace Thermistor
 			// 16 bits is a safe interpolation size.
 			// (A*(255-x)+B*x)/255 orig
 
-			constexpr const uint16_t MaxTemp = temp_table[0].Temperature;
-			constexpr const uint64_t DeltaTimesTemp = uint64(max_adc_delta_local) * MaxTemp;
+			constexpr const uintsz<Thermistor::max_temperature.raw()> MaxTemp = Thermistor::max_temperature.raw();
+			constexpr const uintsz<uint64(max_adc_delta_local) * MaxTemp> DeltaTimesTemp = uint64(max_adc_delta_local) * MaxTemp;
 
 			static_assert(DeltaTimesTemp <= tuna::type_trait<uint32>::max, "ridiculous temperature values in table.");
 			if constexpr (DeltaTimesTemp <= tuna::type_trait<uint8>::max)

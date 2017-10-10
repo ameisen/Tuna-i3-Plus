@@ -99,13 +99,13 @@ namespace tuna::lcd
 
 			nextLcdUpdate = ms + (update_period - min(difference, update_period));
 
-			const auto target_hotend_temperature = uint16(tuna::round(Temperature::target_temperature));
+			const auto target_hotend_temperature = Temperature::target_temperature.rounded_to<uint16>();
 			// TODO validate that float->uint conversion is correct
-			const auto hotend_temperature = uint16(tuna::round(Temperature::degHotend()));
+			const auto hotend_temperature = Temperature::degHotend().rounded_to<uint16>();
 
-			const auto target_bed_temperature = uint16(tuna::round(Temperature::target_temperature_bed));
+			const auto target_bed_temperature = Temperature::target_temperature_bed.rounded_to<uint16>();
 			// TODO validate that float->uint conversion is correct
-			const auto bed_temperature = uint16(tuna::round(Temperature::degBed()));
+			const auto bed_temperature = Temperature::degBed().rounded_to<uint16>();
 
 			const auto fan_speed = (fanSpeeds[0] * 100) / 256;
 
@@ -1014,8 +1014,8 @@ namespace tuna::lcd
 	}
 
 	void update_graph() {
-		const uint16 hotend = static_cast<uint16>(tuna::round(Temperature::degHotend()));
-		const uint16 bed = static_cast<uint16>(tuna::round(Temperature::degBed()));
+		const uint16 hotend = Temperature::degHotend().rounded_to<uint16>();
+		const uint16 bed = Temperature::degBed().rounded_to<uint16>();
 
 		auto foo = type_trait<int16>::unsigned_type{ 0 };
 

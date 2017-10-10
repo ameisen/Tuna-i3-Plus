@@ -87,20 +87,9 @@ namespace tuna
 			return { val, true };
 		}
 
-		// ::raw returns a structure as otherwise it's really painful to constexpr this.
-		struct raw_t final
+		constexpr type raw() const
 		{
-			uint16_t value;
-		};
-		constexpr raw_t raw() const
-		{
-
-			return { m_Value };
-		}
-
-		constexpr operator raw_t () const
-		{
-			return raw();
+			return m_Value;
 		}
 
 		constexpr fixed() = default;
@@ -391,6 +380,14 @@ namespace tuna
 			constexpr const uint8 half = 1_u8 << (fractional_bits - 1);
 			return from((m_Value + half) & ~fractional_mask);
 		}
+
+		template <typename U>
+		constexpr U rounded_to() const
+		{
+			constexpr const T fractional_mask = (T{ 1 } << fractional_bits) - 1;
+			constexpr const uint8 half = 1_u8 << (fractional_bits - 1);
+			return { (m_Value + half) >> fractional_bits };
+		}
 	};
 
 	template <uint64 value, typename T, uint8 minimum_frac = 1>
@@ -416,7 +413,7 @@ namespace tuna
 		static constexpr const uint8 bits_T = type_trait<TP>::bits;
 		static constexpr const uint64 max_sz = type_trait<TP>::max >> 1; // fixed requires at least 1 bit of fractional precision
 		static_assert(value <= max_sz, "Cannot fit the given value into a fixed-point type with the provided underlying type");
-		static constexpr const uint8 integer_bits = ce_log2<value>();
+		static constexpr const uint8 integer_bits = ce_log2<value>;
 		static constexpr const uint8 fractional_bits = bits_T - integer_bits;
 		static_assert(fractional_bits >= minimum_frac, "Cannot fit the requested value into a fixed-precision type with the provided underlying type and requested minimum fractional bits");
 
