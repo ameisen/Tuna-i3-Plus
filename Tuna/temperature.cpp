@@ -35,25 +35,30 @@
 
 #define K2 (1.0-K1)
 
+namespace
+{
+	volatile bool in_autotune = false;
+}
+
 Temperature thermalManager;
 
 // public:
 
-temp_t Temperature::current_temperature = 0,
+temp_t Temperature::current_temperature = 0_C,
 Temperature::current_temperature_bed = 0;
 volatile uint16_t Temperature::current_temperature_raw = 0_u16;
-temp_t Temperature::target_temperature = 0_u16;
+temp_t Temperature::target_temperature = 0_C;
 volatile uint16_t Temperature::current_temperature_bed_raw = 0;
-temp_t Temperature::target_temperature_bed = 0;
+temp_t Temperature::target_temperature_bed = 0_C;
 
 float Temperature::Kp = DEFAULT_Kp,
 Temperature::Ki = (DEFAULT_Ki) * (PID_dT),
 Temperature::Kd = (DEFAULT_Kd) / (PID_dT);
 
-uint16_t Temperature::watch_target_temp = 0_u16;
+temp_t Temperature::watch_target_temp = 0_C;
 millis_t Temperature::watch_heater_next_ms = 0_u16;
 
-uint16_t Temperature::watch_target_bed_temp = 0;
+temp_t Temperature::watch_target_bed_temp = 0_C;
 millis_t Temperature::watch_bed_next_ms = 0;
 
 bool Temperature::allow_cold_extrude = false;
@@ -127,8 +132,8 @@ namespace Thermal
 	}
 }
 
-void Temperature::PID_autotune(float temp, int ncycles, bool set_result/*=false*/) {
-	float input = 0.0;
+void Temperature::PID_autotune(temp_t temp, int ncycles, bool set_result/*=false*/) {
+	temp_t input = 0.0;
 	int cycles = 0;
 	bool heating = true;
 
@@ -140,6 +145,8 @@ void Temperature::PID_autotune(float temp, int ncycles, bool set_result/*=false*
 	float workKp = 0, workKi = 0, workKd = 0;
 	float max = 0, min = 10000;
 
+	in_autotune = true;
+
 	SERIAL_ECHOLN(MSG_PID_AUTOTUNE_START);
 
 	disable_all_heaters(); // switch off all heaters.
@@ -148,18 +155,19 @@ void Temperature::PID_autotune(float temp, int ncycles, bool set_result/*=false*
 
 	wait_for_heatup = true;
 
+	setTargetHotend(temp);
+
 	// PID Tuning loop
 	while (wait_for_heatup) {
 
 		millis_t ms = millis();
 
-		if (temp_meas_ready) { // temp sample ready
-			updateTemperaturesFromRawValues();
+		if (updateTemperaturesFromRawValues()) { // temp sample ready
 
 			input = current_temperature;
 
-			NOLESS(max, input);
-			NOMORE(min, input);
+			NOLESS(max, (float)input);
+			NOMORE(min, (float)input);
 
 			if (heating && input > temp) {
 				if (ELAPSED(ms, t2 + 5000UL)) {
@@ -225,6 +233,7 @@ void Temperature::PID_autotune(float temp, int ncycles, bool set_result/*=false*
 #define MAX_OVERSHOOT_PID_AUTOTUNE 20
 		if (input > temp + MAX_OVERSHOOT_PID_AUTOTUNE) {
 			SERIAL_PROTOCOLLNPGM(MSG_PID_TEMP_TOO_HIGH);
+			in_autotune = false;
 			return;
 		}
 		// Every 2 seconds...
@@ -238,6 +247,7 @@ void Temperature::PID_autotune(float temp, int ncycles, bool set_result/*=false*
 		// Over 2 minutes?
 		if (((ms - t1) + (ms - t2)) > (10L * 60L * 1000L * 2L)) {
 			SERIAL_PROTOCOLLNPGM(MSG_PID_TIMEOUT);
+			in_autotune = false;
 			return;
 		}
 		if (cycles > ncycles) {
@@ -260,11 +270,13 @@ void Temperature::PID_autotune(float temp, int ncycles, bool set_result/*=false*
 			lcd::show_page(66);
 			enqueue_and_echo_command("M106 S0");
 			settings.save();
+			in_autotune = false;
 			return;
 		}
 		lcd::update();
 	}
 	if (!wait_for_heatup) disable_all_heaters();
+	in_autotune = false;
 }
 
 /**
@@ -313,7 +325,7 @@ void Temperature::_temp_error(const char * const serial_msg, const char * const 
 	if (!killed) {
 		Running = false;
 		killed = true;
-		kill(lcd_msg);
+		kill("ohno i broke");
 	}
 	else
 		disable_all_heaters(); // paranoia
@@ -380,16 +392,18 @@ float Temperature::get_pid_output() {
  */
 void Temperature::manage_heater() {
 
-	if (!temp_meas_ready) return;
-
-	updateTemperaturesFromRawValues(); // also resets the watchdog
+	if (!updateTemperaturesFromRawValues()) return;
 
 	millis_t ms = millis();
 
 	// Check for thermal runaway
 	thermal_runaway_protection<Manager::Hotend>(&thermal_runaway_state_machine, &thermal_runaway_timer, current_temperature, target_temperature, THERMAL_PROTECTION_PERIOD, THERMAL_PROTECTION_HYSTERESIS);
 
-	soft_pwm_amount = (current_temperature > Hotend::min_temperature::Adc || is_preheating()) && current_temperature < Hotend::max_temperature::Adc ? (int)get_pid_output() >> 1 : 0;
+	// Failsafe to make sure fubar'd PID settings don't force the heater always on.
+	if (target_temperature == 0_C)
+		soft_pwm_amount = 0;
+	else
+		soft_pwm_amount = (current_temperature > temp_t(Hotend::min_temperature::Temperature) || is_preheating()) && current_temperature < temp_t(Hotend::max_temperature::Temperature) ? (int)get_pid_output() >> 1 : 0;
 
 	// Make sure temperature is increasing
 	if (watch_heater_next_ms && ELAPSED(ms, watch_heater_next_ms)) { // Time to check this extruder?
@@ -434,7 +448,7 @@ temp_t Temperature::analog2temp(uint16 raw)
 	//	return temp_table[0].Temperature;
 
 #if 1
-	return thermistor::adc_to_temperature(raw);
+	return Thermistor::adc_to_temperature(raw);
 	//return get_temperaturef(raw);
 
 #elif 1
@@ -472,7 +486,7 @@ temp_t Temperature::analog2tempBed(uint16 raw)
 	//	return temp_table[0].Temperature;
 
 #if 1
-	return thermistor::adc_to_temperature(raw);
+	return Thermistor::adc_to_temperature(raw);
 	//return get_temperaturef(raw);
 
 #elif 1
@@ -516,7 +530,7 @@ public:
  * and this function is called from normal context
  * as it would block the stepper routine.
  */
-void Temperature::updateTemperaturesFromRawValues() {
+bool Temperature::updateTemperaturesFromRawValues() {
 
 	if (temp_meas_ready) // TODO replace with CAS.
 	{
@@ -529,12 +543,9 @@ void Temperature::updateTemperaturesFromRawValues() {
 			temp_meas_ready = false;
 		}
 
-		constexpr const uint16 minADC = (temp_table[0].Adc < temp_table[temp_table_size - 1].Adc) ? temp_table[0].Adc : temp_table[temp_table_size - 1].Adc;
-		constexpr const uint16 maxADC = (temp_table[0].Adc > temp_table[temp_table_size - 1].Adc) ? temp_table[0].Adc : temp_table[temp_table_size - 1].Adc;
-
 		// reading from constexpr here.
-		temperature_raw = clamp(temperature_raw, minADC, maxADC);
-		temperature_bed_raw = clamp(temperature_bed_raw, minADC, maxADC);
+		temperature_raw = Thermistor::clamp_adc(temperature_raw);
+		temperature_bed_raw = Thermistor::clamp_adc(temperature_bed_raw);
 
 		if constexpr (HEATER_0_RAW_LO_TEMP < HEATER_0_RAW_HI_TEMP)
 		{
@@ -560,10 +571,12 @@ void Temperature::updateTemperaturesFromRawValues() {
 
 		current_temperature = Temperature::analog2temp(temperature_raw);
 		current_temperature_bed = Temperature::analog2tempBed(temperature_bed_raw);
-	}
 
-	// Reset the watchdog after we know we have a temperature measurement.
-	tuna::wdr();
+		// Reset the watchdog after we know we have a temperature measurement.
+		tuna::wdr();
+		return true;
+	}
+	return false;
 }
 
 /**
@@ -600,8 +613,8 @@ void Temperature::init()
  * This is called when the temperature is set. (M104, M109)
  */
 void Temperature::start_watching_heater() {
-	if (degHotend() < degTargetHotend() - (WATCH_TEMP_INCREASE + TEMP_HYSTERESIS + 1)) {
-		watch_target_temp = degHotend() + WATCH_TEMP_INCREASE;
+	if (degHotend() < degTargetHotend() - uint8(WATCH_TEMP_INCREASE + TEMP_HYSTERESIS + 1)) {
+		watch_target_temp = degHotend() + uint8(WATCH_TEMP_INCREASE);
 		watch_heater_next_ms = millis() + (WATCH_TEMP_PERIOD) * 1000UL;
 	}
 	else
@@ -614,9 +627,9 @@ void Temperature::start_watching_heater() {
  * This is called when the temperature is set. (M140, M190)
  */
 void Temperature::start_watching_bed() {
-	if (degBed() < degTargetBed() - (WATCH_BED_TEMP_INCREASE + TEMP_BED_HYSTERESIS + 1)) {
-		watch_target_bed_temp = degBed() + WATCH_BED_TEMP_INCREASE;
-		watch_bed_next_ms = millis() + (WATCH_BED_TEMP_PERIOD) * 1000UL;
+	if (degBed() < degTargetBed() - uint8(WATCH_BED_TEMP_INCREASE + TEMP_BED_HYSTERESIS + 1)) {
+		watch_target_bed_temp = degBed() + uint8(WATCH_BED_TEMP_INCREASE);
+		watch_bed_next_ms = millis() + uint8(WATCH_BED_TEMP_PERIOD) * 1000UL;
 	}
 	else
 		watch_bed_next_ms = 0;
@@ -628,10 +641,10 @@ millis_t Temperature::thermal_runaway_timer = 0;
 Temperature::TRState Temperature::thermal_runaway_bed_state_machine = TRInactive;
 millis_t Temperature::thermal_runaway_bed_timer;
 
-template <Temperature::Manager manager_type> static float tr_target_temperature = 0.0f;
+template <Temperature::Manager manager_type> static temp_t tr_target_temperature = 0_C;
 
 template <Temperature::Manager manager_type>
-void Temperature::thermal_runaway_protection(Temperature::TRState* state, millis_t* timer, float current, float target, int period_seconds, int hysteresis_degc) {
+void Temperature::thermal_runaway_protection(Temperature::TRState* state, millis_t* timer, temp_t current, temp_t target, int period_seconds, int hysteresis_degc) {
 	/**
 		SERIAL_ECHO_START();
 		SERIAL_ECHOPGM("Thermal Thermal Runaway Running. Heater ID: ");
@@ -673,8 +686,8 @@ void Temperature::thermal_runaway_protection(Temperature::TRState* state, millis
 	}
 }
 
-template void Temperature::thermal_runaway_protection<Temperature::Manager::Hotend>(Temperature::TRState* state, millis_t* timer, float current, float target, int period_seconds, int hysteresis_degc);
-template void Temperature::thermal_runaway_protection<Temperature::Manager::Bed>(Temperature::TRState* state, millis_t* timer, float current, float target, int period_seconds, int hysteresis_degc);
+template void Temperature::thermal_runaway_protection<Temperature::Manager::Hotend>(Temperature::TRState* state, millis_t* timer, temp_t current, temp_t target, int period_seconds, int hysteresis_degc);
+template void Temperature::thermal_runaway_protection<Temperature::Manager::Bed>(Temperature::TRState* state, millis_t* timer, temp_t current, temp_t target, int period_seconds, int hysteresis_degc);
 
 void Temperature::disable_all_heaters() {
 

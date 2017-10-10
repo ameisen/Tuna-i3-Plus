@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  <Type Name="tuna::fixed&lt;*, *&gt;">
+    <DisplayString>Fixed Point: {{ value={m_Data.value} }}</DisplayString>
+    <Expand>
+      <Item Name="[value]">m_Data.value</Item>
+    </Expand>
+  </Type>
+</AutoVisualizer>

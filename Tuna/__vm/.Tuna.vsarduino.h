@@ -71,5 +71,17 @@ using __builtin_va_list = void *;
 #define pgm_read_float(address_short) float{}
 #define pgm_read_ptr(address_short) short{}
 
+inline void __builtin_avr_sei() {}
+inline void __builtin_avr_cli() {}
+inline void __builtin_avr_nop() {}
+inline void __builtin_avr_sleep() {}
+inline void __builtin_avr_wdr() {}
+inline unsigned char __builtin_avr_swap(unsigned char value) {}
+inline unsigned short __builtin_avr_fmul(unsigned char value0, unsigned char value1) {}
+inline signed short __builtin_avr_fmuls(signed char value0, signed char value1) {}
+inline signed short __builtin_avr_fmulsu(signed char value0, unsigned char value1) {}
+inline void __builtin_avr_delay_cycles(unsigned long ticks) {}
+inline unsigned char __builtin_avr_insert_bits(unsigned long map, unsigned char bits, unsigned char value) {}
+
 //#include "Marlin.ino"
 #endif

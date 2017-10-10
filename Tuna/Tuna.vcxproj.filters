@@ -188,6 +188,9 @@
     <Filter Include="rbbuild">
       <UniqueIdentifier>{6a152b72-6e1b-4e63-9b09-716f4f86a24b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="natvis">
+      <UniqueIdentifier>{9c3b9e85-0234-44c0-bcfc-e09a1e972af6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="watchdog.cpp" />
@@ -212,5 +215,10 @@
     <ClCompile Include="stopwatch.cpp" />
     <ClCompile Include="temperature.cpp" />
     <ClCompile Include="utility.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="natvis\tuna.natvis">
+      <Filter>natvis</Filter>
+    </Natvis>
   </ItemGroup>
 </Project>

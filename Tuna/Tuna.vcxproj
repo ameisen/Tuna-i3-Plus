@@ -178,6 +178,9 @@
     <ClCompile Include="utility.cpp" />
     <ClCompile Include="watchdog.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="natvis\tuna.natvis" />
+  </ItemGroup>
   <PropertyGroup>
     <DebuggerFlavor>VisualMicroDebugger</DebuggerFlavor>
   </PropertyGroup>

@@ -30,13 +30,18 @@
 
 #include "tuna.h"
 
-using temp_t = tuna::fixed<uint16, 2>;
+namespace Thermal
+{
+	constexpr const uintsz<300> max_temperature = 300;
+}
+
+using temp_t = tuna::fixedsz<Thermal::max_temperature, uint16, 4>; // autogenerate a proper fixed-precision type for this.
+
 constexpr temp_t operator "" _C(long double temperature)
 {
 	return {float(temperature)};
 }
 
-using temp_t = tuna::fixed<uint16, 2>;
 constexpr temp_t operator "" _C(unsigned long long int temperature)
 {
 	return { (typename temp_t::type)(temperature) };
@@ -71,7 +76,7 @@ public:
 	{
 		TemperatureValueConverter() = delete;
 		static constexpr const uint_type<Celcius> Temperature = Celcius;
-		static constexpr const uint_type<thermistor::ce_convert_temp_to_adc<Celcius>()> Adc = thermistor::ce_convert_temp_to_adc<Celcius>();
+		static constexpr const uint_type<Thermistor::ce_convert_temp_to_adc<Celcius>()> Adc = Thermistor::ce_convert_temp_to_adc<Celcius>();
 	};
 
 	class Hotend final
@@ -113,10 +118,10 @@ public:
 #define scalePID_d(d)   ( (d) / PID_dT )
 #define unscalePID_d(d) ( (d) * PID_dT )
 
-	static uint16_t watch_target_temp;
+	static temp_t watch_target_temp;
 	static millis_t watch_heater_next_ms;
 
-	static uint16_t watch_target_bed_temp;
+	static temp_t watch_target_bed_temp;
 	static millis_t watch_bed_next_ms;
 
 	static bool allow_cold_extrude;
@@ -188,15 +193,13 @@ public:
 
 	static void start_watching_bed();
 
-	static void setTargetHotend(const int16_t celsius) {
+	static void setTargetHotend(const temp_t celsius) {
 		target_temperature = celsius;
 		start_watching_heater();
 	}
 
-	static void setTargetBed(const int16_t celsius) {
-		target_temperature_bed =
-			min(celsius, BED_MAXTEMP)
-			;
+	static void setTargetBed(const temp_t celsius) {
+		target_temperature_bed = min(celsius, temp_t(BED_MAXTEMP));
 		start_watching_bed();
 	}
 
@@ -224,7 +227,7 @@ public:
 	/**
 	 * Perform auto-tuning for hotend or bed in response to M303
 	 */
-	static void PID_autotune(float temp, int ncycles, bool set_result = false);
+	static void PID_autotune(temp_t temp, int ncycles, bool set_result = false);
 
 	/**
 	 * Update the temp manager when PID values change
@@ -235,7 +238,7 @@ private:
 
 	static void set_current_temp_raw();
 
-	static void updateTemperaturesFromRawValues();
+	static bool updateTemperaturesFromRawValues();
 
 	static void checkExtruderAutoFans();
 
@@ -251,7 +254,7 @@ private:
 	typedef enum TRState { TRInactive, TRFirstHeating, TRStable, TRRunaway } TRstate;
 
 	template <Manager manager_type>
-	static void thermal_runaway_protection(TRState* state, millis_t* timer, float temperature, float target_temperature, int period_seconds, int hysteresis_degc);
+	static void thermal_runaway_protection(TRState* state, millis_t* timer, temp_t temperature, temp_t target_temperature, int period_seconds, int hysteresis_degc);
 
 	static TRState thermal_runaway_state_machine;
 	static millis_t thermal_runaway_timer;

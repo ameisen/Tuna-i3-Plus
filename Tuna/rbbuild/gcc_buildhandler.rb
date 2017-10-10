@@ -46,7 +46,7 @@ $gpp_buildhandler = Class.new do
 	
 	def self.buildline(source = "dummy.cpp")
 		buildopts = [
-			"-O2",
+			"-O3",
 			"-w",
 			"-fpermissive",
 			"-ffunction-sections",

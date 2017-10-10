@@ -22,256 +22,302 @@
 
 // OVERSAMPLENR PROGMEM
 
-struct TablePair final
+namespace Thermistor
 {
-	uint16_t Adc = 0;
-	uint16_t Temperature = 0;
 
-	constexpr TablePair() = default;
-	constexpr TablePair(uint16_t _ADC, uint16_t _Temperature) :
-		Adc(_ADC * OVERSAMPLENR), Temperature(_Temperature)
-	{}
-
-	constexpr TablePair & operator = (const TablePair &pair)
+	struct TablePair final
 	{
-		Adc = pair.Adc;
-		Temperature = pair.Temperature;
-		return *this;
-	}
-};
+		uint16_t Adc = 0;
+		uint16_t Temperature = 0;
 
-constexpr const PROGMEM TablePair temp_table[]{
-	{ 23, 300 },
-	{ 24, 295 },
-	{ 26, 290 },
-	{ 28, 285 },
-	{ 30, 280 },
-	{ 32, 275 },
-	{ 35, 270 },
-	{ 37, 265 },
-	{ 40, 260 },
-	{ 43, 255 },
-	{ 47, 250 },
-	{ 51, 245 },
-	{ 55, 240 },
-	{ 60, 235 },
-	{ 65, 230 },
-	{ 70, 225 },
-	{ 76, 220 },
-	{ 83, 215 },
-	{ 90, 210 },
-	{ 99, 205 },
-	{ 108, 200 },
-	{ 118, 195 },
-	{ 129, 190 },
-	{ 141, 185 },
-	{ 154, 180 },
-	{ 168, 175 },
-	{ 184, 170 },
-	{ 202, 165 },
-	{ 221, 160 },
-	{ 242, 155 },
-	{ 265, 150 },
-	{ 289, 145 },
-	{ 316, 140 },
-	{ 344, 135 },
-	{ 375, 130 },
-	{ 407, 125 },
-	{ 441, 120 },
-	{ 476, 115 },
-	{ 512, 110 },
-	{ 550, 105 },
-	{ 587, 100 },
-	{ 625, 95 },
-	{ 663, 90 },
-	{ 699, 85 },
-	{ 734, 80 },
-	{ 768, 75 },
-	{ 800, 70 },
-	{ 829, 65 },
-	{ 856, 60 },
-	{ 881, 55 },
-	{ 903, 50 },
-	{ 922, 45 },
-	{ 939, 40 },
-	{ 954, 35 },
-	{ 966, 30 },
-	{ 977, 25 },
-	{ 986, 20 },
-	{ 994, 15 },
-	{ 1000, 10 },
-	{ 1005, 5 },
-	{ 1009, 0 }
-};
-constexpr uint8_t temp_table_size = sizeof(temp_table) / sizeof(temp_table[0]);
+		constexpr TablePair() = default;
+		constexpr TablePair(uint16_t _ADC, uint16_t _Temperature) :
+			Adc(_ADC * OVERSAMPLENR), Temperature(_Temperature << temp_t::fractional_bits)
+		{}
 
-constexpr const bool IsFixedStepTable_Temperature = true;
-constexpr const uint8_t FixedStepTable_Temperature = 5;
-constexpr const bool IsFixedStepTable_ADC = false;
+		constexpr TablePair & operator = (const TablePair &pair)
+		{
+			Adc = pair.Adc;
+			Temperature = pair.Temperature;
+			return *this;
+		}
+	};
 
-template <uint8_t i = 1, uint8_t end = temp_table_size>
-constexpr uint16_t get_max_adc_delta(uint16_t delta = 0)
-{
-	if constexpr (i == 0)
+	constexpr const PROGMEM TablePair temp_table[]{
+		{ 23, 300 },
+		{ 24, 295 },
+		{ 26, 290 },
+		{ 28, 285 },
+		{ 30, 280 },
+		{ 32, 275 },
+		{ 35, 270 },
+		{ 37, 265 },
+		{ 40, 260 },
+		{ 43, 255 },
+		{ 47, 250 },
+		{ 51, 245 },
+		{ 55, 240 },
+		{ 60, 235 },
+		{ 65, 230 },
+		{ 70, 225 },
+		{ 76, 220 },
+		{ 83, 215 },
+		{ 90, 210 },
+		{ 99, 205 },
+		{ 108, 200 },
+		{ 118, 195 },
+		{ 129, 190 },
+		{ 141, 185 },
+		{ 154, 180 },
+		{ 168, 175 },
+		{ 184, 170 },
+		{ 202, 165 },
+		{ 221, 160 },
+		{ 242, 155 },
+		{ 265, 150 },
+		{ 289, 145 },
+		{ 316, 140 },
+		{ 344, 135 },
+		{ 375, 130 },
+		{ 407, 125 },
+		{ 441, 120 },
+		{ 476, 115 },
+		{ 512, 110 },
+		{ 550, 105 },
+		{ 587, 100 },
+		{ 625, 95 },
+		{ 663, 90 },
+		{ 699, 85 },
+		{ 734, 80 },
+		{ 768, 75 },
+		{ 800, 70 },
+		{ 829, 65 },
+		{ 856, 60 },
+		{ 881, 55 },
+		{ 903, 50 },
+		{ 922, 45 },
+		{ 939, 40 },
+		{ 954, 35 },
+		{ 966, 30 },
+		{ 977, 25 },
+		{ 986, 20 },
+		{ 994, 15 },
+		{ 1000, 10 },
+		{ 1005, 5 },
+		{ 1009, 0 }
+	};
+	constexpr uint8_t temp_table_size = sizeof(temp_table) / sizeof(temp_table[0]);
+
+	constexpr const bool IsFixedStepTable_Temperature = true;
+	constexpr const uint8_t FixedStepTable_Temperature = 5 << temp_t::fractional_bits;
+	constexpr const bool IsFixedStepTable_ADC = false;
+
+	template <uint8_t i = 0, uint8_t end = temp_table_size - 1>
+	constexpr uint16_t get_max_adc(uint16 best = 0)
 	{
-		return get_max_adc_delta<1, end>();
+		if constexpr (i == end)
+		{
+			return max(temp_table[i].Adc, best);
+		}
+		else
+		{
+			return get_max_adc<i + 1, end>(max(temp_table[i].Adc, best));
+		}
 	}
-	else if constexpr (i == end)
+
+	template <uint8_t i = 0, uint8_t end = temp_table_size - 1>
+	constexpr uint16_t get_min_adc(uint16 best = 0)
 	{
-		return delta;
+		if constexpr (i == end)
+		{
+			return min(temp_table[i].Adc, best);
+		}
+		else
+		{
+			return get_min_adc<i + 1, end>(min(temp_table[i].Adc, best));
+		}
 	}
-	else
+
+	template <uint8_t i = 0, uint8_t end = temp_table_size - 1>
+	constexpr uint16_t get_max_temperature(uint16 best = 0)
 	{
-		constexpr uint16_t local_delta = (temp_table[i].Adc > temp_table[i - 1].Adc) ?
-			temp_table[i].Adc - temp_table[i - 1].Adc :
-			temp_table[i - 1].Adc - temp_table[i].Adc;
-		return get_max_adc_delta<i + 1, end>((local_delta > delta) ? local_delta : delta);
+		if constexpr (i == end)
+		{
+			return max(temp_table[i].Temperature, best);
+		}
+		else
+		{
+			return get_max_temperature<i + 1, end>(max(temp_table[i].Temperature, best));
+		}
 	}
-}
 
-constexpr uint16_t max_adc_delta = get_max_adc_delta();
-
-template <uint8_t i = 0>
-constexpr uint16_t get_max_adc_uint8_temp(uint16_t max_adc = 0)
-{
-	if constexpr (i == temp_table_size)
+	template <uint8_t i = 0, uint8_t end = temp_table_size - 1>
+	constexpr uint16_t get_min_temperature(uint16 best = 0)
 	{
-		return max_adc;
+		if constexpr (i == end)
+		{
+			return min(temp_table[i].Temperature, best);
+		}
+		else
+		{
+			return get_min_temperature<i + 1, end>(min(temp_table[i].Temperature, best));
+		}
 	}
-	else
+
+	constexpr const uint16 max_adc = get_max_adc<>();
+	constexpr const uint16 min_adc = get_min_adc<>();
+	constexpr const temp_t max_temperature{ temp_t::from(get_max_temperature<>()) };
+	constexpr const temp_t min_temperature{ temp_t::from(get_min_temperature<>()) };
+	constexpr const uint16 max_temperature_integer{ get_max_temperature<>() >> temp_t::fractional_bits };
+	constexpr const uint16 min_temperature_integer{ get_min_temperature<>() >> temp_t::fractional_bits };
+
+	constexpr inline uint16 clamp_adc(uint16 adc)
 	{
-		return get_max_adc_uint8_temp<i + 1>(temp_table[i].Temperature <= 0xFF ? (temp_table[i].Adc > max_adc ? temp_table[i].Adc : max_adc) : max_adc);
+		return clamp(adc, min_adc, max_adc);
 	}
-}
 
-template <uint8_t i = 0, uint16_t adc = 0>
-constexpr uint16_t get_max_adc_uint8_temp_idx(uint8_t idx = 0)
-{
-	if constexpr (i == temp_table_size)
+	static_assert(Thermistor::max_temperature_integer >= Thermal::max_temperature, "the system max temperature must be representable in the temperature table.");
+
+	template <uint8_t i = 1, uint8_t end = temp_table_size - 1>
+	constexpr uint16_t get_max_adc_delta(uint16_t delta = 0)
 	{
-		return idx;
+		if constexpr (i == 0)
+		{
+			return get_max_adc_delta<1, end>();
+		}
+		else if constexpr (i >= end)
+		{
+			constexpr uint16_t local_delta = (temp_table[i].Adc > temp_table[i - 1].Adc) ?
+				temp_table[i].Adc - temp_table[i - 1].Adc :
+				temp_table[i - 1].Adc - temp_table[i].Adc;
+
+			return (local_delta > delta) ? local_delta : delta;
+		}
+		else
+		{
+			constexpr uint16_t local_delta = (temp_table[i].Adc > temp_table[i - 1].Adc) ?
+				temp_table[i].Adc - temp_table[i - 1].Adc :
+				temp_table[i - 1].Adc - temp_table[i].Adc;
+			return get_max_adc_delta<i + 1, end>((local_delta > delta) ? local_delta : delta);
+		}
 	}
-	else
+
+	constexpr uint16_t max_adc_delta = get_max_adc_delta();
+
+	template <uint8_t i = 0>
+	constexpr uint16_t get_max_adc_uint8_temp(uint16_t max_adc = 0)
 	{
-		constexpr bool set_new_adc = (temp_table[i].Temperature <= 0xFF) && (temp_table[i].Adc > adc);
-		return get_max_adc_uint8_temp_idx<i + 1, set_new_adc ? temp_table[i].Adc : adc>(set_new_adc ? i : idx);
+		if constexpr (i == temp_table_size)
+		{
+			return max_adc;
+		}
+		else
+		{
+			return get_max_adc_uint8_temp<i + 1>(temp_table[i].Temperature <= 0xFF ? (temp_table[i].Adc > max_adc ? temp_table[i].Adc : max_adc) : max_adc);
+		}
 	}
-}
 
-constexpr uint16_t max_adc_uint8_temp = get_max_adc_uint8_temp();
-constexpr uint16_t max_adc_uint8_temp_idx = get_max_adc_uint8_temp_idx();
-
-template <uint8_t i = 0>
-constexpr uint16_t get_min_adc_uint8_temp(uint16_t min_adc = 0xFFFF)
-{
-	if constexpr (i == temp_table_size)
+	template <uint8_t i = 0, uint16_t adc = 0>
+	constexpr uint16_t get_max_adc_uint8_temp_idx(uint8_t idx = 0)
 	{
-		return min_adc;
+		if constexpr (i == temp_table_size)
+		{
+			return idx;
+		}
+		else
+		{
+			constexpr bool set_new_adc = (temp_table[i].Temperature <= 0xFF) && (temp_table[i].Adc > adc);
+			return get_max_adc_uint8_temp_idx<i + 1, set_new_adc ? temp_table[i].Adc : adc>(set_new_adc ? i : idx);
+		}
 	}
-	else
+
+	constexpr uint16_t max_adc_uint8_temp = get_max_adc_uint8_temp();
+	constexpr uint16_t max_adc_uint8_temp_idx = get_max_adc_uint8_temp_idx();
+
+	template <uint8_t i = 0>
+	constexpr uint16_t get_min_adc_uint8_temp(uint16_t min_adc = 0xFFFF)
 	{
-		return get_min_adc_uint8_temp<i + 1>(temp_table[i].Temperature <= 0xFF ? (temp_table[i].Adc <= min_adc ? temp_table[i].Adc : min_adc) : min_adc);
+		if constexpr (i == temp_table_size)
+		{
+			return min_adc;
+		}
+		else
+		{
+			return get_min_adc_uint8_temp<i + 1>(temp_table[i].Temperature <= 0xFF ? (temp_table[i].Adc <= min_adc ? temp_table[i].Adc : min_adc) : min_adc);
+		}
 	}
-}
 
-template <uint8_t i = 0, uint16_t adc = 0xFFFF, uint8_t idx = 0>
-constexpr uint16_t get_min_adc_uint8_temp_idx()
-{
-	if constexpr (i == temp_table_size)
+	template <uint8_t i = 0, uint16_t adc = 0xFFFF, uint8_t idx = 0>
+	constexpr uint16_t get_min_adc_uint8_temp_idx()
 	{
-		return idx;
+		if constexpr (i == temp_table_size)
+		{
+			return idx;
+		}
+		else
+		{
+			constexpr bool set_new_adc = (temp_table[i].Temperature <= 0xFF) && (temp_table[i].Adc <= adc);
+			return get_min_adc_uint8_temp_idx<i + 1, set_new_adc ? temp_table[i].Adc : adc, set_new_adc ? i : idx>();
+		}
 	}
-	else
+
+	constexpr uint16_t min_adc_uint8_temp = get_min_adc_uint8_temp();
+	constexpr uint16_t min_adc_uint8_temp_idx = get_min_adc_uint8_temp_idx();
+
+	template <uint8_t i = 0>
+	constexpr uint16_t get_max_adc_uint8(uint8_t adc = 0)
 	{
-		constexpr bool set_new_adc = (temp_table[i].Temperature <= 0xFF) && (temp_table[i].Adc <= adc);
-		return get_min_adc_uint8_temp_idx<i + 1, set_new_adc ? temp_table[i].Adc : adc, set_new_adc ? i : idx>();
+		if constexpr (i == temp_table_size)
+		{
+			return adc;
+		}
+		else
+		{
+			return get_max_adc_uint8<i + 1>(((temp_table[i].Adc >= adc) && temp_table[i].Adc <= 0xFF) ? temp_table[i].Adc : adc);
+		}
 	}
-}
 
-constexpr uint16_t min_adc_uint8_temp = get_min_adc_uint8_temp();
-constexpr uint16_t min_adc_uint8_temp_idx = get_min_adc_uint8_temp_idx();
-
-template <uint8_t i = 0>
-constexpr uint16_t get_max_adc_uint8(uint8_t adc = 0)
-{
-	if constexpr (i == temp_table_size)
+	template <uint8_t i = 0, uint8_t adc = 0, uint8_t idx = 0>
+	constexpr uint16_t get_max_adc_uint8_idx()
 	{
-		return adc;
+		if constexpr (i == temp_table_size)
+		{
+			return idx;
+		}
+		else
+		{
+			constexpr bool set_new_adc = ((temp_table[i].Adc >= adc) && temp_table[i].Adc <= 0xFF);
+			return get_max_adc_uint8_idx<i + 1, set_new_adc ? temp_table[i].Adc : adc, set_new_adc ? i : idx>();
+		}
 	}
-	else
+
+	constexpr uint16_t max_adc_uint8 = get_max_adc_uint8();
+	constexpr uint16_t max_adc_uint8_idx = get_max_adc_uint8_idx();
+
+	template <bool bits8>
+	struct delta_type;
+
+	template <>
+	struct delta_type<true> final
 	{
-		return get_max_adc_uint8<i + 1>(((temp_table[i].Adc >= adc) && temp_table[i].Adc <= 0xFF) ? temp_table[i].Adc : adc);
-	}
-}
+		using type = uint8_t;
+	};
 
-template <uint8_t i = 0, uint8_t adc = 0, uint8_t idx = 0>
-constexpr uint16_t get_max_adc_uint8_idx()
-{
-	if constexpr (i == temp_table_size)
+	template <>
+	struct delta_type<false> final
 	{
-		return idx;
-	}
-	else
-	{
-		constexpr bool set_new_adc = ((temp_table[i].Adc >= adc) && temp_table[i].Adc <= 0xFF);
-		return get_max_adc_uint8_idx<i + 1, set_new_adc ? temp_table[i].Adc : adc, set_new_adc ? i : idx>();
-	}
-}
+		using type = uint16_t;
+	};
 
-constexpr uint16_t max_adc_uint8 = get_max_adc_uint8();
-constexpr uint16_t max_adc_uint8_idx = get_max_adc_uint8_idx();
+	using delta_t = delta_type<max_adc_delta <= 0xFF>::type;
 
-template <bool bits8>
-struct delta_type;
+	constexpr uint8 low_temp_idx = temp_table_size - 1;
+	constexpr uint8 hi_temp_idx = 0;
+	constexpr uint8 low_adc_idx = 0;
+	constexpr uint8 hi_adc_idx = temp_table_size - 1;
+	constexpr int8 higher_temp_idx = (low_temp_idx < hi_temp_idx) ? 1 : -1;
+	constexpr int8 higher_adc_idx = (low_adc_idx < hi_adc_idx) ? 1 : -1;
 
-template <>
-struct delta_type<true> final
-{
-	using type = uint8_t;
-};
-
-template <>
-struct delta_type<false> final
-{
-	using type = uint16_t;
-};
-
-using delta_t = delta_type<max_adc_delta <= 0xFF>::type;
-
-template <typename T, typename U = T>
-inline T pgm_read(const U &var);
-
-template <>
-inline uint8_t pgm_read<uint8_t>(const uint8 &var)
-{
-	return pgm_read_byte((uint16_t)&var);
-}
-
-template <>
-inline uint8_t pgm_read<uint8_t, uint16_t>(const uint16 &var)
-{
-	return pgm_read_byte((uint16_t)&var);
-}
-
-template <>
-inline uint16_t pgm_read<uint16_t>(const uint16_t &var)
-{
-	return pgm_read_word((uint16_t)&var);
-}
-
-constexpr uint8 low_temp_idx = temp_table_size - 1;
-constexpr uint8 hi_temp_idx = 0;
-constexpr uint16 min_temperature = temp_table[low_temp_idx].Temperature;
-constexpr uint16 max_temperature = temp_table[hi_temp_idx].Temperature;
-constexpr uint8 low_adc_idx = 0;
-constexpr uint8 hi_adc_idx = temp_table_size - 1;
-constexpr uint16 min_adc = temp_table[low_adc_idx].Adc;
-constexpr uint16 max_adc = temp_table[hi_temp_idx].Adc;
-constexpr int8 higher_temp_idx = (low_temp_idx < hi_temp_idx) ? 1 : -1;
-constexpr int8 higher_adc_idx = (low_adc_idx < hi_adc_idx) ? 1 : -1;
-
-namespace thermistor
-{
 	template <typename T>
 	struct interpolator
 	{
@@ -296,10 +342,10 @@ namespace thermistor
 		return (a_lambda + b_lambda) / max;
 	}
 
-	template <uint16 temperature, uint8 cur_idx = 0, uint8 best_le = low_temp_idx>
+	template <uint16 temperature, bool first = true, uint8 cur_idx = 0, uint8 best_le = low_temp_idx>
 	constexpr uint16_t ce_convert_temp_to_adc()
 	{
-		static_assert(temperature <= max_temperature && temperature >= min_temperature, "temperature is out of range.");
+		static_assert(temperature <= max_temperature_integer && temperature >= min_temperature_integer, "temperature is out of range.");
 
 		if constexpr (cur_idx == temp_table_size)
 		{
@@ -322,7 +368,7 @@ namespace thermistor
 			constexpr auto cur_value = temp_table[cur_idx];
 			constexpr auto best_value = temp_table[best_le];
 			return ce_convert_temp_to_adc<
-				temperature, cur_idx + 1,
+				temperature, false, cur_idx + 1,
 				(cur_value.Temperature <= temperature && cur_value.Temperature > best_value.Temperature) ?
 					cur_idx : best_le
 			>();
@@ -345,8 +391,8 @@ namespace thermistor
 				constexpr auto best_value = temp_table[best_le];
 				constexpr auto next_value = temp_table[best_le + higher_adc_idx];
 				constexpr auto interp = interpoland<adc, best_value.Adc, next_value.Adc>();
-				return temp_t::_from(interpolate<
-					interp.delta, interp.max, best_value.Temperature << temp_t::frac_bits, next_value.Temperature << temp_t::frac_bits
+				return temp_t::from(interpolate<
+					interp.delta, interp.max, best_value.Temperature, next_value.Temperature
 				>());
 			}
 		}
@@ -367,7 +413,7 @@ namespace thermistor
 	{
 		constexpr const uint8_t max_idx = small_adc ? max_adc_uint8_idx : (temp_table_size - 1);
 		constexpr const uint8_t min_idx = small_temp ? min_adc_uint8_temp_idx : 0;
-		constexpr const uint16_t max_adc_delta_local = get_max_adc_delta<min_idx ? min_idx - 1 : 0, max_idx + 1>();
+		constexpr const uint16_t max_adc_delta_local = get_max_adc_delta<min_idx ? min_idx - 1 : 0, max_idx>();
 		static_assert(uint16_t(max_idx * 2) <= 0xFF, "otherwise halving won't work, and I don't want to add extra code for it.");
 
 		using adc_t = typename delta_type<small_adc>::type;
@@ -390,7 +436,7 @@ namespace thermistor
 			}
 			else
 			{
-				return { pgm_read<deltatemp_t>(temp_table[m].Temperature) };
+				return { temp_t::from(pgm_read<deltatemp_t>(temp_table[m].Temperature)) };
 			}
 		} while (L <= R);
 
@@ -439,7 +485,6 @@ namespace thermistor
 			{
 				uint16_t a_lambda = (uint16_t(a) * (delta.delta));
 				uint16_t b_lambda = (uint16_t(b) * (delta.max - delta.delta));
-				static_assert((DeltaTimesTemp * 2) <= tuna::type_trait<uint8>::max, "ridiculous temperature values in table.");
 				if constexpr ((DeltaTimesTemp * 2) <= tuna::type_trait<uint16>::max)
 				{
 					return (uint16_t(a_lambda) + b_lambda) / delta.max;
@@ -461,7 +506,7 @@ namespace thermistor
 			}
 		};
 
-		interpolator interpoland = get_interpoland(le_value, g_value, adc);
+		auto interpoland = get_interpoland(le_value, g_value, adc);
 
 		const deltatemp_t g_value_t = pgm_read<deltatemp_t>(temp_table[L].Temperature);
 		const deltatemp_t le_value_t = [&, L]()->deltatemp_t
@@ -477,7 +522,7 @@ namespace thermistor
 			}
 		}();
 
-		return interpolate(le_value_t, g_value_t, interpoland);
+		return temp_t::from(interpolate(le_value_t, g_value_t, interpoland));
 	}
 
 	inline temp_t binsearch_temp_get(uint16_t adc)
@@ -490,23 +535,38 @@ namespace thermistor
 		}
 		else
 		{
-			const bool small_adc = (adc <= max_adc_uint8);
-			constexpr const uint8 small_adc_bit = 0b01;
-			const bool small_temp = (adc >= min_adc_uint8_temp);
-			constexpr const uint8 small_temp_bit = 0b10;
-
-			const uint8 bit = (small_adc ? small_adc_bit : 0b00) | (small_temp ? small_temp_bit : 0b00);
-
-			switch (bit)
+			if constexpr (min_adc <= 0xFF)
 			{
-			case 0b00:
-				return binsearch_temp_get_branched<false, false>(adc);
-			case small_adc_bit:
-				return binsearch_temp_get_branched<true, false>(adc);
-			case small_temp_bit:
-				return binsearch_temp_get_branched<false, true>(adc);
-			case small_adc_bit | small_temp_bit:
-				return binsearch_temp_get_branched<true, true>(adc);
+				const bool small_adc = (adc <= max_adc_uint8);
+				constexpr const uint8 small_adc_bit = 0b01;
+				const bool small_temp = (adc >= min_adc_uint8_temp);
+				constexpr const uint8 small_temp_bit = 0b10;
+
+				const uint8 bit = (small_adc ? small_adc_bit : 0b00) | (small_temp ? small_temp_bit : 0b00);
+
+				switch (bit)
+				{
+				case 0b00:
+					return binsearch_temp_get_branched<false, false>(adc);
+				case small_adc_bit:
+					return binsearch_temp_get_branched<true, false>(adc);
+				case small_temp_bit:
+					return binsearch_temp_get_branched<false, true>(adc);
+				case small_adc_bit | small_temp_bit:
+					return binsearch_temp_get_branched<true, true>(adc);
+				}
+			}
+			else
+			{
+				const bool small_temp = (adc >= min_adc_uint8_temp);
+				if (small_temp)
+				{
+					return binsearch_temp_get_branched<false, true>(adc);
+				}
+				else
+				{
+					return binsearch_temp_get_branched<false, false>(adc);
+				}
 			}
 		}
 	}

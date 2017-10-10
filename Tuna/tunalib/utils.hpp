@@ -11,6 +11,8 @@
 #undef cli
 #undef sei
 
+//#define __flash PROGMEM
+
 namespace tuna
 {
 	using uint8 = uint8_t;
@@ -77,6 +79,25 @@ namespace tuna
 
 namespace tuna::utils
 {
+	struct ce_only { ce_only() = delete; };
+
+	template <typename T, T v>
+	struct integral_constant : ce_only
+	{
+		static constexpr const T value = v;
+	};
+	struct false_type : integral_constant<bool, false> {};
+	struct true_type : integral_constant<bool, true> {};
+
+	template <typename T> struct _is_void final { static constexpr const bool value = false; };;
+	template<> struct _is_void<void> final { static constexpr const bool value = true; };
+
+	template <typename T, typename U>
+	struct _is_same final : false_type {};
+	template <typename T>
+	struct _is_same<T, T> final : true_type {};
+	template <typename T, typename U> constexpr const bool is_same = _is_same<T, U>::value;
+
 	using namespace tuna;
 
 	constexpr inline __attribute__((always_inline)) void sei()
@@ -181,10 +202,44 @@ namespace tuna::utils
 	class type_trait;
 
 	template <>
-	struct type_trait<uint8> final
+	struct type_trait<bool> final : ce_only
 	{
-		type_trait() = delete;
+		constexpr static const char name[] = "bool";
 
+		using type = bool;
+		using signed_type = void;
+		using unsigned_type = bool; // I mean, I guess 'bool' can be considered unsigned...?
+		using larger_type = void;
+		using smaller_type = void;
+
+		constexpr static uint8 size = sizeof(type);
+		constexpr static uint8 bits = sizeof(type) * 8;
+
+		constexpr static bool is_signed = false;
+		constexpr static bool is_unsigned = !is_signed;
+		constexpr static bool is_integral = true;
+		constexpr static bool is_float = false;
+		constexpr static bool is_primitive = true;
+		constexpr static bool is_array = false;
+		constexpr static bool is_pointer = false;
+		constexpr static bool is_reference = false;
+		constexpr static bool is_atomic = true;
+		constexpr static bool is_emulated = false;
+
+		constexpr inline static unsigned_type as_unsigned(type val) { return { val }; }
+		constexpr inline static unsigned_type as_safe_unsigned(type val) { return { val }; }
+
+		// We really don't want to be able to generate bools with values that aren't 0x00 and 0x01... it's
+		// perfectly possible but is likely to confuse the runtime due to UB.
+		constexpr static type max = { true };
+		constexpr static type min = { false };
+		constexpr static type ones = { true };
+		constexpr static type zeros = { false };
+	};
+
+	template <>
+	struct type_trait<uint8> final : ce_only
+	{
 		constexpr static const char name[] = "uint8";
 
 		using type = uint8;
@@ -200,6 +255,12 @@ namespace tuna::utils
 		constexpr static bool is_unsigned = !is_signed;
 		constexpr static bool is_integral = true;
 		constexpr static bool is_float = false;
+		constexpr static bool is_primitive = true;
+		constexpr static bool is_array = false;
+		constexpr static bool is_pointer = false;
+		constexpr static bool is_reference = false;
+		constexpr static bool is_atomic = true;
+		constexpr static bool is_emulated = false;
 
 		constexpr inline static unsigned_type as_unsigned(type val) { return { val }; }
 		constexpr inline static unsigned_type as_safe_unsigned(type val) { return { val }; }
@@ -212,10 +273,8 @@ namespace tuna::utils
 	};
 
 	template <>
-	struct type_trait<int8> final
+	struct type_trait<int8> final : ce_only
 	{
-		type_trait() = delete;
-
 		constexpr static const char name[] = "int8";
 
 		using type = int8;
@@ -231,6 +290,12 @@ namespace tuna::utils
 		constexpr static bool is_unsigned = !is_signed;
 		constexpr static bool is_integral = true;
 		constexpr static bool is_float = false;
+		constexpr static bool is_primitive = true;
+		constexpr static bool is_array = false;
+		constexpr static bool is_pointer = false;
+		constexpr static bool is_reference = false;
+		constexpr static bool is_atomic = true;
+		constexpr static bool is_emulated = false;
 
 		constexpr inline static unsigned_type as_unsigned(type val) { return val; }
 		constexpr inline static typename type_trait<unsigned_type>::larger_type as_safe_unsigned(type val) { return val; }
@@ -243,10 +308,8 @@ namespace tuna::utils
 	};
 
 	template <>
-	struct type_trait<uint16> final
+	struct type_trait<uint16> final : ce_only
 	{
-		type_trait() = delete;
-
 		constexpr static const char name[] = "uint16";
 
 		using type = uint16;
@@ -262,6 +325,12 @@ namespace tuna::utils
 		constexpr static bool is_unsigned = !is_signed;
 		constexpr static bool is_integral = true;
 		constexpr static bool is_float = false;
+		constexpr static bool is_primitive = true;
+		constexpr static bool is_array = false;
+		constexpr static bool is_pointer = false;
+		constexpr static bool is_reference = false;
+		constexpr static bool is_atomic = false;
+		constexpr static bool is_emulated = true;
 
 		constexpr inline static unsigned_type as_unsigned(type val) { return { val }; }
 		constexpr inline static unsigned_type as_safe_unsigned(type val) { return { val }; }
@@ -274,10 +343,8 @@ namespace tuna::utils
 	};
 
 	template <>
-	struct type_trait<int16> final
+	struct type_trait<int16> final : ce_only
 	{
-		type_trait() = delete;
-
 		constexpr static const char name[] = "int16";
 
 		using type = int16;
@@ -293,6 +360,12 @@ namespace tuna::utils
 		constexpr static bool is_unsigned = !is_signed;
 		constexpr static bool is_integral = true;
 		constexpr static bool is_float = false;
+		constexpr static bool is_primitive = true;
+		constexpr static bool is_array = false;
+		constexpr static bool is_pointer = false;
+		constexpr static bool is_reference = false;
+		constexpr static bool is_atomic = false;
+		constexpr static bool is_emulated = true;
 
 		constexpr inline static unsigned_type as_unsigned(type val) { return val; }
 		constexpr inline static typename type_trait<unsigned_type>::larger_type as_safe_unsigned(type val) { return val; }
@@ -305,10 +378,8 @@ namespace tuna::utils
 	};
 
 	template <>
-	struct type_trait<const int16> final
+	struct type_trait<const int16> final : ce_only
 	{
-		type_trait() = delete;
-
 		constexpr static const char name[] = "int16";
 
 		using type = int16;
@@ -324,6 +395,12 @@ namespace tuna::utils
 		constexpr static bool is_unsigned = !is_signed;
 		constexpr static bool is_integral = true;
 		constexpr static bool is_float = false;
+		constexpr static bool is_primitive = true;
+		constexpr static bool is_array = false;
+		constexpr static bool is_pointer = false;
+		constexpr static bool is_reference = false;
+		constexpr static bool is_atomic = false;
+		constexpr static bool is_emulated = true;
 
 		constexpr inline static unsigned_type as_unsigned(type val) { return val; }
 		constexpr inline static typename type_trait<unsigned_type>::larger_type as_safe_unsigned(type val) { return val; }
@@ -336,10 +413,8 @@ namespace tuna::utils
 	};
 
 	template <>
-	struct type_trait<uint32> final
+	struct type_trait<uint32> final : ce_only
 	{
-		type_trait() = delete;
-
 		constexpr static const char name[] = "uint32";
 
 		using type = uint32;
@@ -355,6 +430,12 @@ namespace tuna::utils
 		constexpr static bool is_unsigned = !is_signed;
 		constexpr static bool is_integral = true;
 		constexpr static bool is_float = false;
+		constexpr static bool is_primitive = true;
+		constexpr static bool is_array = false;
+		constexpr static bool is_pointer = false;
+		constexpr static bool is_reference = false;
+		constexpr static bool is_atomic = false;
+		constexpr static bool is_emulated = true;
 
 		constexpr inline static unsigned_type as_unsigned(type val) { return { val }; }
 		constexpr inline static unsigned_type as_safe_unsigned(type val) { return { val }; }
@@ -367,10 +448,8 @@ namespace tuna::utils
 	};
 
 	template <>
-	struct type_trait<int32> final
+	struct type_trait<int32> final : ce_only
 	{
-		type_trait() = delete;
-
 		constexpr static const char name[] = "int32";
 
 		using type = int32;
@@ -386,6 +465,12 @@ namespace tuna::utils
 		constexpr static bool is_unsigned = !is_signed;
 		constexpr static bool is_integral = true;
 		constexpr static bool is_float = false;
+		constexpr static bool is_primitive = true;
+		constexpr static bool is_array = false;
+		constexpr static bool is_pointer = false;
+		constexpr static bool is_reference = false;
+		constexpr static bool is_atomic = false;
+		constexpr static bool is_emulated = true;
 
 		constexpr inline static unsigned_type as_unsigned(type val) { return val; }
 		constexpr inline static typename type_trait<unsigned_type>::larger_type as_safe_unsigned(type val) { return val; }
@@ -398,10 +483,8 @@ namespace tuna::utils
 	};
 
 	template <>
-	struct type_trait<uint64> final
+	struct type_trait<uint64> final : ce_only
 	{
-		type_trait() = delete;
-
 		constexpr static const char name[] = "uint64";
 
 		using type = uint64;
@@ -417,6 +500,12 @@ namespace tuna::utils
 		constexpr static bool is_unsigned = !is_signed;
 		constexpr static bool is_integral = true;
 		constexpr static bool is_float = false;
+		constexpr static bool is_primitive = true;
+		constexpr static bool is_array = false;
+		constexpr static bool is_pointer = false;
+		constexpr static bool is_reference = false;
+		constexpr static bool is_atomic = false;
+		constexpr static bool is_emulated = true;
 
 		constexpr inline static unsigned_type as_unsigned(type val) { return { val }; }
 		constexpr inline static unsigned_type as_safe_unsigned(type val) { return { val }; }
@@ -429,10 +518,8 @@ namespace tuna::utils
 	};
 
 	template <>
-	struct type_trait<int64> final
+	struct type_trait<int64> final : ce_only
 	{
-		type_trait() = delete;
-
 		constexpr static const char name[] = "int64";
 
 		using type = int64;
@@ -448,6 +535,12 @@ namespace tuna::utils
 		constexpr static bool is_unsigned = !is_signed;
 		constexpr static bool is_integral = true;
 		constexpr static bool is_float = false;
+		constexpr static bool is_primitive = true;
+		constexpr static bool is_array = false;
+		constexpr static bool is_pointer = false;
+		constexpr static bool is_reference = false;
+		constexpr static bool is_atomic = false;
+		constexpr static bool is_emulated = true;
 
 		constexpr inline static unsigned_type as_unsigned(type val) { return val; }
 		constexpr inline static signed_type as_signed(type val) { return { val }; }
@@ -459,10 +552,8 @@ namespace tuna::utils
 	};
 
 	template <>
-	struct type_trait<float> final
+	struct type_trait<float> : ce_only
 	{
-		type_trait() = delete;
-
 		constexpr static const char name[] = "float";
 
 		using type = float;
@@ -472,18 +563,27 @@ namespace tuna::utils
 		using smaller_type = void;
 
 		constexpr static uint8 size = sizeof(type);
-		constexpr static uint8 bits = sizeof(type) * 8;
+		constexpr static uint8 bits = sizeof(type) * 4;
 
 		constexpr static bool is_signed = true;
 		constexpr static bool is_unsigned = !is_signed;
 		constexpr static bool is_integral = false;
 		constexpr static bool is_float = true;
+		constexpr static bool is_primitive = true;
+		constexpr static bool is_array = false;
+		constexpr static bool is_pointer = false;
+		constexpr static bool is_reference = false;
+		constexpr static bool is_atomic = false;
+		constexpr static bool is_emulated = true;
 
 		constexpr inline static signed_type as_signed(type val) { return { val }; }
 
 		//constexpr static type max = { FLT_MAX };
 		//constexpr static type min = { FLT_MIN };
 	};
+	// On AVR, float == double == long double, though the compiler doesn't always agree due to strict typing.
+	template <> struct type_trait<double> : type_trait<float> {};
+	template <> struct type_trait<long double> : type_trait<float> {};
 
 	template <uint64 value>
 	class _uint_type final
@@ -630,6 +730,70 @@ namespace tuna::utils
 			SREG = m_sReg;
 		}
 	};
+
+	template <uint64 v, bool _canary = false, uint8 r = 0, bool pow2 = true>
+	constexpr uint8 ce_log2()
+	{
+		static_assert(!_canary, "Please do not use parameters past the first in ce_log2. The rest are used internally.");
+		if constexpr (v != 0)
+		{
+			constexpr uint64 new_v = v >> 1;
+			return ce_log2<new_v, _canary, r + 1, (new_v != 0 && (v & 1) != 0) ? false : pow2>();
+		}
+		else
+		{
+			return r - (pow2 ? 1 : 0);
+		}
+	}
+
+	template <uint64 value>
+	class _uintsz final : ce_only
+	{
+		constexpr static auto typer()
+		{
+			if constexpr (value <= type_trait<uint8>::max)
+			{
+				return uint8{};
+			}
+			else if constexpr (value <= type_trait<uint16>::max)
+			{
+				return uint16{};
+			}
+			else if constexpr (value <= type_trait<uint32>::max)
+			{
+				return uint32{};
+			}
+			else if constexpr (value <= type_trait<uint64>::max)
+			{
+				return uint64{};
+			}
+		}
+	public:
+		using type = decltype(typer());
+	};
+
+	template <uint64 value> using uintsz = typename _uintsz<value>::type;
+
+	template <typename T, typename U = T>
+	inline T pgm_read(const U &var);
+
+	template <>
+	inline uint8_t pgm_read<uint8_t>(const uint8 &var)
+	{
+		return pgm_read_byte((uint16_t)&var);
+	}
+
+	template <>
+	inline uint8_t pgm_read<uint8_t, uint16_t>(const uint16 &var)
+	{
+		return pgm_read_byte((uint16_t)&var);
+	}
+
+	template <>
+	inline uint16_t pgm_read<uint16_t>(const uint16_t &var)
+	{
+		return pgm_read_word((uint16_t)&var);
+	}
 }
 
 namespace tuna

@@ -1518,7 +1518,7 @@ inline void gcode_M104() {
 	if (DEBUGGING(DRYRUN)) return;
 
 	if (parser.seenval('S')) {
-		const int16_t temp = parser.value_celsius();
+		const temp_t temp = parser.value_celsius();
 		thermalManager.setTargetHotend(temp);
 
 		/**
@@ -1656,7 +1656,7 @@ inline void gcode_M109() {
 
 	const bool no_wait_for_cooling = parser.seenval('S');
 	if (no_wait_for_cooling || parser.seenval('R')) {
-		const int16_t temp = parser.value_celsius();
+		const temp_t temp = parser.value_celsius();
 		thermalManager.setTargetHotend(temp);
 
 		/**
