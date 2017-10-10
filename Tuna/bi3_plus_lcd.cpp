@@ -3,7 +3,7 @@
 #include "Marlin.h"
 #include "language.h"
 #include "cardreader.h"
-#include "temperature.hpp"
+#include "thermal/thermal.hpp"
 #include "stepper.h"
 #include "configuration_store.h"
 #include "utility.h"
@@ -33,18 +33,23 @@ namespace tuna::lcd
 		inline void read_data();
 		void write_statistics();
 
+		millis24_t nextOpTime = 0;
+		millis24_t nextLcdUpdate = 0;
 		uint16 fileIndex = 0;
-		millis_t nextOpTime = 0;
-		millis_t nextLcdUpdate = 0;
 		OpMode opMode = OpMode::None;
-		uint8 eventCnt = 0;
 		uint8 tempGraphUpdate = 0;
 		uint8 currentPage = 11; // main menu
 		uint8 lastPage = 11; // main menu
 
-		constexpr millis_t update_period = { 100 }; // originally 500
+		constexpr const millis24_t update_period = { 100 }; // originally 500
 
-		void execute_looped_operation(millis_t ms)
+		template <typename MS>
+		inline bool passed(const MS & __restrict cur_time, const MS & __restrict target)
+		{
+			return (cur_time - target) < (type_trait<MS>::max() / 2); // will roll around with 24 and 16-bit values.
+		}
+
+		void execute_looped_operation(millis24_t ms)
 		{
 			if (ms < nextOpTime)
 			{
@@ -83,14 +88,14 @@ namespace tuna::lcd
 			}
 		}
 
-		void status_update(millis_t ms)
+		void status_update(millis24_t ms)
 		{
 			if (ms < nextLcdUpdate)
 			{
 				return;
 			}
 
-			const millis_t difference = ms - nextLcdUpdate;
+			const auto difference = ms - nextLcdUpdate;
 
 			nextLcdUpdate = ms + (update_period - min(difference, update_period));
 
@@ -600,7 +605,7 @@ namespace tuna::lcd
 					axis_homed[X_AXIS] = axis_homed[Y_AXIS] = axis_homed[Z_AXIS] = false;
 					enqueue_and_echo_commands_P(PSTR("G90")); //absolute mode
 					enqueue_and_echo_commands_P((PSTR("G28")));//homeing
-					nextOpTime = millis() + 200;
+					nextOpTime = millis24() + 200;
 					opMode = OpMode::Level_Init;
 				} break;
 				case 1: { //fl
@@ -685,7 +690,7 @@ namespace tuna::lcd
 					sprintf(command, "M104 S%d", hotendTemp); //build auto pid command (extruder)
 																//enqueue_and_echo_command((const char*)&command); //enque pid command
 					enqueue_and_echo_commands_P(PSTR("G91")); // relative mode
-					nextOpTime = millis() + 500;
+					nextOpTime = millis24() + 500;
 					if (lcdData == 1) {
 						opMode = OpMode::Load_Filament;
 					}
@@ -943,7 +948,7 @@ namespace tuna::lcd
 					char time_str[15];
 				} time_data;
 
-				duration_t{ stats.printTime }.toString<15>(time_data.time_str);
+				duration32_t{ stats.printTime }.toString<15>(time_data.time_str);
 
 				serial<2>::write_struct(time_data);
 			}
@@ -963,7 +968,7 @@ namespace tuna::lcd
 					char time_str[15];
 				} time_data;
 
-				duration_t{ stats.longestPrint }.toString<15>(time_data.time_str);
+				duration32_t{ stats.longestPrint }.toString<15>(time_data.time_str);
 
 				serial<2>::write_struct(time_data);
 			}
@@ -1004,7 +1009,7 @@ namespace tuna::lcd
 	{
 		read_data();
 
-		const millis_t ms = millis();
+		const millis24_t ms = millis24();
 		execute_looped_operation(ms);
 		status_update(ms);
 	}

@@ -17,10 +17,12 @@ namespace tuna
 {
 	using uint8 = uint8_t;
 	using uint16 = uint16_t;
+	using uint24 = __uint24;
 	using uint32 = uint32_t;
 	using uint64 = uint64_t;
 	using int8 = int8_t;
 	using int16 = int16_t;
+	using int24 = __int24;
 	using int32 = int32_t;
 	using int64 = int64_t;
 #if !defined(__INTELLISENSE__)
@@ -315,7 +317,7 @@ namespace tuna::utils
 		using type = uint16;
 		using signed_type = int16;
 		using unsigned_type = type;
-		using larger_type = uint32;
+		using larger_type = uint24;
 		using smaller_type = uint8;
 
 		constexpr static uint8 size = sizeof(type);
@@ -350,7 +352,7 @@ namespace tuna::utils
 		using type = int16;
 		using signed_type = type;
 		using unsigned_type = uint16;
-		using larger_type = int32;
+		using larger_type = int24;
 		using smaller_type = int8;
 
 		constexpr static uint8 size = sizeof(type);
@@ -378,15 +380,50 @@ namespace tuna::utils
 	};
 
 	template <>
-	struct type_trait<const int16> final : ce_only
+	struct type_trait<uint24> final : ce_only
 	{
-		constexpr static const char name[] = "int16";
+		constexpr static const char name[] = "uint24";
 
-		using type = int16;
+		using type = uint24;
+		using signed_type = int24;
+		using unsigned_type = type;
+		using larger_type = uint32;
+		using smaller_type = uint16;
+
+		constexpr static uint8 size = sizeof(type);
+		constexpr static uint8 bits = sizeof(type) * 8;
+
+		constexpr static bool is_signed = false;
+		constexpr static bool is_unsigned = !is_signed;
+		constexpr static bool is_integral = true;
+		constexpr static bool is_float = false;
+		constexpr static bool is_primitive = true;
+		constexpr static bool is_array = false;
+		constexpr static bool is_pointer = false;
+		constexpr static bool is_reference = false;
+		constexpr static bool is_atomic = false;
+		constexpr static bool is_emulated = true;
+
+		constexpr inline static unsigned_type as_unsigned(type val) { return { val }; }
+		constexpr inline static unsigned_type as_safe_unsigned(type val) { return { val }; }
+		constexpr inline static signed_type as_signed(type val) { return val; }
+
+		constexpr static type max = { 0xFFFFFF };
+		constexpr static type min = { 0x000000 };
+		constexpr static type ones = { 0xFFFFFF };
+		constexpr static type zeros = { 0x000000 };
+	};
+
+	template <>
+	struct type_trait<int24> final : ce_only
+	{
+		constexpr static const char name[] = "int24";
+
+		using type = int24;
 		using signed_type = type;
-		using unsigned_type = uint16;
+		using unsigned_type = uint24;
 		using larger_type = int32;
-		using smaller_type = int8;
+		using smaller_type = int16;
 
 		constexpr static uint8 size = sizeof(type);
 		constexpr static uint8 bits = sizeof(type) * 8;
@@ -406,10 +443,10 @@ namespace tuna::utils
 		constexpr inline static typename type_trait<unsigned_type>::larger_type as_safe_unsigned(type val) { return val; }
 		constexpr inline static signed_type as_signed(type val) { return { val }; }
 
-		constexpr static type max = { 32767 };
-		constexpr static type min = { -32768 };
-		constexpr static type ones = { unsigned_type{ 0xFFFF } };
-		constexpr static type zeros = { unsigned_type{ 0x0000 } };
+		constexpr static type max = { 16777215 };
+		constexpr static type min = { -16777216 };
+		constexpr static type ones = { unsigned_type{ 0xFFFFFF } };
+		constexpr static type zeros = { unsigned_type{ 0x000099 } };
 	};
 
 	template <>
@@ -585,36 +622,6 @@ namespace tuna::utils
 	template <> struct type_trait<double> : type_trait<float> {};
 	template <> struct type_trait<long double> : type_trait<float> {};
 
-	template <uint64 value>
-	class _uint_type final
-	{
-		uint_type() = delete;
-		constexpr static auto typer()
-		{
-			if constexpr (value <= type_trait<uint8>::max)
-			{
-				return uint8{};
-			}
-			else if constexpr (value <= type_trait<uint16>::max)
-			{
-				return uint16{};
-			}
-			else if constexpr (value <= type_trait<uint32>::max)
-			{
-				return uint32{};
-			}
-			else if constexpr (value <= type_trait<uint64>::max)
-			{
-				return uint64{};
-			}
-			else
-				return;
-		}
-	public:
-		using type = decltype(typer());
-	};
-	template <uint64 value> using uint_type = typename _uint_type<value>::type;
-
 	template <typename T, typename R = typename type_trait<typename type_trait<T>::unsigned_type>::smaller_type>
 	constexpr inline R hi(T value)
 	{
@@ -759,6 +766,10 @@ namespace tuna::utils
 			{
 				return uint16{};
 			}
+			else if constexpr (value <= type_trait<uint24>::max)
+			{
+				return uint24{};
+			}
 			else if constexpr (value <= type_trait<uint32>::max)
 			{
 				return uint32{};
@@ -794,6 +805,9 @@ namespace tuna::utils
 	{
 		return pgm_read_word((uint16_t)&var);
 	}
+
+	extern uint24 millis24();
+	extern uint16 millis16();
 }
 
 namespace tuna

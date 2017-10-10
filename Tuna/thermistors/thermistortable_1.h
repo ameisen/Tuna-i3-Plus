@@ -491,6 +491,19 @@ namespace Thermistor
 				}
 				else
 				{
+					return (uint24(a_lambda) + b_lambda) / delta.max;
+				}
+			}
+			else if constexpr (DeltaTimesTemp <= tuna::type_trait<uint24>::max)
+			{
+				uint24 a_lambda = (uint24(a) * (delta.delta));
+				uint24 b_lambda = (uint24(b) * (delta.max - delta.delta));
+				if constexpr ((DeltaTimesTemp * 2) <= tuna::type_trait<uint24>::max)
+				{
+					return (uint24(a_lambda) + b_lambda) / delta.max;
+				}
+				else
+				{
 					return (uint32_t(a_lambda) + b_lambda) / delta.max;
 				}
 			}

@@ -247,7 +247,7 @@
 #include "planner.h"
 #include "stepper.h"
 #include "endstops.h"
-#include "temperature.hpp"
+#include "thermal/thermal.hpp"
 #include "cardreader.h"
 #include "configuration_store.h"
 #include "language.h"

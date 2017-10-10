@@ -81,6 +81,7 @@
     <ClInclude Include="Configuration.h" />
     <ClInclude Include="Configuration_adv.h" />
     <ClInclude Include="configuration_store.h" />
+    <ClInclude Include="config\thermal.hpp" />
     <ClInclude Include="duration_t.h" />
     <ClInclude Include="endstops.h" />
     <ClInclude Include="enum.h" />
@@ -112,7 +113,8 @@
     <ClInclude Include="stepper.h" />
     <ClInclude Include="stepper_indirection.h" />
     <ClInclude Include="stopwatch.h" />
-    <ClInclude Include="temperature.hpp" />
+    <ClInclude Include="thermal.hpp" />
+    <ClInclude Include="thermal\thermal.hpp" />
     <ClInclude Include="thermistors\thermistortables.h" />
     <ClInclude Include="thermistors\thermistortable_1.h" />
     <ClInclude Include="thermistors\thermistortable_10.h" />
@@ -149,7 +151,6 @@
     <ClInclude Include="tunalib\utils.hpp" />
     <ClInclude Include="types.h" />
     <ClInclude Include="utility.h" />
-    <ClInclude Include="utils.hpp" />
     <ClInclude Include="Version.h" />
     <ClInclude Include="watchdog.h" />
     <ClInclude Include="__vm\.Tuna.vsarduino.h" />
@@ -174,7 +175,9 @@
     <ClCompile Include="stepper.cpp" />
     <ClCompile Include="stepper_indirection.cpp" />
     <ClCompile Include="stopwatch.cpp" />
-    <ClCompile Include="temperature.cpp" />
+    <ClCompile Include="thermal.cpp" />
+    <ClCompile Include="thermal\thermal.cpp" />
+    <ClCompile Include="tunalib\utils.cpp" />
     <ClCompile Include="utility.cpp" />
     <ClCompile Include="watchdog.cpp" />
   </ItemGroup>

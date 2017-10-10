@@ -23,6 +23,10 @@
 #ifndef __TYPES_H__
 #define __TYPES_H__
 
-typedef unsigned long millis_t;
+#include "tuna.h"
+
+using millis_t = uint32;
+using millis24_t = uint24;
+using millis16_t = uint16;
 
 #endif

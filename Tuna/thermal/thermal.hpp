@@ -75,8 +75,8 @@ public:
 	struct TemperatureValueConverter final
 	{
 		TemperatureValueConverter() = delete;
-		static constexpr const uint_type<Celcius> Temperature = Celcius;
-		static constexpr const uint_type<Thermistor::ce_convert_temp_to_adc<Celcius>()> Adc = Thermistor::ce_convert_temp_to_adc<Celcius>();
+		static constexpr const uintsz<Celcius> Temperature = Celcius;
+		static constexpr const uintsz<Thermistor::ce_convert_temp_to_adc<Celcius>()> Adc = Thermistor::ce_convert_temp_to_adc<Celcius>();
 	};
 
 	class Hotend final

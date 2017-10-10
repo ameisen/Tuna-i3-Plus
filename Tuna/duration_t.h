@@ -23,26 +23,62 @@
 #ifndef __DURATION_T__
 #define __DURATION_T__
 
-struct duration_t {
+#include "tuna.h"
+
+template <typename T>
+struct _duration_t final
+{
+	static_assert(tuna::is_same<T, uint24> || tuna::is_same<T, uint32>, "duration_t can only be 24 or 32 bits");
+
+	using type = T;
+
+private:
+	struct short_types final
+	{
+		using day_t = uint8;
+		using hour_t = uint16;
+		using min_t = uint24;
+		using sec_t = uint24;
+	};
+	struct long_types final
+	{
+		using day_t = uint16;
+		using hour_t = uint24;
+		using min_t = uint32;
+		using sec_t = uint32;
+	};
+	constexpr static auto typer()
+	{
+		if constexpr (tuna::is_same<T, uint24>)
+		{
+			return short_types{};
+		}
+		else
+		{
+			return long_types{};
+		}
+	}
+	using types = decltype(typer());
+public:
+
   /**
    * @brief Duration is stored in seconds
    */
-  uint32_t value;
+	type value = 0;
 
   /**
    * @brief Constructor
    */
-  duration_t()
-    : duration_t(0) {};
+	_duration_t() = default;
 
   /**
    * @brief Constructor
    *
    * @param seconds The number of seconds
    */
-  duration_t(uint32_t const &seconds) {
-    this->value = seconds;
-  }
+	_duration_t(uint24 const &seconds) : value(seconds) {}
+
+	_duration_t(uint32 const &seconds) : value(seconds) {}
 
   /**
    * @brief Equality comparison
@@ -51,7 +87,7 @@ struct duration_t {
    * @param value The number of seconds to compare to
    * @return True if both durations are equal
    */
-  bool operator==(const uint32_t &value) const {
+  bool operator==(const type &value) const {
     return (this->value == value);
   }
 
@@ -62,7 +98,7 @@ struct duration_t {
    * @param value The number of seconds to compare to
    * @return False if both durations are equal
    */
-  bool operator!=(const uint32_t &value) const {
+  bool operator!=(const type &value) const {
     return ! this->operator==(value);
   }
 
@@ -70,7 +106,7 @@ struct duration_t {
    * @brief Formats the duration as years
    * @return The number of years
    */
-  inline uint8_t year() const {
+  inline uint8 year() const {
     return this->day() / 365;
   }
 
@@ -78,7 +114,7 @@ struct duration_t {
    * @brief Formats the duration as days
    * @return The number of days
    */
-  inline uint16_t day() const {
+  inline typename types::day_t day() const {
     return this->hour() / 24;
   }
 
@@ -86,7 +122,7 @@ struct duration_t {
    * @brief Formats the duration as hours
    * @return The number of hours
    */
-  inline uint32_t hour() const {
+  inline typename types::hour_t hour() const {
     return this->minute() / 60;
   }
 
@@ -94,7 +130,7 @@ struct duration_t {
    * @brief Formats the duration as minutes
    * @return The number of minutes
    */
-  inline uint32_t minute() const {
+  inline typename types::min_t minute() const {
     return this->second() / 60;
   }
 
@@ -102,7 +138,7 @@ struct duration_t {
    * @brief Formats the duration as seconds
    * @return The number of seconds
    */
-  inline uint32_t second() const {
+  inline typename types::sec_t second() const {
     return this->value;
   }
 
@@ -192,5 +228,8 @@ struct duration_t {
     }
   }
 };
+
+using duration_t = _duration_t<uint24>;
+using duration32_t = _duration_t<uint32>;
 
 #endif // __DURATION_T__

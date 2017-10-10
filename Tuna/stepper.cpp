@@ -48,7 +48,7 @@
 #include "stepper.h"
 #include "endstops.h"
 #include "planner.h"
-#include "temperature.hpp"
+#include "thermal/thermal.hpp"
 #include "bi3_plus_lcd.h"
 #include "language.h"
 #include "cardreader.h"
