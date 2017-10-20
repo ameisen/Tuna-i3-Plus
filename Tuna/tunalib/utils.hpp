@@ -799,26 +799,12 @@ namespace tuna::utils
 
 	template <uint64 value> using uintsz = typename _uintsz<value>::type;
 
-	template <typename T, typename U = T>
-	inline T pgm_read(const U &var);
-
-	template <>
-	inline uint8_t pgm_read<uint8_t>(const uint8 &var)
-	{
-		return pgm_read_byte((uint16_t)&var);
-	}
-
-	template <>
-	inline uint8_t pgm_read<uint8_t, uint16_t>(const uint16 &var)
-	{
-		return pgm_read_byte((uint16_t)&var);
-	}
-
-	template <>
-	inline uint16_t pgm_read<uint16_t>(const uint16_t &var)
-	{
-		return pgm_read_word((uint16_t)&var);
-	}
+  template <typename T> using pgptr = uint16;
+  template <typename T>
+  constexpr inline pgptr<T> as_pgptr(T &var)
+  {
+    return pgptr<T>(&var);
+  }
 
 	extern uint24 millis24();
 	extern uint16 millis16();
@@ -826,50 +812,195 @@ namespace tuna::utils
   template <typename T>
   alignas(T) class flash final
   {
-    T PROGMEM m_Value = T{};
+    const T PROGMEM m_Value = T{};
 
     // Put ASM into another function... which works for some reason.
-    T rt_getter() const
+    template <typename U>
+    U rt_getter() const
     {
-      uint16 ptr = (uint16)&m_Value;
+      const pgptr<T> ptr = as_pgptr(m_Value);
 
-      if constexpr (sizeof(T) == 1)
+      U retValue;
+
+      if constexpr (sizeof(U) == 1)
       {
-        return (const T &)pgm_read_byte(ptr);
+        __asm__ __volatile__
+        (
+          "lpm %0, Z;"
+          : "=r" (retValue)
+          : "z" (ptr)
+          :
+        );
       }
-      else if constexpr (sizeof(T) == 2)
+      else if constexpr (sizeof(U) == 2)
       {
-        return (const T &)pgm_read_word(ptr);
+        __asm__ __volatile__
+        (
+          "lpm %A0, Z;"
+          "lpm %B0, Z + 1;"
+          : "=r" (retValue)
+          : "z" (ptr)
+          :
+        );
       }
-      else if constexpr (sizeof(T) > 2)
+      else if constexpr (sizeof(U) == 3)
       {
-        T retValue;
+        __asm__ __volatile__
+        (
+          "lpm %A0, Z;"
+          "lpm %B0, Z + 1;"
+          "lpm %C0, Z + 2;"
+          : "=r" (retValue)
+          : "z" (ptr)
+          :
+        );
+      }
+      else if constexpr (sizeof(U) == 4)
+      {
+        __asm__ __volatile__
+        (
+          "lpm %A0, Z;"
+          "lpm %B0, Z + 1;"
+          "lpm %C0, Z + 2;"
+          "lpm %D0, Z + 3;"
+          : "=r" (retValue)
+          : "z" (ptr)
+          :
+        );
+      }
+      else if constexpr (sizeof(U) == 5)
+      {
+        __asm__ __volatile__
+        (
+          "lpm %A0, Z;"
+          "lpm %B0, Z + 1;"
+          "lpm %C0, Z + 2;"
+          "lpm %D0, Z + 3;"
+          "lpm %E0, Z + 4;"
+          : "=r" (retValue)
+          : "z" (ptr)
+          :
+        );
+      }
+      else if constexpr (sizeof(U) == 6)
+      {
+        __asm__ __volatile__
+        (
+          "lpm %A0, Z;"
+          "lpm %B0, Z + 1;"
+          "lpm %C0, Z + 2;"
+          "lpm %D0, Z + 3;"
+          "lpm %E0, Z + 4;"
+          "lpm %F0, Z + 5;"
+          : "=r" (retValue)
+          : "z" (ptr)
+          :
+        );
+      }
+      else if constexpr (sizeof(U) == 7)
+      {
+        __asm__ __volatile__
+        (
+          "lpm %A0, Z;"
+          "lpm %B0, Z + 1;"
+          "lpm %C0, Z + 2;"
+          "lpm %D0, Z + 3;"
+          "lpm %E0, Z + 4;"
+          "lpm %F0, Z + 5;"
+          "lpm %G0, Z + 6;"
+          : "=r" (retValue)
+          : "z" (ptr)
+          :
+        );
+      }
+      else if constexpr (sizeof(U) == 8)
+      {
+        __asm__ __volatile__
+        (
+          "lpm %A0, Z;"
+          "lpm %B0, Z + 1;"
+          "lpm %C0, Z + 2;"
+          "lpm %D0, Z + 3;"
+          "lpm %E0, Z + 4;"
+          "lpm %F0, Z + 5;"
+          "lpm %G0, Z + 6;"
+          "lpm %H0, Z + 7;"
+          : "=r" (retValue)
+          : "z" (ptr)
+          :
+        );
+      }
+      else if constexpr (sizeof(U) > 8)
+      {
         uint8 *retValuePtr = (uint8 *)&retValue;
-        constexpr uint8 type_size = sizeof(T);
+        constexpr uint8 type_size = sizeof(U);
         // TODO : we should hand-optimize this routine, as this is suboptimal by far.
 
-        constexpr uint8 dwords = type_size / 4;
+        constexpr uint8 qwords = type_size / 8;
 
-        for (uint8 i = 0; i < dwords; ++i)
+        for (uint8 i = 0; i < qwords; ++i)
         {
-          *(uint32 *)retValuePtr = pgm_read_dword(ptr);
+          auto &val = *(uint64 *)retValuePtr;
+          __asm__ __volatile__
+          (
+            "lpm %A0, Z;"
+            "lpm %B0, Z + 1;"
+            "lpm %C0, Z + 2;"
+            "lpm %D0, Z + 3;"
+            "lpm %E0, Z + 4;"
+            "lpm %F0, Z + 5;"
+            "lpm %G0, Z + 6;"
+            "lpm %H0, Z + 7;"
+            : "=r" (val)
+            : "z" (ptr)
+            :
+          );
+          retValuePtr += 8;
+          ptr += 8;
+        }
+        if constexpr (type_size & 4)
+        {
+          auto &val = *(uint32 *)retValuePtr = pgm_read_word(ptr);
+          __asm__ __volatile__
+          (
+            "lpm %A0, Z;"
+            "lpm %B0, Z + 1;"
+            "lpm %C0, Z + 2;"
+            "lpm %D0, Z + 3;"
+            : "=r" (val)
+            : "z" (ptr)
+            :
+          );
           retValuePtr += 4;
           ptr += 4;
         }
-
         if constexpr (type_size & 2)
         {
-          *(uint16 *)retValuePtr = pgm_read_word(ptr);
+          auto &val = *(uint16 *)retValuePtr = pgm_read_word(ptr);
+          __asm__ __volatile__
+          (
+            "lpm %A0, Z;"
+            "lpm %B0, Z + 1;"
+            : "=r" (val)
+            : "z" (ptr)
+            :
+          );
           retValuePtr += 2;
           ptr += 2;
         }
         if constexpr (type_size & 1)
         {
-          *(uint8 *)retValuePtr = pgm_read_byte(ptr);
+          auto &val = *(uint8 *)retValuePtr = pgm_read_byte(ptr);
+          __asm__ __volatile__
+          (
+            "lpm %A0, Z;"
+            : "=r" (val)
+            : "z" (ptr)
+            :
+          );
         }
-
-        return retValue;
       }
+      return retValue;
     }
 
   public:
@@ -877,7 +1008,8 @@ namespace tuna::utils
     constexpr flash(const flash &data) : m_Value(data.m_Value) {}
     constexpr flash(const T &value) : m_Value(value) {}
 
-    constexpr operator T () const
+    template <typename U = T>
+    constexpr T get() const
     {
       if (__builtin_constant_p(m_Value))
       {
@@ -885,10 +1017,23 @@ namespace tuna::utils
       }
       else
       {
-        return rt_getter();
+        return rt_getter<T>();
       }
     }
+
+    constexpr operator T () const
+    {
+      return get();
+    }
   };
+
+  template<typename T, size_t N>
+  constexpr inline _derive_array_size(T(&)[N])
+  {
+    return N;
+  }
+
+  template<typename T> constexpr const int8_t array_size = _derive_array_size(T{});
 
 	// WIP
 #if 0

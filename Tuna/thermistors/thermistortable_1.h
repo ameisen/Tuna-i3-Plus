@@ -27,20 +27,13 @@ namespace Thermistor
 
 	struct TablePair final
 	{
-		uint16_t Adc = 0;
-		uint16_t Temperature = 0;
+    flash<uint16_t> Adc = 0;
+    flash<uint16_t> Temperature = 0;
 
 		constexpr TablePair() = default;
 		constexpr TablePair(uint16_t _ADC, uint16_t _Temperature) :
 			Adc(_ADC * OVERSAMPLENR), Temperature(_Temperature << temp_t::fractional_bits)
 		{}
-
-		constexpr TablePair & operator = (const TablePair &pair)
-		{
-			Adc = pair.Adc;
-			Temperature = pair.Temperature;
-			return *this;
-		}
 	};
 
 	constexpr const PROGMEM TablePair temp_table[]{
@@ -106,7 +99,7 @@ namespace Thermistor
 		{ 1005, 5 },
 		{ 1009, 0 }
 	};
-	constexpr uint8_t temp_table_size = sizeof(temp_table) / sizeof(temp_table[0]);
+	constexpr uint8_t temp_table_size = array_size<decltype(temp_table)>;
 
 	constexpr const bool IsFixedStepTable_Temperature = true;
 	constexpr const uintsz<5 << temp_t::fractional_bits> FixedStepTable_Temperature = 5 << temp_t::fractional_bits;
@@ -117,11 +110,11 @@ namespace Thermistor
 	{
 		if constexpr (i == end)
 		{
-			return max(temp_table[i].Adc, best);
+			return max(temp_table[i].Adc.get(), best);
 		}
 		else
 		{
-			return get_max_adc<i + 1, end>(max(temp_table[i].Adc, best));
+			return get_max_adc<i + 1, end>(max(temp_table[i].Adc.get(), best));
 		}
 	}
 
@@ -130,11 +123,11 @@ namespace Thermistor
 	{
 		if constexpr (i == end)
 		{
-			return min(temp_table[i].Adc, best);
+			return min(temp_table[i].Adc.get(), best);
 		}
 		else
 		{
-			return get_min_adc<i + 1, end>(min(temp_table[i].Adc, best));
+			return get_min_adc<i + 1, end>(min(temp_table[i].Adc.get(), best));
 		}
 	}
 
@@ -143,11 +136,11 @@ namespace Thermistor
 	{
 		if constexpr (i == end)
 		{
-			return max(temp_table[i].Temperature, best);
+			return max(temp_table[i].Temperature.get(), best);
 		}
 		else
 		{
-			return get_max_temperature<i + 1, end>(max(temp_table[i].Temperature, best));
+			return get_max_temperature<i + 1, end>(max(temp_table[i].Temperature.get(), best));
 		}
 	}
 
@@ -156,11 +149,11 @@ namespace Thermistor
 	{
 		if constexpr (i == end)
 		{
-			return min(temp_table[i].Temperature, best);
+			return min(temp_table[i].Temperature.get(), best);
 		}
 		else
 		{
-			return get_min_temperature<i + 1, end>(min(temp_table[i].Temperature, best));
+			return get_min_temperature<i + 1, end>(min(temp_table[i].Temperature.get(), best));
 		}
 	}
 
@@ -213,7 +206,7 @@ namespace Thermistor
 		}
 		else
 		{
-			return get_max_adc_uint8_temp<i + 1>(temp_table[i].Temperature <= 0xFF ? (temp_table[i].Adc > max_adc ? temp_table[i].Adc : max_adc) : max_adc);
+			return get_max_adc_uint8_temp<i + 1>(temp_table[i].Temperature <= 0xFF ? (temp_table[i].Adc > max_adc ? temp_table[i].Adc.get() : max_adc) : max_adc);
 		}
 	}
 
@@ -227,7 +220,7 @@ namespace Thermistor
 		else
 		{
 			constexpr bool set_new_adc = (temp_table[i].Temperature <= 0xFF) && (temp_table[i].Adc > adc);
-			return get_max_adc_uint8_temp_idx<i + 1, set_new_adc ? temp_table[i].Adc : adc>(set_new_adc ? i : idx);
+			return get_max_adc_uint8_temp_idx<i + 1, set_new_adc ? temp_table[i].Adc.get() : adc>(set_new_adc ? i : idx);
 		}
 	}
 
@@ -243,7 +236,7 @@ namespace Thermistor
 		}
 		else
 		{
-			return get_min_adc_uint8_temp<i + 1>(temp_table[i].Temperature <= 0xFF ? (temp_table[i].Adc <= min_adc ? temp_table[i].Adc : min_adc) : min_adc);
+			return get_min_adc_uint8_temp<i + 1>(temp_table[i].Temperature <= 0xFF ? (temp_table[i].Adc <= min_adc ? temp_table[i].Adc.get() : min_adc) : min_adc);
 		}
 	}
 
@@ -257,7 +250,7 @@ namespace Thermistor
 		else
 		{
 			constexpr bool set_new_adc = (temp_table[i].Temperature <= 0xFF) && (temp_table[i].Adc <= adc);
-			return get_min_adc_uint8_temp_idx<i + 1, set_new_adc ? temp_table[i].Adc : adc, set_new_adc ? i : idx>();
+			return get_min_adc_uint8_temp_idx<i + 1, set_new_adc ? temp_table[i].Adc.get() : adc, set_new_adc ? i : idx>();
 		}
 	}
 
@@ -273,7 +266,7 @@ namespace Thermistor
 		}
 		else
 		{
-			return get_max_adc_uint8<i + 1>(((temp_table[i].Adc >= adc) && temp_table[i].Adc <= 0xFF) ? temp_table[i].Adc : adc);
+			return get_max_adc_uint8<i + 1>(((temp_table[i].Adc >= adc) && temp_table[i].Adc <= 0xFF) ? temp_table[i].Adc.get() : adc);
 		}
 	}
 
@@ -287,7 +280,7 @@ namespace Thermistor
 		else
 		{
 			constexpr bool set_new_adc = ((temp_table[i].Adc >= adc) && temp_table[i].Adc <= 0xFF);
-			return get_max_adc_uint8_idx<i + 1, set_new_adc ? temp_table[i].Adc : adc, set_new_adc ? i : idx>();
+			return get_max_adc_uint8_idx<i + 1, set_new_adc ? temp_table[i].Adc.get() : adc, set_new_adc ? i : idx>();
 		}
 	}
 
@@ -340,8 +333,8 @@ namespace Thermistor
 			}
 			else
 			{
-				constexpr auto best_value = temp_table[best_le];
-				constexpr auto next_value = temp_table[best_le + higher_temp_idx];
+				constexpr auto &best_value = temp_table[best_le];
+				constexpr auto &next_value = temp_table[best_le + higher_temp_idx];
 				constexpr auto interp = interpoland<temperature, best_value.Temperature, next_value.Temperature>();
 				return interpolate<
 					interp.delta, interp.max, best_value.Adc, next_value.Adc
@@ -350,11 +343,11 @@ namespace Thermistor
 		}
 		else
 		{
-			constexpr auto cur_value = temp_table[cur_idx];
-			constexpr auto best_value = temp_table[best_le];
+			constexpr auto &cur_value = temp_table[cur_idx];
+			constexpr auto &best_value = temp_table[best_le];
 			return ce_convert_temp_to_adc<
 				temperature, false, cur_idx + 1,
-				(cur_value.Temperature <= temperature && cur_value.Temperature > best_value.Temperature) ?
+				(cur_value.Temperature.get() <= temperature && cur_value.Temperature.get() > best_value.Temperature.get()) ?
 					cur_idx : best_le
 			>();
 		}
@@ -410,7 +403,7 @@ namespace Thermistor
 		do
 		{
 			m = (L + R) / 2;
-			adc_t A = pgm_read<adc_t>(temp_table[m].Adc);
+			adc_t A = temp_table[m].Adc.get<adc_t>();
 			if (A < adc)
 			{
 				L = m + 1;
@@ -421,14 +414,14 @@ namespace Thermistor
 			}
 			else
 			{
-				return { temp_t::from(pgm_read<deltatemp_t>(temp_table[m].Temperature)) };
+				return { temp_t::from(temp_table[m].Temperature.get<deltatemp_t>()) };
 			}
 		} while (L <= R);
 
 		// L is either equal to or less than our real value. We need to interpolate between this value and L+1.
 
-		adc_t le_value = pgm_read<adc_t>(temp_table[L - 1].Adc);
-		adc_t g_value = pgm_read<adc_t>(temp_table[L].Adc);
+		adc_t le_value = temp_table[L - 1].Adc.get<adc_t>();
+		adc_t g_value = temp_table[L].Adc.get<adc_t>();
 
 		//assert(le_value <= adc);
 		//assert(g_value > adc);
@@ -506,7 +499,7 @@ namespace Thermistor
 
 		auto interpoland = get_interpoland(le_value, g_value, adc);
 
-		const deltatemp_t g_value_t = pgm_read<deltatemp_t>(temp_table[L].Temperature);
+		const deltatemp_t g_value_t = temp_table[L].Temperature.get<deltatemp_t>();
 		const deltatemp_t le_value_t = [&, L]()->deltatemp_t
 		{
 			// Save on a load when we can derive it from something already loaded.
@@ -516,7 +509,7 @@ namespace Thermistor
 			}
 			else
 			{
-				return pgm_read<deltatemp_t>(temp_table[L - 1].Temperature);
+				return temp_table[L - 1].Temperature.get<deltatemp_t>();
 			}
 		}();
 
@@ -540,7 +533,7 @@ namespace Thermistor
 				const bool small_temp = (adc >= min_adc_uint8_temp);
 				constexpr const uint8 small_temp_bit = 0b10;
 
-				const uint8 bit = (small_adc ? small_adc_bit : 0b00) | (small_temp ? small_temp_bit : 0b00);
+				const uint8 bit = uint8(small_adc) | (uint8(small_temp) << 1);
 
 				switch (bit)
 				{
