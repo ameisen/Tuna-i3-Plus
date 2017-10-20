@@ -28,10 +28,8 @@
 #include "thermal/thermal.hpp"
 #include "bi3_plus_lcd.h"
 #include "planner.h"
-#include "language.h"
 #include "configuration_store.h"
 #include "watchdog.h"
-#include "tunalib/initializer_list.h"
 
 #define K2 (1.0-K1)
 

@@ -28,7 +28,7 @@
 
 #include "MarlinConfig.h"
 
-#include "tuna.h"
+#include <tuna.h>
 
 namespace Thermal
 {

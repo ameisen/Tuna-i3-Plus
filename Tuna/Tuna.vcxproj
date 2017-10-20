@@ -67,10 +67,12 @@
     <None Include="rbbuild\ascii.rb" />
     <None Include="rbbuild\atomic_int.rb" />
     <None Include="rbbuild\buildopts.rb" />
+    <None Include="rbbuild\clang_buildhandler.rb" />
     <None Include="rbbuild\gcc_buildhandler.rb" />
     <None Include="rbbuild\path_support.rb" />
     <None Include="rbbuild\rbbuild.rb" />
     <None Include="rbbuild\thread_exec.rb" />
+    <None Include="tuna.gcpp" />
     <None Include="tunalib\tunalib.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -113,6 +115,7 @@
     <ClInclude Include="stepper.h" />
     <ClInclude Include="stepper_indirection.h" />
     <ClInclude Include="stopwatch.h" />
+    <ClInclude Include="system\system.hpp" />
     <ClInclude Include="thermal.hpp" />
     <ClInclude Include="thermal\thermal.hpp" />
     <ClInclude Include="thermistors\thermistortables.h" />
@@ -175,6 +178,7 @@
     <ClCompile Include="stepper.cpp" />
     <ClCompile Include="stepper_indirection.cpp" />
     <ClCompile Include="stopwatch.cpp" />
+    <ClCompile Include="system\system.cpp" />
     <ClCompile Include="thermal.cpp" />
     <ClCompile Include="thermal\thermal.cpp" />
     <ClCompile Include="tunalib\utils.cpp" />

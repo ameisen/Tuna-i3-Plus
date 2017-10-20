@@ -26,7 +26,7 @@
 #include "Marlin.h"
 #include "macros.h"
 
-#include "tuna.h"
+#include <tuna.h>
 
 constexpr const uint8 OVERSAMPLENR = 16;
 

@@ -823,6 +823,73 @@ namespace tuna::utils
 	extern uint24 millis24();
 	extern uint16 millis16();
 
+  template <typename T>
+  alignas(T) class flash final
+  {
+    T PROGMEM m_Value = T{};
+
+    // Put ASM into another function... which works for some reason.
+    T rt_getter() const
+    {
+      uint16 ptr = (uint16)&m_Value;
+
+      if constexpr (sizeof(T) == 1)
+      {
+        return (const T &)pgm_read_byte(ptr);
+      }
+      else if constexpr (sizeof(T) == 2)
+      {
+        return (const T &)pgm_read_word(ptr);
+      }
+      else if constexpr (sizeof(T) > 2)
+      {
+        T retValue;
+        uint8 *retValuePtr = (uint8 *)&retValue;
+        constexpr uint8 type_size = sizeof(T);
+        // TODO : we should hand-optimize this routine, as this is suboptimal by far.
+
+        constexpr uint8 dwords = type_size / 4;
+
+        for (uint8 i = 0; i < dwords; ++i)
+        {
+          *(uint32 *)retValuePtr = pgm_read_dword(ptr);
+          retValuePtr += 4;
+          ptr += 4;
+        }
+
+        if constexpr (type_size & 2)
+        {
+          *(uint16 *)retValuePtr = pgm_read_word(ptr);
+          retValuePtr += 2;
+          ptr += 2;
+        }
+        if constexpr (type_size & 1)
+        {
+          *(uint8 *)retValuePtr = pgm_read_byte(ptr);
+        }
+
+        return retValue;
+      }
+    }
+
+  public:
+    constexpr flash() = default;
+    constexpr flash(const flash &data) : m_Value(data.m_Value) {}
+    constexpr flash(const T &value) : m_Value(value) {}
+
+    constexpr operator T () const
+    {
+      if (__builtin_constant_p(m_Value))
+      {
+        return m_Value;
+      }
+      else
+      {
+        return rt_getter();
+      }
+    }
+  };
+
 	// WIP
 #if 0
 	template <typename T>

@@ -8,7 +8,11 @@ require 'pathname'
 require_relative 'path_support.rb'
 require_relative 'buildopts.rb'
 require_relative 'gcc_buildhandler.rb'
+require_relative 'clang_buildhandler.rb'
 require_relative 'thread_exec.rb'
+
+$USE_CLANG = false
+$C_BUILD_HANDLER = $USE_CLANG ? $clang_buildhandler : $gpp_buildhandler
 
 def duration (timediff)
 	out = ""
@@ -123,10 +127,11 @@ def vputs(str, tabs = 0)
 end
 
 # Build Handler setup
+$pch_files = Hash.new nil
 $source_files = Hash.new nil
 $source_handlers = Hash.new nil
 Handlers = [
-	$gpp_buildhandler
+	$C_BUILD_HANDLER
 ]
 
 Handlers.each { |handler|
@@ -134,6 +139,7 @@ Handlers.each { |handler|
 		$source_handlers[ext.downcase] = handler
 	}
 	$source_files[handler] = []
+	$pch_files[handler] = []
 }
 
 init_time = Time.now - init_time
@@ -166,20 +172,28 @@ class Source
 	attr_accessor :hash
 	attr_accessor :handler
 	attr_accessor :build
+	attr_accessor :extension
 	
 	def initialize (params = {})
 		@path = params.fetch(:path)
 		@hash = params.fetch(:hash)
 		@handler = params.fetch(:handler)
 		@build = false
+		@extension = params.fetch(:extension)
 	end
 	
 	def object_path
 		base = File.basename(path)
-		ipath = $BuildOptions.intermediate + "/" + hash.to_s(36) + "/" + base + ".o"
+		if (extension == ".h.gch")
+			ipath = $BuildOptions.intermediate + "/" + hash.to_s(36) + "/" + File.basename(base,File.extname(base)) + extension
+		else
+			ipath = $BuildOptions.intermediate + "/" + hash.to_s(36) + "/" + base + extension
+		end
 		return best_path(ipath)
 	end
 end
+
+$pch_header_includes = []
 
 $BuildOptions.src_dirs.each { |dir|
 	dir = File.expand_path(dir)
@@ -196,8 +210,14 @@ $BuildOptions.src_dirs.each { |dir|
 				extension = File.extname(entry).downcase
 				next if $source_handlers[extension] == nil
 				path = best_path(entry)
-				source_file = Source.new( path: path, hash: hash, handler: $gpp_buildhandler )
-				$source_files[$gpp_buildhandler] << source_file;
+				if ($C_BUILD_HANDLER.is_gccp(path))
+					source_file = Source.new( path: path, hash: hash, handler: $C_BUILD_HANDLER, extension: ".h.gch" )
+					$pch_header_includes << File.dirname(source_file.object_path)
+					$pch_files[$C_BUILD_HANDLER] << source_file
+				else
+					source_file = Source.new( path: path, hash: hash, handler: $C_BUILD_HANDLER, extension: ".o" )
+					$source_files[$C_BUILD_HANDLER] << source_file;
+				end
 			end
 		end
 	end
@@ -223,7 +243,13 @@ newest_objtime = 0.0
 any_rebuild = false
 puts "Determining which object files need to be rebuilt"
 $dependency_times = Hash.new nil
-$source_files.each { |handler, files|
+
+$combined_hash = $source_files.clone
+$pch_files.each { |handler, files|
+	$combined_hash[handler] += files
+}
+
+$combined_hash.each { |handler, files|
 	Threader.new(
 		-> (idx) {
 			src = files[idx]
@@ -279,9 +305,10 @@ puts "Dependency Generation Complete. (#{duration(dep_time)})"
 compile_time = Time.now
 
 if (any_rebuild)
+
 	if ($BuildOptions.verbose)
 		puts "The following files will be compiled:"
-		$source_files.each { |handler, files|
+		$combined_hash.each { |handler, files|
 			files.each { |src|
 				if (src.build)
 					puttabs(src.path, 1);
@@ -291,8 +318,7 @@ if (any_rebuild)
 	end
 	
 	puts "Compiling..."
-	$source_files.each { |handler, files|
-	
+	$pch_files.each { |handler, files|
 		Threader.new(
 		-> (idx) {
 			src = files[idx]
@@ -301,7 +327,22 @@ if (any_rebuild)
 				if !$BuildOptions.verbose
 					puttabs src.path
 				end
-				handler.compile(src.path, src.object_path(), $BuildOptions.verbose)
+				handler.compile(src.path, src.object_path(), [], $BuildOptions.verbose)
+				STDOUT.flush
+			end
+		},
+		files.length).join()
+	}
+	$source_files.each { |handler, files|
+		Threader.new(
+		-> (idx) {
+			src = files[idx]
+			
+			if (src.build)
+				if !$BuildOptions.verbose
+					puttabs src.path
+				end
+				handler.compile(src.path, src.object_path(), $pch_header_includes, $BuildOptions.verbose)
 				STDOUT.flush
 			end
 		},
@@ -368,7 +409,7 @@ end
 
 if (binary_rebuild)
 	puts "Output Binary is out of date, relinking."
-	$gpp_buildhandler.link(binary_path, archive_path, [])
+	$C_BUILD_HANDLER.link(binary_path, archive_path, [])
 	any_rebuild = true
 	link_time = Time.now - link_time
 	puts "Linking Complete (#{duration(link_time)})"
@@ -410,7 +451,7 @@ else
 	any_rebuild = true
 	puttabs "EEP file is out of date - rebuilding."
 	command = "-O ihex -j .eeprom --set-section-flags=.eeprom=alloc,load --no-change-warnings --change-section-lma .eeprom=0 #{quote_wrap($BuildOptions.output)} #{quote_wrap(eep_path)}"
-	$gpp_buildhandler.objcopy(command)
+	$C_BUILD_HANDLER.objcopy(command)
 	# avr-objcopy" -O ihex -j .eeprom --set-section-flags=.eeprom=alloc,load --no-change-warnings --change-section-lma .eeprom=0  "C:\Users\mkuklinski\AppData\Local\Temp\arduino_build_225425/Marlin.ino.elf" "C:\Users\mkuklinski\AppData\Local\Temp\arduino_build_225425/Marlin.ino.eep"
 end
 
@@ -422,7 +463,7 @@ else
 	any_rebuild = true
 	puttabs "HEX file is out of date - rebuilding."
 	command = "-O ihex -R .eeprom #{quote_wrap($BuildOptions.output)} #{quote_wrap(hex_path)}"
-	$gpp_buildhandler.objcopy(command)
+	$C_BUILD_HANDLER.objcopy(command)
 	# avr-objcopy" -O ihex -R .eeprom  "C:\Users\mkuklinski\AppData\Local\Temp\arduino_build_225425/Marlin.ino.elf" "C:\Users\mkuklinski\AppData\Local\Temp\arduino_build_225425/Marlin.ino.hex"
 end
 

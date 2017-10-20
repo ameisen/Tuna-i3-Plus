@@ -2,9 +2,13 @@ $script_mtime = [$script_mtime, File.mtime(__FILE__).to_f].max
 
 require_relative 'path_support.rb'
 
-$ARDUINO_BIN_PATH = best_path(ENV["ARDUINO_PATH"] + "hardware/tools/avr/bin", Dir.pwd) + "/"
+#$CLANG_BIN_PATH = best_path(ENV["ARDUINO_PATH"] + "hardware/tools/avr/bin", Dir.pwd) + "/"
+$CLANG_BIN_PATH = "D:/Projects/llvm/build/Debug/bin/"
 
-$gpp_buildhandler = Class.new do
+$ARDUINO_INC_PATH = best_path(ENV["ARDUINO_PATH"] + "hardware/tools/avr/avr/include", Dir.pwd) + "/"
+$ARDUINO_LIB_PATH = best_path(ENV["ARDUINO_PATH"] + "hardware/tools/avr/avr/lib", Dir.pwd) + "/"
+
+$clang_buildhandler = Class.new do
 	def self.name
 		return "gcc/g++ build handler"
 	end
@@ -33,23 +37,25 @@ $gpp_buildhandler = Class.new do
 	end
 	
 	def self.gpp_path
-		return quote_wrap($ARDUINO_BIN_PATH + "avr-g++.exe")
+		return quote_wrap($CLANG_BIN_PATH + "clang++.exe")
 	end
 	
 	def self.gcc_path
-		return quote_wrap($ARDUINO_BIN_PATH + "avr-gcc.exe")
+		return quote_wrap($CLANG_BIN_PATH + "clang.exe")
 	end
 	
 	def self.archiver_path
-		return quote_wrap($ARDUINO_BIN_PATH + "avr-gcc-ar.exe")
+		return quote_wrap($CLANG_BIN_PATH + "llvm-ar.exe")
 	end
 	
 	def self.objcopy_path
-		return quote_wrap($ARDUINO_BIN_PATH + "avr-objcopy.exe")
+		return quote_wrap($CLANG_BIN_PATH + "llvm-objcopy.exe")
 	end
 	
 	def self.buildline(source = "dummy.cpp")
 		buildopts = [
+			"-target avr-none-none",
+			"-fuse-ld=lld.exe",
 			is_gccp(source) ? "-x c++" : "",
 			"-O3",
 			"-w",
@@ -59,10 +65,8 @@ $gpp_buildhandler = Class.new do
 			"-fno-threadsafe-statics",
 			"-flto",
 			"-fno-fat-lto-objects",
-			"-fno-keep-static-consts",
 			"-fmerge-all-constants",
 			"-funsafe-loop-optimizations",
-			"-fpredictive-commoning",
 			"-mmcu=atmega2560",
 			is_c(source) ? "-std=gnu11" : "-std=gnu++1z",
 			is_c(source) ? "" : "-fno-exceptions",
@@ -72,29 +76,17 @@ $gpp_buildhandler = Class.new do
 			"-DARDUINO_ARCH_AVR",
 			"-I#{quote_wrap(best_path(ENV["ARDUINO_PATH"] + "hardware/arduino/avr/cores/arduino", Dir.pwd))}",
 			"-I#{quote_wrap(best_path(ENV["ARDUINO_PATH"] + "hardware/arduino/avr/variants/mega", Dir.pwd))}",
+			"-I#{quote_wrap($ARDUINO_INC_PATH)}",
 			"-I.",
 			"-isystem./tuna",
-			"-fdelete-dead-exceptions",
 			"-fshort-enums",
-			"-freg-struct-return",
 			"-fno-common",
 			"-funswitch-loops",
 			"-fgcse-after-reload",
-			"-fsplit-paths",
-			"-ftree-partial-pre",
 			"-fgcse-sm",
 			"-fgcse-las",
 			"-fgcse-after-reload",
-			"-fdeclone-ctor-dtor",
 			"-fdevirtualize-speculatively",
-			"-fdevirtualize-at-ltrans",
-			"-free",
-			"-fsched-pressure",
-			"-fsched-spec-load",
-			"-fipa-pta",
-			"-ftree-builtin-call-dce",
-			"-ftree-loop-distribute-patterns",
-			"-ftree-loop-ivcanon",
 			"-fivopts",
 			"-fvariable-expansion-in-unroller",
 			"-fno-align-functions",
@@ -103,9 +95,7 @@ $gpp_buildhandler = Class.new do
 			"-fno-align-jumps",
 			"-fassociative-math",
 			"-freciprocal-math",
-			"-fbranch-target-load-optimize",
-			"-fbranch-target-load-optimize2",
-			"-fstdarg-opt"
+			"-Wl,-rpath=#{quote_wrap($ARDUINO_LIB_PATH)}"
 		]
 		
 		# -fdelete-dead-exceptions
@@ -139,6 +129,7 @@ $gpp_buildhandler = Class.new do
 	end
 	
 	def self.compile(source, out, include_paths, print_cmd = true)		
+		puts "compile"
 		includes = ""
 		include_paths.each { |path|
 			includes += "-I#{quote_wrap(path)} "
@@ -159,6 +150,7 @@ $gpp_buildhandler = Class.new do
 	end
 	
 	def self.get_dependencies(source, print_cmd = false)
+		puts "get_dependencies"
 		command = compiler_path(source) + " " + buildline(source) + " -M -MT \"\" #{quote_wrap(source)}"
 		if (print_cmd)
 			puts $TAB + command
@@ -179,6 +171,7 @@ $gpp_buildhandler = Class.new do
 	end
 	
 	def self.archive(archive, objects, print_cmd = true)
+		puts "archive"
 		@MaxCmd = 8191
 	
 		baseCmd = archiver_path() + " rcs " + quote_wrap(archive) + " ";
@@ -214,7 +207,7 @@ $gpp_buildhandler = Class.new do
 	end
 	
 	def self.link(outfile, archive, library_paths, print_cmd = true)
-	
+		puts "link"
 		lib_str = ""
 		library_paths.each { |dir|
 			lib_str += "-L#{quote_wrap(dir)} "

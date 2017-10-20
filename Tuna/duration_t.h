@@ -23,7 +23,7 @@
 #ifndef __DURATION_T__
 #define __DURATION_T__
 
-#include "tuna.h"
+#include <tuna.h>
 
 template <typename T>
 struct _duration_t final

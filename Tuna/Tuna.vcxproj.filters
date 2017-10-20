@@ -25,6 +25,10 @@
     <None Include="rbbuild\buildopts.rb">
       <Filter>rbbuild</Filter>
     </None>
+    <None Include="tuna.gcpp" />
+    <None Include="rbbuild\clang_buildhandler.rb">
+      <Filter>rbbuild</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="tunalib\initializer_list.h">
@@ -179,6 +183,9 @@
     <ClInclude Include="thermal\thermal.hpp">
       <Filter>thermal</Filter>
     </ClInclude>
+    <ClInclude Include="system\system.hpp">
+      <Filter>system</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tunalib">
@@ -201,6 +208,9 @@
     </Filter>
     <Filter Include="thermal">
       <UniqueIdentifier>{8319d257-26a3-4d61-87c0-4070057a5e26}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="system">
+      <UniqueIdentifier>{c4554f4d-804d-4ec1-a2d9-22bb19f117d2}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -231,6 +241,9 @@
     </ClCompile>
     <ClCompile Include="tunalib\utils.cpp">
       <Filter>tunalib</Filter>
+    </ClCompile>
+    <ClCompile Include="system\system.cpp">
+      <Filter>system</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
