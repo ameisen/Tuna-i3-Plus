@@ -33,8 +33,8 @@
  *  - X_HEAD and Y_HEAD is used for systems that don't have a 1:1 relationship
  *    between X_AXIS and X Head movement, like CoreXY bots
  */
-enum AxisEnum {
-  NO_AXIS   = -1,
+enum AxisEnum : uint8_t {
+  NO_AXIS   = 0xFF, // was -1,
   X_AXIS    = 0,
   A_AXIS    = 0,
   Y_AXIS    = 1,
@@ -58,22 +58,22 @@ enum AxisEnum {
 #define LOOP_XYZE(VAR) LOOP_S_LE_N(VAR, X_AXIS, E_AXIS)
 #define LOOP_XYZE_N(VAR) LOOP_S_L_N(VAR, X_AXIS, XYZE_N)
 
-typedef enum {
+enum LinearUnit : uint8_t {
   LINEARUNIT_MM,
   LINEARUNIT_INCH
-} LinearUnit;
+};
 
-typedef enum {
+enum TempUnit : uint8_t {
   TEMPUNIT_C,
   TEMPUNIT_K,
   TEMPUNIT_F
-} TempUnit;
+};
 
 /**
  * Debug flags
  * Not yet widely applied
  */
-enum DebugFlags {
+enum DebugFlags : uint8_t {
   DEBUG_NONE          = 0,
   DEBUG_ECHO          = _BV(0), ///< Echo commands in order as they are processed
   DEBUG_INFO          = _BV(1), ///< Print messages for code that has debug output
@@ -85,7 +85,7 @@ enum DebugFlags {
   DEBUG_ALL           = 0xFF
 };
 
-enum EndstopEnum {
+enum EndstopEnum : uint8_t {
   X_MIN,
   Y_MIN,
   Z_MIN,
@@ -98,7 +98,7 @@ enum EndstopEnum {
 };
 
 #if ENABLED(EMERGENCY_PARSER)
-  enum e_parser_state {
+  enum e_parser_state : uint8_t {
     state_RESET,
     state_N,
     state_M,
@@ -115,14 +115,14 @@ enum EndstopEnum {
 #endif
 
 #if ENABLED(ADVANCED_PAUSE_FEATURE)
-  enum AdvancedPauseMenuResponse {
+  enum AdvancedPauseMenuResponse : uint8_t {
     ADVANCED_PAUSE_RESPONSE_WAIT_FOR,
     ADVANCED_PAUSE_RESPONSE_EXTRUDE_MORE,
     ADVANCED_PAUSE_RESPONSE_RESUME_PRINT
   };
 
   #if ENABLED(ULTIPANEL)
-    enum AdvancedPauseMessage {
+    enum AdvancedPauseMessage : uint8_t {
       ADVANCED_PAUSE_MESSAGE_INIT,
       ADVANCED_PAUSE_MESSAGE_UNLOAD,
       ADVANCED_PAUSE_MESSAGE_INSERT,
@@ -142,7 +142,7 @@ enum EndstopEnum {
  * Marlin sends messages if blocked or busy
  */
 #if ENABLED(HOST_KEEPALIVE_FEATURE)
-  enum MarlinBusyState {
+  enum MarlinBusyState : uint8_t {
     NOT_BUSY,           // Not in a handler
     IN_HANDLER,         // Processing a GCode
     IN_PROCESS,         // Known to be blocking command input (as in G29)
@@ -154,12 +154,12 @@ enum EndstopEnum {
 /**
  * SD Card
  */
-enum LsAction { LS_SerialPrint, LS_Count, LS_GetFilename };
+enum LsAction : uint8_t { LS_SerialPrint, LS_Count, LS_GetFilename };
 
 /**
  * Ultra LCD
  */
-enum LCDViewAction {
+enum LCDViewAction : uint8_t {
   LCDVIEW_NONE,
   LCDVIEW_REDRAW_NOW,
   LCDVIEW_CALL_REDRAW_NEXT,
@@ -171,7 +171,7 @@ enum LCDViewAction {
  * Dual X Carriage modes. A Dual Nozzle can also do duplication.
  */
 #if ENABLED(DUAL_X_CARRIAGE) || ENABLED(DUAL_NOZZLE_DUPLICATION_MODE)
-  enum DualXMode {
+  enum DualXMode : uint8_t {
     DXC_FULL_CONTROL_MODE,  // DUAL_X_CARRIAGE only
     DXC_AUTO_PARK_MODE,     // DUAL_X_CARRIAGE only
     DXC_DUPLICATION_MODE
@@ -183,7 +183,7 @@ enum LCDViewAction {
  * (and "canned cycles" - not a current feature)
  */
 #if ENABLED(CNC_WORKSPACE_PLANES)
-  enum WorkspacePlane { PLANE_XY, PLANE_ZX, PLANE_YZ };
+  enum WorkspacePlane : uint8_t { PLANE_XY, PLANE_ZX, PLANE_YZ };
 #endif
 
 #endif // __ENUM_H__

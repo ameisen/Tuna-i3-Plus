@@ -443,6 +443,8 @@ def quote_wrap(str)
 	return str
 end
 
+puts `avr-size #{quote_wrap($BuildOptions.output)}`
+
 eep_path = File.dirname($BuildOptions.output) + "/" + File.basename($BuildOptions.output) + ".eep"
 eep_ood = out_of_date(eep_path, $BuildOptions.output);
 if (!eep_ood)

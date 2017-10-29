@@ -75,15 +75,16 @@ $gpp_buildhandler = Class.new do
 			"-I.",
 			"-isystem./tuna",
 			"-fdelete-dead-exceptions",
-			"-fshort-enums",
+			"-fshort-enums", #-fno-short-enums is for some reason dramatically smaller. Investigate.
 			"-freg-struct-return",
 			"-fno-common",
-			"-funswitch-loops",
+			"-fno-unswitch-loops", #-funswitch-loops makes worse code on AVR.
 			"-fgcse-after-reload",
-			"-fsplit-paths",
+			"-ftree-loop-vectorize", # not sure why, but this generates better code?
+			"-fsplit-paths", #-fno-split-paths generates smaller code. Investigate if the code is actually better.
 			"-ftree-partial-pre",
-			"-fgcse-sm",
-			"-fgcse-las",
+			"-fno-gcse-sm",
+			"-fno-gcse-las",
 			"-fgcse-after-reload",
 			"-fdeclone-ctor-dtor",
 			"-fdevirtualize-speculatively",

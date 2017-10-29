@@ -35,7 +35,7 @@
  */
 class Stopwatch {
   private:
-    enum State {
+    enum State : uint8_t {
       STOPPED,
       RUNNING,
       PAUSED

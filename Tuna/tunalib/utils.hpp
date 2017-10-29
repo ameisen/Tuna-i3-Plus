@@ -799,11 +799,18 @@ namespace tuna::utils
 
 	template <uint64 value> using uintsz = typename _uintsz<value>::type;
 
+  template <uint64 value> constexpr auto make_uintsz = uintsz<value>{ value };
+
   template <typename T> using pgptr = uint16;
   template <typename T>
   constexpr inline pgptr<T> as_pgptr(T &var)
   {
     return pgptr<T>(&var);
+  }
+  template <typename T>
+  constexpr inline const pgptr<T> as_pgptr(const T &var)
+  {
+    return (const pgptr<T>)(&var);
   }
 
 	extern uint24 millis24();
@@ -816,9 +823,9 @@ namespace tuna::utils
 
     // Put ASM into another function... which works for some reason.
     template <typename U>
-    U rt_getter() const
+    static inline U rt_getter(const T &value)
     {
-      const pgptr<T> ptr = as_pgptr(m_Value);
+      const pgptr<T> ptr = as_pgptr(&value);
 
       U retValue;
 
@@ -960,7 +967,7 @@ namespace tuna::utils
         }
         if constexpr (type_size & 4)
         {
-          auto &val = *(uint32 *)retValuePtr = pgm_read_word(ptr);
+          auto &val = *(uint32 *)retValuePtr;
           __asm__ __volatile__
           (
             "lpm %A0, Z;"
@@ -976,7 +983,7 @@ namespace tuna::utils
         }
         if constexpr (type_size & 2)
         {
-          auto &val = *(uint16 *)retValuePtr = pgm_read_word(ptr);
+          auto &val = *(uint16 *)retValuePtr;
           __asm__ __volatile__
           (
             "lpm %A0, Z;"
@@ -990,7 +997,7 @@ namespace tuna::utils
         }
         if constexpr (type_size & 1)
         {
-          auto &val = *(uint8 *)retValuePtr = pgm_read_byte(ptr);
+          auto &val = *(uint8 *)retValuePtr;
           __asm__ __volatile__
           (
             "lpm %A0, Z;"
@@ -1017,7 +1024,7 @@ namespace tuna::utils
       }
       else
       {
-        return rt_getter<T>();
+        return rt_getter<T>(m_Value);
       }
     }
 

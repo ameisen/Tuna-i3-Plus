@@ -286,7 +286,7 @@ Temperature::Temperature() { }
 void Temperature::updatePID() {}
 
 template <Temperature::Manager manager_type>
-int Temperature::getHeaterPower() {
+uint8 Temperature::getHeaterPower() {
 	if constexpr (manager_type == Manager::Hotend)
 	{
 		return soft_pwm_amount;
@@ -296,8 +296,8 @@ int Temperature::getHeaterPower() {
 		return soft_pwm_amount_bed;
 	}
 }
-template int Temperature::getHeaterPower<Temperature::Manager::Hotend>();
-template int Temperature::getHeaterPower<Temperature::Manager::Bed>();
+template uint8 Temperature::getHeaterPower<Temperature::Manager::Hotend>();
+template uint8 Temperature::getHeaterPower<Temperature::Manager::Bed>();
 
 //
 // Temperature Error Handlers
@@ -401,7 +401,7 @@ void Temperature::manage_heater() {
 	if (target_temperature == 0_C)
 		soft_pwm_amount = 0;
 	else
-		soft_pwm_amount = (current_temperature > temp_t(Hotend::min_temperature::Temperature) || is_preheating()) && current_temperature < temp_t(Hotend::max_temperature::Temperature) ? (int)get_pid_output() >> 1 : 0;
+		soft_pwm_amount = (current_temperature > temp_t(Hotend::min_temperature::Temperature) || is_preheating()) && current_temperature < temp_t(Hotend::max_temperature::Temperature) ? (uint16)get_pid_output() >> 1 : 0;
 
 	// Make sure temperature is increasing
 	if (watch_heater_next_ms && ELAPSED(ms, watch_heater_next_ms)) { // Time to check this extruder?
@@ -738,7 +738,7 @@ volatile bool Temperature::in_temp_isr = false;
 /**
 * States for ADC reading in the ISR
 */
-enum ADCSensorState {
+enum ADCSensorState : uint8 {
 	PrepareTemp_0 = 0,
 	MeasureTemp_0,
 	PrepareTemp_BED,

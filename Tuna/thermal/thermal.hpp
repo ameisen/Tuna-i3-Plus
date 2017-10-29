@@ -32,7 +32,7 @@
 
 namespace Thermal
 {
-	constexpr const uintsz<300> max_temperature = 300;
+	constexpr const auto max_temperature = make_uintsz<300>;
 }
 
 using temp_t = tuna::fixedsz<Thermal::max_temperature, uint16, 4>; // autogenerate a proper fixed-precision type for this.
@@ -75,8 +75,8 @@ public:
 	struct TemperatureValueConverter final
 	{
 		TemperatureValueConverter() = delete;
-		static constexpr const uintsz<Celcius> Temperature = Celcius;
-		static constexpr const uintsz<Thermistor::ce_convert_temp_to_adc<Celcius>()> Adc = Thermistor::ce_convert_temp_to_adc<Celcius>();
+		static constexpr const auto Temperature = make_uintsz<Celcius>;
+		static constexpr const auto Adc = make_uintsz<Thermistor::ce_convert_temp_to_adc<Celcius>()>;
 	};
 
 	class Hotend final
@@ -217,7 +217,7 @@ public:
 	 * The software PWM power for a heater
 	 */
 	template <Manager manager_type>
-	static int getHeaterPower();
+	static uint8 getHeaterPower();
 
 	/**
 	 * Switch off all heaters, set all target temperatures to 0

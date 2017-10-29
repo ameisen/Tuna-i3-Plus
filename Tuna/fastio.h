@@ -117,7 +117,7 @@
  */
 
 // Waveform Generation Modes
-typedef enum {
+typedef enum : uint8_t {
   WGM_NORMAL,          //  0
   WGM_PWM_PC_8,        //  1
   WGM_PWM_PC_9,        //  2
@@ -137,7 +137,7 @@ typedef enum {
 } WaveGenMode;
 
 // Compare Modes
-typedef enum {
+typedef enum : uint8_t {
   COM_NORMAL,          //  0
   COM_TOGGLE,          //  1  Non-PWM: OCnx ... Both PWM (WGM 9,11,14,15): OCnA only ... else NORMAL
   COM_CLEAR_SET,       //  2  Non-PWM: OCnx ... Fast PWM: OCnx/Bottom ... PF-FC: OCnx Up/Down
@@ -145,7 +145,7 @@ typedef enum {
 } CompareMode;
 
 // Clock Sources
-typedef enum {
+typedef enum : uint8_t {
   CS_NONE,             //  0
   CS_PRESCALER_1,      //  1
   CS_PRESCALER_8,      //  2
@@ -157,7 +157,7 @@ typedef enum {
 } ClockSource;
 
 // Clock Sources (Timer 2 only)
-typedef enum {
+typedef enum : uint8_t {
   CS2_NONE,            //  0
   CS2_PRESCALER_1,     //  1
   CS2_PRESCALER_8,     //  2
