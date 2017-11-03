@@ -442,76 +442,14 @@ void Temperature::manage_heater() {
 // For hot end temperature measurement.
 temp_t Temperature::analog2temp(uint16 raw)
 {
-	//if (raw < temp_table[0].Adc)
-	//	return temp_table[0].Temperature;
-
-#if 1
 	return Thermistor::adc_to_temperature(raw);
-	//return get_temperaturef(raw);
-
-#elif 1
-	for (uint8 i = 1; i < temp_table_size; ++i) {
-		if (PGM_RD_W(temp_table[i].Adc) > raw) {
-			return PGM_RD_W(temp_table[i - 1].Temperature) +
-				(raw - PGM_RD_W(temp_table[i - 1].Adc)) *
-				(float)(PGM_RD_W(temp_table[i].Temperature) - PGM_RD_W(temp_table[i - 1].Temperature)) /
-				(float)(PGM_RD_W(temp_table[i].Adc) - PGM_RD_W(temp_table[i - 1].Adc));
-		}
-	}
-
-	// Overflow: Set to last value in the table
-	return PGM_RD_W(temp_table[temp_table_size - 1].Temperature);
-#else
-	for (uint8 i = 1; i < HEATER_0_TEMPTABLE_LEN; ++i) {
-		if (PGM_RD_W(HEATER_0_TEMPTABLE[i][0]) > raw) {
-			return PGM_RD_W(HEATER_0_TEMPTABLE[i - 1][1]) +
-				(raw - PGM_RD_W(HEATER_0_TEMPTABLE[i - 1][0])) *
-				(float)(PGM_RD_W(HEATER_0_TEMPTABLE[i][1]) - PGM_RD_W(HEATER_0_TEMPTABLE[i - 1][1])) /
-				(float)(PGM_RD_W(HEATER_0_TEMPTABLE[i][0]) - PGM_RD_W(HEATER_0_TEMPTABLE[i - 1][0]));
-		}
-	}
-
-	// Overflow: Set to last value in the table
-	return PGM_RD_W(HEATER_0_TEMPTABLE[HEATER_0_TEMPTABLE_LEN - 1][1]);
-#endif
 }
 
 // Derived from RepRap FiveD extruder::getTemperature()
 // For bed temperature measurement.
 temp_t Temperature::analog2tempBed(uint16 raw)
 {
-	//if (raw < temp_table[0].Adc)
-	//	return temp_table[0].Temperature;
-
-#if 1
 	return Thermistor::adc_to_temperature(raw);
-	//return get_temperaturef(raw);
-
-#elif 1
-	for (uint8 i = 1; i < temp_table_size; ++i) {
-		if (PGM_RD_W(temp_table[i].Adc) > raw) {
-			return PGM_RD_W(temp_table[i - 1].Temperature) +
-				(raw - PGM_RD_W(temp_table[i - 1].Adc)) *
-				(float)(PGM_RD_W(temp_table[i].Temperature) - PGM_RD_W(temp_table[i - 1].Temperature)) /
-				(float)(PGM_RD_W(temp_table[i].Adc) - PGM_RD_W(temp_table[i - 1].Adc));
-		}
-	}
-
-	// Overflow: Set to last value in the table
-	return PGM_RD_W(temp_table[temp_table_size - 1].Temperature);
-#else
-	for (uint8 i = 1; i < BEDTEMPTABLE_LEN; i++) {
-		if (PGM_RD_W(BEDTEMPTABLE[i][0]) > raw) {
-			return PGM_RD_W(BEDTEMPTABLE[i - 1][1]) +
-				(raw - PGM_RD_W(BEDTEMPTABLE[i - 1][0])) *
-				(float)(PGM_RD_W(BEDTEMPTABLE[i][1]) - PGM_RD_W(BEDTEMPTABLE[i - 1][1])) /
-				(float)(PGM_RD_W(BEDTEMPTABLE[i][0]) - PGM_RD_W(BEDTEMPTABLE[i - 1][0]));
-		}
-	}
-
-	// Overflow: Set to last value in the table
-	return PGM_RD_W(BEDTEMPTABLE[BEDTEMPTABLE_LEN - 1][1]);
-#endif
 }
 
 template <typename T>

@@ -1035,12 +1035,10 @@ namespace tuna::utils
   };
 
   template<typename T, size_t N>
-  constexpr inline _derive_array_size(T(&)[N])
+  constexpr inline array_size(T(&)[N])
   {
     return N;
   }
-
-  template<typename T> constexpr const int8_t array_size = _derive_array_size(T{});
 
 	// WIP
 #if 0

@@ -64,7 +64,7 @@ $gpp_buildhandler = Class.new do
 			"-funsafe-loop-optimizations",
 			"-fpredictive-commoning",
 			"-mmcu=atmega2560",
-			is_c(source) ? "-std=gnu11" : "-std=gnu++1z",
+			is_c(source) ? "-std=gnu11" : "-std=gnu++17",
 			is_c(source) ? "" : "-fno-exceptions",
 			"-DF_CPU=16000000L",
 			"-DARDUINO=10804",

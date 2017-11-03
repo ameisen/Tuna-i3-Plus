@@ -390,7 +390,7 @@ namespace tuna
 		}
 	};
 
-	template <uint64 value, typename T, uint8 minimum_frac = 1>
+	template <uint64 value, uint8 minimum_frac, typename T>
 	class _fixedsz final : ce_only
 	{
 		static_assert(minimum_frac >= 1, "You must have greater than 0 fractional bits in a fixed-precision type");
@@ -421,6 +421,6 @@ namespace tuna
 		using type = fixed<TP, fractional_bits>;
 	};
 
-	template <uint64 value, typename T = void, uint8 minimum_frac = 1>
-	using fixedsz = typename _fixedsz<value, T, minimum_frac>::type;
+	template <uint64 value, uint8 minimum_frac = 1, typename T = void>
+	using fixedsz = typename _fixedsz<value, minimum_frac, T>::type;
 }

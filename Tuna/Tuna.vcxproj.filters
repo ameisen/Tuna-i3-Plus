@@ -186,6 +186,9 @@
     <ClInclude Include="system\system.hpp">
       <Filter>system</Filter>
     </ClInclude>
+    <ClInclude Include="thermistors\ThermistorUtils.hpp">
+      <Filter>thermistors</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tunalib">

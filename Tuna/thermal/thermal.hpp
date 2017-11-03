@@ -30,12 +30,17 @@
 
 #include <tuna.h>
 
+namespace Tuna {}
+using namespace Tuna;
+
 namespace Thermal
 {
 	constexpr const auto max_temperature = make_uintsz<300>;
 }
 
-using temp_t = tuna::fixedsz<Thermal::max_temperature, uint16, 4>; // autogenerate a proper fixed-precision type for this.
+// generate a fixed-precision type that can hold up to at least the maximum temperature,
+// and has at least 4 bits of decimal precision.
+using temp_t = tuna::fixedsz<Thermal::max_temperature, 4>;
 
 constexpr temp_t operator "" _C(long double temperature)
 {

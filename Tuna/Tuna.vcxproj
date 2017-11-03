@@ -147,6 +147,7 @@
     <ClInclude Include="thermistors\thermistortable_9.h" />
     <ClInclude Include="thermistors\thermistortable_998.h" />
     <ClInclude Include="thermistors\thermistortable_999.h" />
+    <ClInclude Include="thermistors\ThermistorUtils.hpp" />
     <ClInclude Include="tuna.h" />
     <ClInclude Include="tunalib\fixed.hpp" />
     <ClInclude Include="tunalib\initializer_list.h" />

@@ -22,19 +22,11 @@
 
  // OVERSAMPLENR PROGMEM
 
-namespace Thermistor
+#include "ThermistorUtils.hpp"
+
+namespace Tuna::Thermistor
 {
-
-  struct TablePair final
-  {
-    flash<uint16_t> Adc = 0;
-    flash<uint16_t> Temperature = 0;
-
-    constexpr TablePair() = default;
-    constexpr TablePair(uint16_t _ADC, uint16_t _Temperature) :
-      Adc(_ADC * OVERSAMPLENR), Temperature(_Temperature << temp_t::fractional_bits)
-    {}
-  };
+  using TablePair = _ThermistorUtils::TablePairBase<uint16>;
 
   constexpr const PROGMEM TablePair temp_table[]{
     { 23, 300 },
@@ -99,35 +91,35 @@ namespace Thermistor
     { 1005, 5 },
     { 1009, 0 }
   };
-  constexpr uint8_t temp_table_size = array_size<decltype(temp_table)>;
+  constexpr uint8_t temp_table_size = array_size(temp_table);
 
   constexpr const bool IsFixedStepTable_Temperature = true;
   constexpr const auto FixedStepTable_Temperature = make_uintsz<5 << temp_t::fractional_bits>;
   constexpr const bool IsFixedStepTable_ADC = false;
 
-  template <typename ret_t, typename functor, uint8_t i = 0, uint8_t end = temp_table_size - 1>
-  constexpr ret_t table_search(functor predicate, ret_t best = 0)
+  template <typename functor, uint8_t i = 0, uint8_t end = temp_table_size - 1>
+  constexpr uint16 table_search(functor predicate, uint16 best = 0)
   {
-    const ret_t current_best = predicate((i == 0) ? nullptr : &temp_table[i - 1], temp_table[i], best);
+    const uint16 current_best = predicate(temp_table[i], best);
 
     if constexpr (i == end)
     {
       return current_best;
     }
-    return table_search<ret_t, functor, i + 1, end>(predicate, current_best);
+    return table_search<functor, i + 1, end>(predicate, current_best);
   }
 
-  constexpr const auto max_adc_uncast = table_search<uint16>([](auto *, auto &pair, auto best) {
+  constexpr const auto max_adc_uncast = table_search<>([](auto &pair, auto best) {
     return max(pair.Adc.get(), best);
   });
-  constexpr const auto min_adc_uncast = table_search<uint16>([](auto *, auto &pair, auto best) {
+  constexpr const auto min_adc_uncast = table_search<>([](auto &pair, auto best) {
     return min(pair.Adc.get(), best);
   });
 
-  constexpr const auto max_temp_uncast = table_search<uint16>([](auto *, auto &pair, auto best) {
+  constexpr const auto max_temp_uncast = table_search<>([](auto &pair, auto best) {
     return max(pair.Temperature.get(), best);
   });
-  constexpr const auto min_temp_uncast = table_search<uint16>([](auto *, auto &pair, auto best) {
+  constexpr const auto min_temp_uncast = table_search<>([](auto &pair, auto best) {
     return min(pair.Temperature.get(), best);
   });
 
