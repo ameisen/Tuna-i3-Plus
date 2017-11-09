@@ -33,6 +33,11 @@
 
 #define K2 (1.0-K1)
 
+#define ENABLE_ERROR_1 1
+#define ENABLE_ERROR_2 1
+#define ENABLE_ERROR_3 1
+#define ENABLE_ERROR_4 1
+
 namespace
 {
 	volatile bool in_autotune = false;
@@ -42,11 +47,13 @@ Temperature thermalManager;
 
 // public:
 
+temp_t Temperature::min_extrude_temp = (typename temp_t::type)EXTRUDE_MINTEMP;
+
 temp_t Temperature::current_temperature = 0_C,
 Temperature::current_temperature_bed = 0;
 volatile uint16_t Temperature::current_temperature_raw = 0_u16;
 temp_t Temperature::target_temperature = 0_C;
-volatile uint16_t Temperature::current_temperature_bed_raw = 0;
+volatile uint16_t Temperature::current_temperature_bed_raw = 0_u16;
 temp_t Temperature::target_temperature_bed = 0_C;
 
 float Temperature::Kp = DEFAULT_Kp,
@@ -395,7 +402,9 @@ void Temperature::manage_heater() {
 	millis_t ms = millis();
 
 	// Check for thermal runaway
+#if ENABLE_ERROR_2
 	thermal_runaway_protection<Manager::Hotend>(&thermal_runaway_state_machine, &thermal_runaway_timer, current_temperature, target_temperature, THERMAL_PROTECTION_PERIOD, THERMAL_PROTECTION_HYSTERESIS);
+#endif
 
 	// Failsafe to make sure fubar'd PID settings don't force the heater always on.
 	if (target_temperature == 0_C)
@@ -405,24 +414,30 @@ void Temperature::manage_heater() {
 
 	// Make sure temperature is increasing
 	if (watch_heater_next_ms && ELAPSED(ms, watch_heater_next_ms)) { // Time to check this extruder?
+#if ENABLE_ERROR_1
 		if (degHotend() < watch_target_temp)                             // Failed to increase enough?
 			_temp_error<Manager::Hotend>(PSTR(MSG_T_HEATING_FAILED), PSTR(MSG_HEATING_FAILED_LCD));
 		else                                                                 // Start again if the target is still far off
+#endif
 			start_watching_heater();
 	}
 
 	// Make sure temperature is increasing
 	if (watch_bed_next_ms && ELAPSED(ms, watch_bed_next_ms)) {        // Time to check the bed?
+#if ENABLE_ERROR_1
 		if (degBed() < watch_target_bed_temp)                           // Failed to increase enough?
 			_temp_error<Manager::Bed>(PSTR(MSG_T_HEATING_FAILED), PSTR(MSG_HEATING_FAILED_LCD));
 		else                                                            // Start again if the target is still far off
+#endif
 			start_watching_bed();
 	}
 
 	if (PENDING(ms, next_bed_check_ms)) return;
 	next_bed_check_ms = ms + BED_CHECK_INTERVAL;
 
+#if ENABLE_ERROR_2
 	thermal_runaway_protection<Manager::Bed>(&thermal_runaway_bed_state_machine, &thermal_runaway_bed_timer, current_temperature_bed, target_temperature_bed, THERMAL_PROTECTION_BED_PERIOD, THERMAL_PROTECTION_BED_HYSTERESIS);
+#endif
 
 	{
 		// Check if temperature is within the correct range
@@ -435,8 +450,6 @@ void Temperature::manage_heater() {
 		}
 	}
 }
-
-#define PGM_RD_W(x)   (short)pgm_read_word(&x)
 
 // Derived from RepRap FiveD extruder::getTemperature()
 // For hot end temperature measurement.
@@ -452,14 +465,6 @@ temp_t Temperature::analog2tempBed(uint16 raw)
 	return Thermistor::adc_to_temperature(raw);
 }
 
-template <typename T>
-class atomic final
-{
-	T m_Value;
-
-public:
-};
-
 /**
  * Get the raw values into the actual temperatures.
  * The raw values are created in interrupt context,
@@ -473,7 +478,7 @@ bool Temperature::updateTemperaturesFromRawValues() {
 		uint16 temperature_raw;
 		uint16 temperature_bed_raw;
 		{
-			tuna::utils::critical_section _critsec;
+			tuna::utils::critical_section_not_isr _critsec;
 			temperature_raw = current_temperature_raw;
 			temperature_bed_raw = current_temperature_bed_raw;
 			temp_meas_ready = false;
@@ -483,6 +488,7 @@ bool Temperature::updateTemperaturesFromRawValues() {
 		temperature_raw = Thermistor::clamp_adc(temperature_raw);
 		temperature_bed_raw = Thermistor::clamp_adc(temperature_bed_raw);
 
+#if ENABLE_ERROR_3
 		if constexpr (HEATER_0_RAW_LO_TEMP < HEATER_0_RAW_HI_TEMP)
 		{
 			if ((temperature_raw >= Hotend::max_temperature::Adc) & (target_temperature > 0_C)) { max_temp_error<Manager::Hotend>(); }
@@ -504,6 +510,7 @@ bool Temperature::updateTemperaturesFromRawValues() {
 			if ((temperature_bed_raw <= Bed::max_temperature::Adc) & (target_temperature_bed > 0_C)) { max_temp_error<Manager::Bed>(); }
 			if ((Bed::min_temperature::Adc <= temperature_bed_raw) & (target_temperature_bed > 0_C)) { min_temp_error<Manager::Bed>(); }
 		}
+#endif
 
 		current_temperature = Temperature::analog2temp(temperature_raw);
 		current_temperature_bed = Temperature::analog2tempBed(temperature_bed_raw);

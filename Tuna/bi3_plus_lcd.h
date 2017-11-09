@@ -8,7 +8,7 @@ namespace tuna::lcd
 {
 	enum class Page : uint8
 	{
-		Boot_Animation = 0,
+		Boot_Animation = 1,
 		// Boot Animation continues until 11
 		Main_Menu = 11,
 		Main_Menu_Pressed = 12,
@@ -54,7 +54,7 @@ namespace tuna::lcd
 
 	void initialize();
 	void update();
-	constexpr void show_page(Page pageNumber);
+	void show_page(Page pageNumber);
 	void update_graph();
 	constexpr inline bool has_status() { return false; }
 	constexpr inline void set_status(const char* const, const bool = false) { }

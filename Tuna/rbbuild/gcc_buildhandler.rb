@@ -52,16 +52,16 @@ $gpp_buildhandler = Class.new do
 		buildopts = [
 			is_gccp(source) ? "-x c++" : "",
 			"-O3",
-			"-w",
-			"-fpermissive",
+			#"-w",
+			is_c(source) ? "" : "-fpermissive",
 			"-ffunction-sections",
 			"-fdata-sections",
-			"-fno-threadsafe-statics",
+			is_c(source) ? "" : "-fno-threadsafe-statics",
 			"-flto",
 			"-fno-fat-lto-objects",
 			"-fno-keep-static-consts",
 			"-fmerge-all-constants",
-			"-funsafe-loop-optimizations",
+			#"-funsafe-loop-optimizations",
 			"-fpredictive-commoning",
 			"-mmcu=atmega2560",
 			is_c(source) ? "-std=gnu11" : "-std=gnu++17",
@@ -79,14 +79,13 @@ $gpp_buildhandler = Class.new do
 			"-freg-struct-return",
 			"-fno-common",
 			"-fno-unswitch-loops", #-funswitch-loops makes worse code on AVR.
-			"-fgcse-after-reload",
 			"-ftree-loop-vectorize", # not sure why, but this generates better code?
 			"-fsplit-paths", #-fno-split-paths generates smaller code. Investigate if the code is actually better.
 			"-ftree-partial-pre",
 			"-fno-gcse-sm",
 			"-fno-gcse-las",
 			"-fgcse-after-reload",
-			"-fdeclone-ctor-dtor",
+			is_c(source) ? "" : "-fdeclone-ctor-dtor",
 			"-fdevirtualize-speculatively",
 			"-fdevirtualize-at-ltrans",
 			"-free",
@@ -103,10 +102,15 @@ $gpp_buildhandler = Class.new do
 			"-fno-align-loops",
 			"-fno-align-jumps",
 			"-fassociative-math",
+			"-ffast-math",
 			"-freciprocal-math",
 			"-fbranch-target-load-optimize",
-			"-fbranch-target-load-optimize2",
-			"-fstdarg-opt"
+			"-finline-limit=10000000",
+			#"-fbranch-target-load-optimize2",
+			"-fstdarg-opt",
+			"-fno-strict-aliasing",
+			"-fno-math-errno",
+			"-funsafe-math-optimizations"
 		]
 		
 		# -fdelete-dead-exceptions
@@ -222,6 +226,7 @@ $gpp_buildhandler = Class.new do
 		}
 
 		command = gcc_path() + " " + buildline() +  "-Wl,--sort-common -s -fuse-linker-plugin -Wl,--gc-sections,--relax -o \"#{outfile}\" \"#{archive}\" #{lib_str}-lm"
+		#command = gcc_path() + " " + buildline() +  "-Wl,--sort-common -s -fuse-linker-plugin -Wl,--relax -o \"#{outfile}\" \"#{archive}\" #{lib_str}-lm"
 		if (print_cmd)
 			puts $TAB + command
 			STDOUT.flush

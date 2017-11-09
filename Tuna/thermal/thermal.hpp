@@ -74,7 +74,7 @@ public:
 	static constexpr uint8 num_hotends = 1;
 	static constexpr uint8 num_beds = 1;
 
-	static constexpr temp_t min_extrude_temp { (typename temp_t::type)EXTRUDE_MINTEMP };
+  static temp_t min_extrude_temp;
 
 	template <uint16 Celcius>
 	struct TemperatureValueConverter final

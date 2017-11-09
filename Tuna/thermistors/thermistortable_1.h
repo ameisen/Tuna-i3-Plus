@@ -110,18 +110,18 @@ namespace Tuna::Thermistor
   }
 
   constexpr const auto max_adc_uncast = table_search<>([](auto &pair, auto best) {
-    return max(pair.Adc.get(), best);
+    return max(as<decltype(best)>(pair.Adc), best);
   });
   constexpr const auto min_adc_uncast = table_search<>([](auto &pair, auto best) {
-    return min(pair.Adc.get(), best);
-  });
+    return min(as<decltype(best)>(pair.Adc), best);
+  }, 0xFFFF);
 
   constexpr const auto max_temp_uncast = table_search<>([](auto &pair, auto best) {
-    return max(pair.Temperature.get(), best);
+    return max(as<decltype(best)>(pair.Temperature), best);
   });
   constexpr const auto min_temp_uncast = table_search<>([](auto &pair, auto best) {
-    return min(pair.Temperature.get(), best);
-  });
+    return min(as<decltype(best)>(pair.Temperature), best);
+  }, 0xFFFF);
 
   constexpr const auto max_adc = make_uintsz<max_adc_uncast>;
   constexpr const auto min_adc = make_uintsz<min_adc_uncast>;
@@ -172,7 +172,7 @@ namespace Tuna::Thermistor
     }
     else
     {
-      return get_max_adc_uint8_temp<i + 1>(temp_table[i].Temperature <= 0xFF ? (temp_table[i].Adc > max_adc ? temp_table[i].Adc.get() : max_adc) : max_adc);
+      return get_max_adc_uint8_temp<i + 1>(temp_table[i].Temperature <= 0xFF ? (temp_table[i].Adc > max_adc ? as<>(temp_table[i].Adc) : max_adc) : max_adc);
     }
   }
 
@@ -186,7 +186,7 @@ namespace Tuna::Thermistor
     else
     {
       constexpr bool set_new_adc = (temp_table[i].Temperature <= 0xFF) && (temp_table[i].Adc > adc);
-      return get_max_adc_uint8_temp_idx<i + 1, set_new_adc ? temp_table[i].Adc.get() : adc>(set_new_adc ? i : idx);
+      return get_max_adc_uint8_temp_idx<i + 1, set_new_adc ? as<>(temp_table[i].Adc) : adc>(set_new_adc ? i : idx);
     }
   }
 
@@ -202,7 +202,7 @@ namespace Tuna::Thermistor
     }
     else
     {
-      return get_min_adc_uint8_temp<i + 1>(temp_table[i].Temperature <= 0xFF ? (temp_table[i].Adc <= min_adc ? temp_table[i].Adc.get() : min_adc) : min_adc);
+      return get_min_adc_uint8_temp<i + 1>(temp_table[i].Temperature <= 0xFF ? (temp_table[i].Adc <= min_adc ? as<>(temp_table[i].Adc) : min_adc) : min_adc);
     }
   }
 
@@ -216,7 +216,7 @@ namespace Tuna::Thermistor
     else
     {
       constexpr bool set_new_adc = (temp_table[i].Temperature <= 0xFF) && (temp_table[i].Adc <= adc);
-      return get_min_adc_uint8_temp_idx<i + 1, set_new_adc ? temp_table[i].Adc.get() : adc, set_new_adc ? i : idx>();
+      return get_min_adc_uint8_temp_idx<i + 1, set_new_adc ? as<>(temp_table[i].Adc) : adc, set_new_adc ? i : idx>();
     }
   }
 
@@ -232,7 +232,7 @@ namespace Tuna::Thermistor
     }
     else
     {
-      return get_max_adc_uint8<i + 1>(((temp_table[i].Adc >= adc) && temp_table[i].Adc <= 0xFF) ? temp_table[i].Adc.get() : adc);
+      return get_max_adc_uint8<i + 1>(((temp_table[i].Adc >= adc) && temp_table[i].Adc <= 0xFF) ? as<>(temp_table[i].Adc) : adc);
     }
   }
 
@@ -246,7 +246,7 @@ namespace Tuna::Thermistor
     else
     {
       constexpr bool set_new_adc = ((temp_table[i].Adc >= adc) && temp_table[i].Adc <= 0xFF);
-      return get_max_adc_uint8_idx<i + 1, set_new_adc ? temp_table[i].Adc.get() : adc, set_new_adc ? i : idx>();
+      return get_max_adc_uint8_idx<i + 1, set_new_adc ? as<>(temp_table[i].Adc) : adc, set_new_adc ? i : idx>();
     }
   }
 
@@ -287,7 +287,7 @@ namespace Tuna::Thermistor
   }
 
   template <uint16 temperature, bool first = true, uint8 cur_idx = 0, uint8 best_le = low_temp_idx>
-  constexpr uintsz<temperature> ce_convert_temp_to_adc()
+  constexpr uint16 ce_convert_temp_to_adc() // TODO convert to a uintsz somehow.
   {
     static_assert(temperature <= max_temperature_integer && temperature >= min_temperature_integer, "temperature is out of range.");
 
@@ -313,7 +313,7 @@ namespace Tuna::Thermistor
       constexpr auto &best_value = temp_table[best_le];
       return ce_convert_temp_to_adc<
         temperature, false, cur_idx + 1,
-        (cur_value.Temperature.get() <= temperature && cur_value.Temperature.get() > best_value.Temperature.get()) ?
+        (cur_value.Temperature <= temperature && cur_value.Temperature > best_value.Temperature) ?
         cur_idx : best_le
   >();
     }
@@ -365,11 +365,10 @@ namespace Tuna::Thermistor
 
     uint8_t L = min_idx;
     uint8_t R = max_idx;
-    uint8_t m;
     do
     {
-      m = (L + R) / 2;
-      adc_t A = temp_table[m].Adc.get<adc_t>();
+      uint8_t m = (L + R) / 2;
+      adc_t A = as<adc_t>(temp_table[m].Adc);
       if (A < adc)
       {
         L = m + 1;
@@ -380,14 +379,14 @@ namespace Tuna::Thermistor
       }
       else
       {
-        return { temp_t::from(temp_table[m].Temperature.get<deltatemp_t>()) };
+        return { temp_t::from(as<deltatemp_t>(temp_table[m].Temperature)) };
       }
     } while (L <= R);
 
     // L is either equal to or less than our real value. We need to interpolate between this value and L+1.
 
-    adc_t le_value = temp_table[L - 1].Adc.get<adc_t>();
-    adc_t g_value = temp_table[L].Adc.get<adc_t>();
+    adc_t le_value = as<adc_t>(temp_table[L - 1].Adc);
+    adc_t g_value = as<adc_t>(temp_table[L].Adc);
 
     const auto get_interpoland = [](adc_t a, adc_t b, adc_t x) -> interpolator<delta_t>
     {
@@ -415,7 +414,7 @@ namespace Tuna::Thermistor
 
     auto interpoland = get_interpoland(le_value, g_value, adc);
 
-    const deltatemp_t g_value_t = temp_table[L].Temperature.get<deltatemp_t>();
+    const deltatemp_t g_value_t = as<deltatemp_t>(temp_table[L].Temperature);
     const deltatemp_t le_value_t = [&, L]()->deltatemp_t
     {
       // Save on a load when we can derive it from something already loaded.
@@ -425,7 +424,7 @@ namespace Tuna::Thermistor
       }
       else
       {
-        return temp_table[L - 1].Temperature.get<deltatemp_t>();
+        return as<deltatemp_t>(temp_table[L - 1].Temperature);
       }
     }();
 

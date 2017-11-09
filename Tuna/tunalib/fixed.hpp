@@ -384,7 +384,6 @@ namespace tuna
 		template <typename U>
 		constexpr U rounded_to() const
 		{
-			constexpr const T fractional_mask = (T{ 1 } << fractional_bits) - 1;
 			constexpr const uint8 half = 1_u8 << (fractional_bits - 1);
 			return { (m_Value + half) >> fractional_bits };
 		}

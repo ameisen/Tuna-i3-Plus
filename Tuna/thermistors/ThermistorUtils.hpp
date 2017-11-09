@@ -5,8 +5,8 @@ namespace Tuna::_ThermistorUtils
   template <typename T>
   struct TablePairBase final
   {
-    flash<T> Adc = 0;
-    flash<T> Temperature = 0;
+    const flash<T> Adc;
+    const flash<T> Temperature;
 
     constexpr TablePairBase() = default;
     constexpr TablePairBase(T _ADC, T _Temperature) :

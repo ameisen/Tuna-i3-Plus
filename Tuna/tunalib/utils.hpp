@@ -25,6 +25,10 @@ namespace tuna
 	using int24 = __int24;
 	using int32 = int32_t;
 	using int64 = int64_t;
+
+  // sanity checks
+  static_assert(sizeof(uint8) == 1);
+
 #if !defined(__INTELLISENSE__)
 	static_assert(sizeof(int) == 2, "atmega int is 2 bytes. Utils need to be rewritten for other sizes.");
 #endif
@@ -213,7 +217,49 @@ namespace tuna::utils
 	}
 
 	template <typename T>
-	class type_trait;
+  class type_trait : ce_only
+  {
+    // Default
+    constexpr static const char name[] = "unknown";
+
+    using type = T;
+
+    constexpr static uint8 size = sizeof(T);
+    constexpr static uint8 bits = sizeof(T) * 8;
+
+    constexpr static bool is_signed = false;
+    constexpr static bool is_unsigned = false;
+    constexpr static bool is_integral = false;
+    constexpr static bool is_float = false;
+    constexpr static bool is_primitive = false;
+    constexpr static bool is_array = false;
+    constexpr static bool is_pointer = false;
+    constexpr static bool is_reference = false;
+    constexpr static bool is_atomic = false;
+    constexpr static bool is_emulated = false;
+  };
+
+  template <>
+  struct type_trait<void> final : ce_only
+  {
+    constexpr static const char name[] = "void";
+
+    using type = void;
+
+    constexpr static uint8 size = 0;
+    constexpr static uint8 bits = 0;
+
+    constexpr static bool is_signed = false;
+    constexpr static bool is_unsigned = false;
+    constexpr static bool is_integral = false;
+    constexpr static bool is_float = false;
+    constexpr static bool is_primitive = false;
+    constexpr static bool is_array = false;
+    constexpr static bool is_pointer = false;
+    constexpr static bool is_reference = false;
+    constexpr static bool is_atomic = false;
+    constexpr static bool is_emulated = false;
+  };
 
 	template <>
 	struct type_trait<bool> final : ce_only
@@ -280,10 +326,10 @@ namespace tuna::utils
 		constexpr inline static unsigned_type as_safe_unsigned(type val) { return { val }; }
 		constexpr inline static signed_type as_signed(type val) { return val; }
 
-		constexpr static type max = { 0xFF };
-		constexpr static type min = { 0x00 };
-		constexpr static type ones = { 0xFF };
-		constexpr static type zeros = { 0x00 };
+		constexpr static type max = { 0xFF_u8 };
+		constexpr static type min = { 0x00_u8 };
+		constexpr static type ones = { 0xFF_u8 };
+		constexpr static type zeros = { 0x00_u8 };
 	};
 
 	template <>
@@ -315,10 +361,10 @@ namespace tuna::utils
 		constexpr inline static typename type_trait<unsigned_type>::larger_type as_safe_unsigned(type val) { return val; }
 		constexpr inline static signed_type as_signed(type val) { return { val }; }
 
-		constexpr static type max = { 127 };
-		constexpr static type min = { -128 };
-		constexpr static type ones = { unsigned_type{0xFF} };
-		constexpr static type zeros = { unsigned_type{0x00} };
+		constexpr static type max = { 0x7F_i8 };
+		constexpr static type min = { 0x80_i8 };
+		constexpr static type ones = { 0xFF_i8 };
+		constexpr static type zeros = { 0x00_i8 };
 	};
 
 	template <>
@@ -350,10 +396,10 @@ namespace tuna::utils
 		constexpr inline static unsigned_type as_safe_unsigned(type val) { return { val }; }
 		constexpr inline static signed_type as_signed(type val) { return val; }
 
-		constexpr static type max = { 0xFFFF };
-		constexpr static type min = { 0x0000 };
-		constexpr static type ones = { 0xFFFF };
-		constexpr static type zeros = { 0x0000 };
+		constexpr static type max = { 0xFFFF_u16 };
+		constexpr static type min = { 0x0000_u16 };
+		constexpr static type ones = { 0xFFFF_u16 };
+		constexpr static type zeros = { 0x0000_u16 };
 	};
 
 	template <>
@@ -385,10 +431,10 @@ namespace tuna::utils
 		constexpr inline static typename type_trait<unsigned_type>::larger_type as_safe_unsigned(type val) { return val; }
 		constexpr inline static signed_type as_signed(type val) { return { val }; }
 
-		constexpr static type max = { 32767 };
-		constexpr static type min = { -32768 };
-		constexpr static type ones = { unsigned_type{ 0xFFFF } };
-		constexpr static type zeros = { unsigned_type{ 0x0000 } };
+		constexpr static type max = { 0x7FFF_i16 };
+		constexpr static type min = { 0x8000_i16 };
+		constexpr static type ones = { 0xFFFF_i16 };
+		constexpr static type zeros = { 0x0000_i16 };
 	};
 
 	template <>
@@ -420,10 +466,10 @@ namespace tuna::utils
 		constexpr inline static unsigned_type as_safe_unsigned(type val) { return { val }; }
 		constexpr inline static signed_type as_signed(type val) { return val; }
 
-		constexpr static type max = { 0xFFFFFF };
-		constexpr static type min = { 0x000000 };
-		constexpr static type ones = { 0xFFFFFF };
-		constexpr static type zeros = { 0x000000 };
+		constexpr static type max = { 0xFFFFFF_u24 };
+		constexpr static type min = { 0x000000_u24 };
+		constexpr static type ones = { 0xFFFFFF_u24 };
+		constexpr static type zeros = { 0x000000_u24 };
 	};
 
 	template <>
@@ -455,10 +501,10 @@ namespace tuna::utils
 		constexpr inline static typename type_trait<unsigned_type>::larger_type as_safe_unsigned(type val) { return val; }
 		constexpr inline static signed_type as_signed(type val) { return { val }; }
 
-		constexpr static type max = { 16777215 };
-		constexpr static type min = { -16777216 };
-		constexpr static type ones = { unsigned_type{ 0xFFFFFF } };
-		constexpr static type zeros = { unsigned_type{ 0x000099 } };
+		constexpr static type max = { 0x7FFFFF_i24 };
+		constexpr static type min = { 0x800000_i24 };
+		constexpr static type ones = { 0xFFFFFF_i24 };
+		constexpr static type zeros = { 0x000099_i24 };
 	};
 
 	template <>
@@ -490,10 +536,10 @@ namespace tuna::utils
 		constexpr inline static unsigned_type as_safe_unsigned(type val) { return { val }; }
 		constexpr inline static signed_type as_signed(type val) { return val; }
 
-		constexpr static type max = { 0xFFFFFFFF };
-		constexpr static type min = { 0x00000000 };
-		constexpr static type ones = { 0xFFFFFFFF };
-		constexpr static type zeros = { 0x00000000 };
+		constexpr static type max = { 0xFFFFFFFF_u32 };
+		constexpr static type min = { 0x00000000_u32 };
+		constexpr static type ones = { 0xFFFFFFFF_u32 };
+		constexpr static type zeros = { 0x00000000_u32 };
 	};
 
 	template <>
@@ -525,10 +571,10 @@ namespace tuna::utils
 		constexpr inline static typename type_trait<unsigned_type>::larger_type as_safe_unsigned(type val) { return val; }
 		constexpr inline static signed_type as_signed(type val) { return { val }; }
 
-		constexpr static type max = { 2147483647 };
-		constexpr static type min = { -2147483648 };
-		constexpr static type ones = { unsigned_type{ 0xFFFFFFFF } };
-		constexpr static type zeros = { unsigned_type{ 0x00000000 } };
+		constexpr static type max = { 0x7FFFFFFF_i32 };
+		constexpr static type min = { 0x80000000_i32 };
+		constexpr static type ones = { 0xFFFFFFFF_i32 };
+		constexpr static type zeros = { 0x00000000_i32 };
 	};
 
 	template <>
@@ -560,10 +606,10 @@ namespace tuna::utils
 		constexpr inline static unsigned_type as_safe_unsigned(type val) { return { val }; }
 		constexpr inline static signed_type as_signed(type val) { return val; }
 
-		constexpr static type max = { 0xFFFFFFFFFFFFFFFF };
-		constexpr static type min = { 0x0000000000000000 };
-		constexpr static type ones = { 0xFFFFFFFFFFFFFFFF };
-		constexpr static type zeros = { 0x0000000000000000 };
+		constexpr static type max = { 0xFFFFFFFFFFFFFFFF_u64 };
+		constexpr static type min = { 0x0000000000000000_u64 };
+		constexpr static type ones = { 0xFFFFFFFFFFFFFFFF_u64 };
+		constexpr static type zeros = { 0x0000000000000000_u64 };
 	};
 
 	template <>
@@ -594,10 +640,10 @@ namespace tuna::utils
 		constexpr inline static unsigned_type as_unsigned(type val) { return val; }
 		constexpr inline static signed_type as_signed(type val) { return { val }; }
 
-		constexpr static type max = { 9'223'372'036'854'775'807 };
-		constexpr static type min = { -9'223'372'036'854'775'808 };
-		constexpr static type ones = { 0xFFFFFFFFFFFFFFFF };
-		constexpr static type zeros = { 0x0000000000000000 };
+		constexpr static type max = { 0x7FFFFFFFFFFFFFFF_i64 };
+		constexpr static type min = { 0x8000000000000000_i64 };
+		constexpr static type ones = { 0xFFFFFFFFFFFFFFFF_i64 };
+		constexpr static type zeros = { 0x0000000000000000_i64 };
 	};
 
 	template <>
@@ -750,6 +796,24 @@ namespace tuna::utils
 		}
 	};
 
+  class critical_section_not_isr final
+  {
+  public:
+    critical_section_not_isr(const critical_section_not_isr &) = delete;
+    critical_section_not_isr(critical_section_not_isr &&) = delete;
+    critical_section_not_isr & operator = (const critical_section_not_isr &) = delete;
+    critical_section_not_isr & operator = (critical_section_not_isr &&) = delete;
+
+    inline critical_section_not_isr()
+    {
+      cli();
+    }
+    inline ~critical_section_not_isr()
+    {
+      sei();
+    }
+  };
+
 	template <uint64 v, bool _canary = false, uint8 r = 0, bool pow2 = true>
 	constexpr uint8 _ce_log2()
 	{
@@ -801,216 +865,226 @@ namespace tuna::utils
 
   template <uint64 value> constexpr auto make_uintsz = uintsz<value>{ value };
 
-  template <typename T> using pgptr = uint16;
-  template <typename T>
-  constexpr inline pgptr<T> as_pgptr(T &var)
-  {
-    return pgptr<T>(&var);
-  }
-  template <typename T>
-  constexpr inline const pgptr<T> as_pgptr(const T &var)
-  {
-    return (const pgptr<T>)(&var);
-  }
-
 	extern uint24 millis24();
 	extern uint16 millis16();
 
   template <typename T>
-  alignas(T) class flash final
+  struct flash_ptr final
   {
-    const T PROGMEM m_Value = T{};
+  public:
+    using ptr_t = uint16; // TODO handle > 16-bit ptrs
+  private:
+    const uint16  m_Ptr;
+  public:
+    constexpr flash_ptr(const T &value) : m_Ptr(uint16(&value)) {}
 
-    // Put ASM into another function... which works for some reason.
-    template <typename U>
-    static inline U rt_getter(const T &value)
+    constexpr inline operator uint16 () const
     {
-      const pgptr<T> ptr = as_pgptr(&value);
+      return m_Ptr;
+    }
+  };
 
-      U retValue;
+  template <typename U>
+  static inline U read_pgm_ptr(uint16 ptr)
+  {
+    U retValue;// = pgm_read_word(ptr);
+    //return retValue;
 
-      if constexpr (sizeof(U) == 1)
-      {
-        __asm__ __volatile__
-        (
-          "lpm %0, Z;"
-          : "=r" (retValue)
-          : "z" (ptr)
-          :
-        );
-      }
-      else if constexpr (sizeof(U) == 2)
-      {
-        __asm__ __volatile__
-        (
-          "lpm %A0, Z;"
-          "lpm %B0, Z + 1;"
-          : "=r" (retValue)
-          : "z" (ptr)
-          :
-        );
-      }
-      else if constexpr (sizeof(U) == 3)
-      {
-        __asm__ __volatile__
-        (
-          "lpm %A0, Z;"
-          "lpm %B0, Z + 1;"
-          "lpm %C0, Z + 2;"
-          : "=r" (retValue)
-          : "z" (ptr)
-          :
-        );
-      }
-      else if constexpr (sizeof(U) == 4)
-      {
-        __asm__ __volatile__
-        (
-          "lpm %A0, Z;"
-          "lpm %B0, Z + 1;"
-          "lpm %C0, Z + 2;"
-          "lpm %D0, Z + 3;"
-          : "=r" (retValue)
-          : "z" (ptr)
-          :
-        );
-      }
-      else if constexpr (sizeof(U) == 5)
-      {
-        __asm__ __volatile__
-        (
-          "lpm %A0, Z;"
-          "lpm %B0, Z + 1;"
-          "lpm %C0, Z + 2;"
-          "lpm %D0, Z + 3;"
-          "lpm %E0, Z + 4;"
-          : "=r" (retValue)
-          : "z" (ptr)
-          :
-        );
-      }
-      else if constexpr (sizeof(U) == 6)
-      {
-        __asm__ __volatile__
-        (
-          "lpm %A0, Z;"
-          "lpm %B0, Z + 1;"
-          "lpm %C0, Z + 2;"
-          "lpm %D0, Z + 3;"
-          "lpm %E0, Z + 4;"
-          "lpm %F0, Z + 5;"
-          : "=r" (retValue)
-          : "z" (ptr)
-          :
-        );
-      }
-      else if constexpr (sizeof(U) == 7)
-      {
-        __asm__ __volatile__
-        (
-          "lpm %A0, Z;"
-          "lpm %B0, Z + 1;"
-          "lpm %C0, Z + 2;"
-          "lpm %D0, Z + 3;"
-          "lpm %E0, Z + 4;"
-          "lpm %F0, Z + 5;"
-          "lpm %G0, Z + 6;"
-          : "=r" (retValue)
-          : "z" (ptr)
-          :
-        );
-      }
-      else if constexpr (sizeof(U) == 8)
-      {
-        __asm__ __volatile__
-        (
-          "lpm %A0, Z;"
-          "lpm %B0, Z + 1;"
-          "lpm %C0, Z + 2;"
-          "lpm %D0, Z + 3;"
-          "lpm %E0, Z + 4;"
-          "lpm %F0, Z + 5;"
-          "lpm %G0, Z + 6;"
-          "lpm %H0, Z + 7;"
-          : "=r" (retValue)
-          : "z" (ptr)
-          :
-        );
-      }
-      else if constexpr (sizeof(U) > 8)
-      {
-        uint8 *retValuePtr = (uint8 *)&retValue;
-        constexpr uint8 type_size = sizeof(U);
-        // TODO : we should hand-optimize this routine, as this is suboptimal by far.
+    if constexpr (sizeof(U) == 1)
+    {
+      __asm__ __volatile__
+      (
+        "lpm %0, Z" "\n\t"
+        : "=r" (retValue), "=z" (ptr)
+        : "1" (ptr)
+      );
+    }
+    else if constexpr (sizeof(U) == 2)
+    {
+      __asm__ __volatile__
+      (
+        "lpm %A0, Z+" "\n\t"
+        "lpm %B0, Z" "\n\t"
+        : "=r" (retValue), "=z" (ptr)
+        : "1" (ptr)
+      );
+    }
+    else if constexpr (sizeof(U) == 3)
+    {
+      __asm__ __volatile__
+      (
+        "lpm %A0, Z+" "\n\t"
+        "lpm %B0, Z+" "\n\t"
+        "lpm %C0, Z" "\n\t"
+        : "=r" (retValue), "=z" (ptr)
+        : "1" (ptr)
+      );
+    }
+    else if constexpr (sizeof(U) == 4)
+    {
+      __asm__ __volatile__
+      (
+        "lpm %A0, Z+" "\n\t"
+        "lpm %B0, Z+" "\n\t"
+        "lpm %C0, Z+" "\n\t"
+        "lpm %D0, Z" "\n\t"
+        : "=r" (retValue), "=z" (ptr)
+        : "1" (ptr)
+      );
+    }
+    else if constexpr (sizeof(U) == 5)
+    {
+      __asm__ __volatile__
+      (
+        "lpm %A0, Z+" "\n\t"
+        "lpm %B0, Z+" "\n\t"
+        "lpm %C0, Z+" "\n\t"
+        "lpm %D0, Z+" "\n\t"
+        "lpm %E0, Z" "\n\t"
+        : "=r" (retValue), "=z" (ptr)
+        : "1" (ptr)
+      );
+    }
+    else if constexpr (sizeof(U) == 6)
+    {
+      __asm__ __volatile__
+      (
+        "lpm %A0, Z+" "\n\t"
+        "lpm %B0, Z+" "\n\t"
+        "lpm %C0, Z+" "\n\t"
+        "lpm %D0, Z+" "\n\t"
+        "lpm %E0, Z+" "\n\t"
+        "lpm %F0, Z" "\n\t"
+        : "=r" (retValue), "=z" (ptr)
+        : "1" (ptr)
+      );
+    }
+    else if constexpr (sizeof(U) == 7)
+    {
+      __asm__ __volatile__
+      (
+        "lpm %A0, Z+" "\n\t"
+        "lpm %B0, Z+" "\n\t"
+        "lpm %C0, Z+" "\n\t"
+        "lpm %D0, Z+" "\n\t"
+        "lpm %E0, Z+" "\n\t"
+        "lpm %F0, Z+" "\n\t"
+        "lpm %G0, Z" "\n\t"
+        : "=r" (retValue), "=z" (ptr)
+        : "1" (ptr)
+      );
+    }
+    else if constexpr (sizeof(U) == 8)
+    {
+      __asm__ __volatile__
+      (
+        "lpm %A0, Z+" "\n\t"
+        "lpm %B0, Z+" "\n\t"
+        "lpm %C0, Z+" "\n\t"
+        "lpm %D0, Z+" "\n\t"
+        "lpm %E0, Z+" "\n\t"
+        "lpm %F0, Z+" "\n\t"
+        "lpm %G0, Z+" "\n\t"
+        "lpm %H0, Z" "\n\t"
+        : "=r" (retValue), "=z" (ptr)
+        : "1" (ptr)
+      );
+    }
+    else if constexpr (sizeof(U) > 8)
+    {
+      uint8 *retValuePtr = (uint8 *)&retValue;
+      constexpr uint8 type_size = sizeof(U);
+      // TODO : we should hand-optimize this routine, as this is suboptimal by far.
 
-        constexpr uint8 qwords = type_size / 8;
+      constexpr uint8 qwords = type_size / 8;
 
-        for (uint8 i = 0; i < qwords; ++i)
-        {
-          auto &val = *(uint64 *)retValuePtr;
-          __asm__ __volatile__
-          (
-            "lpm %A0, Z;"
-            "lpm %B0, Z + 1;"
-            "lpm %C0, Z + 2;"
-            "lpm %D0, Z + 3;"
-            "lpm %E0, Z + 4;"
-            "lpm %F0, Z + 5;"
-            "lpm %G0, Z + 6;"
-            "lpm %H0, Z + 7;"
-            : "=r" (val)
-            : "z" (ptr)
-            :
-          );
-          retValuePtr += 8;
-          ptr += 8;
-        }
-        if constexpr (type_size & 4)
-        {
-          auto &val = *(uint32 *)retValuePtr;
-          __asm__ __volatile__
-          (
-            "lpm %A0, Z;"
-            "lpm %B0, Z + 1;"
-            "lpm %C0, Z + 2;"
-            "lpm %D0, Z + 3;"
-            : "=r" (val)
-            : "z" (ptr)
-            :
-          );
-          retValuePtr += 4;
-          ptr += 4;
-        }
-        if constexpr (type_size & 2)
-        {
-          auto &val = *(uint16 *)retValuePtr;
-          __asm__ __volatile__
-          (
-            "lpm %A0, Z;"
-            "lpm %B0, Z + 1;"
-            : "=r" (val)
-            : "z" (ptr)
-            :
-          );
-          retValuePtr += 2;
-          ptr += 2;
-        }
-        if constexpr (type_size & 1)
-        {
-          auto &val = *(uint8 *)retValuePtr;
-          __asm__ __volatile__
-          (
-            "lpm %A0, Z;"
-            : "=r" (val)
-            : "z" (ptr)
-            :
-          );
-        }
+      for (uint8 i = 0; i < qwords; ++i)
+      {
+        auto &val = *(uint64 *)retValuePtr;
+        __asm__ __volatile__
+        (
+          "lpm %A0, Z+" "\n\t"
+          "lpm %B0, Z+" "\n\t"
+          "lpm %C0, Z+" "\n\t"
+          "lpm %D0, Z+" "\n\t"
+          "lpm %E0, Z+" "\n\t"
+          "lpm %F0, Z+" "\n\t"
+          "lpm %G0, Z+" "\n\t"
+          "lpm %H0, Z" "\n\t"
+          : "=r" (val), "=z" (ptr)
+          : "1" (ptr)
+        );
+        retValuePtr += 8;
+        ptr += 8;
       }
-      return retValue;
+      if constexpr (type_size & 4)
+      {
+        auto &val = *(uint32 *)retValuePtr;
+        __asm__ __volatile__
+        (
+          "lpm %A0, Z+" "\n\t"
+          "lpm %B0, Z+" "\n\t"
+          "lpm %C0, Z+" "\n\t"
+          "lpm %D0, Z" "\n\t"
+          : "=r" (val), "=z" (ptr)
+          : "1" (ptr)
+        );
+        retValuePtr += 4;
+        ptr += 4;
+      }
+      if constexpr (type_size & 2)
+      {
+        auto &val = *(uint16 *)retValuePtr;
+        __asm__ __volatile__
+        (
+          "lpm %A0, Z+" "\n\t"
+          "lpm %B0, Z" "\n\t"
+          : "=r" (val), "=z" (ptr)
+          : "1" (ptr)
+        );
+        retValuePtr += 2;
+        ptr += 2;
+      }
+      if constexpr (type_size & 1)
+      {
+        auto &val = *(uint8 *)retValuePtr;
+        __asm__ __volatile__
+        (
+          "lpm %A0, Z" "\n\t"
+          : "=r" (val), "=z" (ptr)
+          : "1" (ptr)
+        );
+      }
+    }
+    return retValue;
+  }
+
+  template <typename U, typename T>
+  static inline U read_pgm(const flash_ptr<T> &value)
+  {
+    return read_pgm_ptr<U>(uint16(value));
+  }
+
+  template <typename U, typename T>
+  static inline U read_pgm(const T &value)
+  {
+    return read_pgm_ptr<U>(uint16(&value));
+  }
+
+
+  template <typename T, bool deref = true>
+  class alignas(T) flash final
+  {
+    const T m_Value = T{};
+
+    static inline T _read_pgm(const T &value)
+    {
+      return read_pgm<T>(value);
     }
 
   public:
+    using type = T;
+
     constexpr flash() = default;
     constexpr flash(const flash &data) : m_Value(data.m_Value) {}
     constexpr flash(const T &value) : m_Value(value) {}
@@ -1018,26 +1092,263 @@ namespace tuna::utils
     template <typename U = T>
     constexpr T get() const
     {
-      if (__builtin_constant_p(m_Value))
+      if constexpr (deref)
       {
         return m_Value;
       }
       else
       {
-        return rt_getter<T>(m_Value);
+        if (__builtin_constant_p(m_Value))
+        {
+          return m_Value;
+        }
+        else
+        {
+          return _read_pgm(m_Value);
+        }
       }
     }
 
-    constexpr operator T () const
+    //constexpr operator T () const
+    //{
+    //  return get();
+    //}
+
+    template <typename U>
+    constexpr operator U () const
     {
-      return get();
+      static_assert(sizeof(T) <= sizeof(U), "Cannot extract pgm value larger than declared storage.");
+      return get<U>();
+    }
+
+    constexpr bool operator == (const flash &other) const
+    {
+      return get() == other.get();
+    }
+
+    constexpr bool operator != (const flash &other) const
+    {
+      return get() != other.get();
+    }
+
+    constexpr bool operator > (const flash &other) const
+    {
+      return get() > other.get();
+    }
+
+    constexpr bool operator >= (const flash &other) const
+    {
+      return get() >= other.get();
+    }
+
+    constexpr bool operator < (const flash &other) const
+    {
+      return get() < other.get();
+    }
+
+    constexpr bool operator <= (const flash &other) const
+    {
+      return get() <= other.get();
+    }
+
+    template <typename U>
+    constexpr bool operator == (const U &other) const
+    {
+      return get() == other;
+    }
+
+    template <typename U>
+    constexpr bool operator != (const U &other) const
+    {
+      return get() != other;
+    }
+
+    template <typename U>
+    constexpr bool operator > (const U &other) const
+    {
+      return get() > other;
+    }
+
+    template <typename U>
+    constexpr bool operator >= (const U &other) const
+    {
+      return get() >= other;
+    }
+
+    template <typename U>
+    constexpr bool operator < (const U &other) const
+    {
+      return get() < other;
+    }
+
+    template <typename U>
+    constexpr bool operator <= (const U &other) const
+    {
+      return get() <= other;
+    }
+
+    constexpr T operator + (const flash &other) const
+    {
+      return get() + other.get();
+    }
+
+    constexpr T operator - (const flash &other) const
+    {
+      return get() - other.get();
+    }
+
+    constexpr T operator / (const flash &other) const
+    {
+      return get() / other.get();
+    }
+
+    constexpr T operator * (const flash &other) const
+    {
+      return get() * other.get();
+    }
+
+    constexpr T operator % (const flash &other) const
+    {
+      return get() % other.get();
+    }
+
+    constexpr T operator >> (const flash &other) const
+    {
+      return get() >> other.get();
+    }
+
+    constexpr T operator << (const flash &other) const
+    {
+      return get() << other.get();
+    }
+
+    template <typename U>
+    constexpr T operator + (const U &other) const
+    {
+      return get() + other;
+    }
+
+    template <typename U>
+    constexpr T operator - (const U &other) const
+    {
+      return get() - other;
+    }
+
+    template <typename U>
+    constexpr T operator / (const U &other) const
+    {
+      return get() / other;
+    }
+
+    template <typename U>
+    constexpr T operator * (const U &other) const
+    {
+      return get() * other;
+    }
+
+    template <typename U>
+    constexpr T operator % (const U &other) const
+    {
+      return get() % other;
+    }
+
+    template <typename U>
+    constexpr T operator >> (const U &other) const
+    {
+      return get() >> other;
+    }
+
+    template <typename U>
+    constexpr T operator << (const U &other) const
+    {
+      return get() << other;
     }
   };
 
   template<typename T, size_t N>
-  constexpr inline array_size(T(&)[N])
+  constexpr inline size_t array_size(T(&)[N])
   {
     return N;
+  }
+
+  // Simple static-cast like routine. Also makes extracting sub-types easier from encapsulations like 'flash'.
+  template <typename T = void, typename U>
+  constexpr inline auto as(const U &value)
+  {
+    if constexpr (is_same<T, void>)
+    {
+      if constexpr (type_trait<U>::is_primitive)
+      {
+        return U(value);
+      }
+      else
+      {
+        using type = typename U::type;
+        return type(value);
+      }
+    }
+    else
+    {
+      return T(value);
+    }
+  }
+
+  class flash_string final
+  {
+    const char *m_Str = nullptr;
+  public:
+    constexpr flash_string() = default;
+    constexpr flash_string(const char *str) : m_Str(str) {}
+    constexpr flash_string(const flash_string &str) : m_Str(str.m_Str) {}
+
+    constexpr flash_string & operator = (const char *str)
+    {
+      m_Str = str;
+      return *this;
+    }
+
+    constexpr flash_string & operator = (const flash_string &str)
+    {
+      m_Str = str.m_Str;
+      return *this;
+    }
+
+    constexpr operator bool() const
+    {
+      return m_Str != nullptr;
+    }
+
+    constexpr bool operator == (const flash_string &str) const
+    {
+      return m_Str == str.m_Str;
+    }
+
+    constexpr bool operator != (const flash_string &str) const
+    {
+      return m_Str == str.m_Str;
+    }
+
+    constexpr const char * c_str() const
+    {
+      return m_Str;
+    }
+  };
+
+  namespace _internal
+  {
+    template <char... Chars>
+    struct progmem_str_store final : ce_only
+    {
+      static constexpr const char str[] PROGMEM = { Chars..., '\0' };
+    };
+  }
+
+  template <typename T, T... Chars>
+  constexpr flash_string operator "" _p()
+  {
+    static_assert(is_same<T, char>, "_p must be used with 'char'");
+    //static const char str[] PROGMEM = { Chars..., '\0' };
+    return { _internal::progmem_str_store<Chars...>::str };
   }
 
 	// WIP

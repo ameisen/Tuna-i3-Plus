@@ -99,15 +99,13 @@ namespace tuna::lcd
 
 			nextLcdUpdate = ms + (update_period - min(difference, update_period));
 
-			const auto target_hotend_temperature = Temperature::target_temperature.rounded_to<uint16>();
-			// TODO validate that float->uint conversion is correct
-			const auto hotend_temperature = Temperature::degHotend().rounded_to<uint16>();
+      const uint16 target_hotend_temperature = Temperature::target_temperature.rounded_to<uint16>();
+			const uint16 hotend_temperature = Temperature::degHotend().rounded_to<uint16>();
 
-			const auto target_bed_temperature = Temperature::target_temperature_bed.rounded_to<uint16>();
-			// TODO validate that float->uint conversion is correct
-			const auto bed_temperature = Temperature::degBed().rounded_to<uint16>();
+			const uint16 target_bed_temperature = Temperature::target_temperature_bed.rounded_to<uint16>();
+			const uint16 bed_temperature = Temperature::degBed().rounded_to<uint16>();
 
-			const auto fan_speed = (fanSpeeds[0] * 100) / 256;
+			const uint16_t fan_speed = (fanSpeeds[0] * 100) / 256;
 
 			const auto card_progress = card.percentDone();
 
@@ -393,28 +391,29 @@ namespace tuna::lcd
 					planner.preheat_preset3_hotend = int16{ buffer[15] } * 256_i16 + buffer[16];
 					planner.preheat_preset3_bed = int8{ buffer[18] };
 					enqueue_and_echo_commands_P(PSTR("M500"));
+
 					char command[20];
 					switch (lcdData)
 					{
 					case 1: {
 						//thermalManager.setTargetHotend(planner.preheat_preset1_hotend);
 						//Serial.println(thermalManager.target_temperature[0]);
-						snprintf(command, sizeof(command), "M104 S%d", planner.preheat_preset1_hotend); //build heat up command (extruder)
-						enqueue_and_echo_command((const char*)&command); //enque heat command
-						snprintf(command, sizeof(command), "M140 S%d", planner.preheat_preset1_bed); //build heat up command (bed)
-						enqueue_and_echo_command((const char*)&command); //enque heat command
+            sprintf_P(command, PSTR("M104 S%d"), planner.preheat_preset1_hotend); //build heat up command (extruder)
+						enqueue_and_echo_command(command); //enque heat command
+            sprintf_P(command, PSTR("M140 S%d"), planner.preheat_preset1_bed); //build heat up command (bed)
+						enqueue_and_echo_command(command); //enque heat command
 					} break;
 					case 2: {
-						snprintf(command, sizeof(command), "M104 S%d", planner.preheat_preset2_hotend); //build heat up command (extruder)
-						enqueue_and_echo_command((const char*)&command); //enque heat command
-						snprintf(command, sizeof(command), "M140 S%d", planner.preheat_preset2_bed); //build heat up command (bed)
-						enqueue_and_echo_command((const char*)&command); //enque heat command
+            sprintf_P(command, PSTR("M104 S%d"), planner.preheat_preset2_hotend); //build heat up command (extruder)
+						enqueue_and_echo_command(command); //enque heat command
+            sprintf_P(command, PSTR("M140 S%d"), planner.preheat_preset2_bed); //build heat up command (bed)
+						enqueue_and_echo_command(command); //enque heat command
 					} break;
 					case 3: {
-						snprintf(command, sizeof(command), "M104 S%d", planner.preheat_preset3_hotend); //build heat up command (extruder)
-						enqueue_and_echo_command((const char*)&command); //enque heat command
-						snprintf(command, sizeof(command), "M140 S%d", planner.preheat_preset3_bed); //build heat up command (bed)
-						enqueue_and_echo_command((const char*)&command); //enque heat command
+            sprintf_P(command, PSTR("M104 S%d"), planner.preheat_preset3_hotend); //build heat up command (extruder)
+						enqueue_and_echo_command(command); //enque heat command
+						sprintf_P(command, PSTR("M140 S%d"), planner.preheat_preset3_bed); //build heat up command (bed)
+						enqueue_and_echo_command(command); //enque heat command
 					} break;
 					}
 				}
@@ -656,11 +655,7 @@ namespace tuna::lcd
 						break;
 					}
 					int16 hotendTemp = (int16)buffer[7] * 256 + buffer[8];
-					Serial.println(hotendTemp);
-					char command[20];
 					Temperature::setTargetHotend(hotendTemp);
-					snprintf(command, sizeof(command), "M104 S%d", hotendTemp); //build auto pid command (extruder)
-																//enqueue_and_echo_command((const char*)&command); //enque pid command
 					enqueue_and_echo_commands_P(PSTR("G91")); // relative mode
 					nextOpTime = millis24() + 500;
 					if (lcdData == 1) {
@@ -808,8 +803,8 @@ namespace tuna::lcd
 					}
 					uint16 hotendTemp = (uint16)buffer[7] * 256 + buffer[8];
 					//Serial.println(hotendTemp);
-					char command[20];
-					snprintf(command, sizeof(command), "M303 S%d E0 C8 U1", hotendTemp); //build auto pid command (extruder)
+					char command[30];
+					sprintf_P(command, PSTR("M303 S%d E0 C8 U1"), hotendTemp); //build auto pid command (extruder)
 					enqueue_and_echo_command("M106 S255"); //Turn on fan
 					enqueue_and_echo_command(command); //enque pid command
 					tempGraphUpdate = 2;
@@ -987,7 +982,7 @@ namespace tuna::lcd
 	}
 
 	//show page OK
-	constexpr void show_page(Page pageNumber)
+	void show_page(Page pageNumber)
 	{
 		if (pageNumber >= Page::Main_Menu) //main menu
 		{
