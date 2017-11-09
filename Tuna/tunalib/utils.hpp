@@ -989,7 +989,7 @@ namespace tuna::utils
   }
 
 
-  template <typename T, bool deref = true>
+  template <typename T>
   class alignas(T) flash final
   {
     const T m_Value = T{};
@@ -1009,20 +1009,13 @@ namespace tuna::utils
     template <typename U = T>
     constexpr T get() const
     {
-      if constexpr (deref)
+      if (__builtin_constant_p(m_Value))
       {
         return m_Value;
       }
       else
       {
-        if (__builtin_constant_p(m_Value))
-        {
-          return m_Value;
-        }
-        else
-        {
-          return _read_pgm(m_Value);
-        }
+        return _read_pgm(m_Value);
       }
     }
 
