@@ -320,7 +320,7 @@ static char command_queue[BUFSIZE][MAX_CMD_SIZE];
  * Used by Marlin internally to ensure that commands initiated from within
  * are enqueued ahead of any pending serial or sd card commands.
  */
-static const char *injected_commands_P = nullptr;
+static tuna::flash_string injected_commands_P = nullptr;
 
 /**
  * Feed rates are often configured with mm/m
@@ -459,17 +459,17 @@ int freeMemory() { return SdFatUtil::FreeRam(); }
  * Return true if any immediate commands remain to inject.
  */
 static bool drain_injected_commands_P() {
-	if (injected_commands_P != nullptr) {
+	if (injected_commands_P) {
 		size_t i = 0;
 		char c, cmd[30];
-		strncpy_P(cmd, injected_commands_P, sizeof(cmd) - 1);
+		strncpy_P(cmd, injected_commands_P.c_str(), sizeof(cmd) - 1);
 		cmd[sizeof(cmd) - 1] = '\0';
 		while ((c = cmd[i]) && c != '\n') i++; // find the end of this gcode command
 		cmd[i] = '\0';
 		if (enqueue_and_echo_command(cmd))     // success?
-			injected_commands_P = c ? injected_commands_P + i + 1 : nullptr; // next command or done
+			injected_commands_P = c ? injected_commands_P.c_str() + i + 1 : nullptr; // next command or done
 	}
-	return (injected_commands_P != nullptr);    // return whether any more remain
+	return (injected_commands_P);    // return whether any more remain
 }
 
 /**
@@ -477,7 +477,7 @@ static bool drain_injected_commands_P() {
  * Aborts the current queue, if any.
  * Note: drain_injected_commands_P() must be called repeatedly to drain the commands afterwards
  */
-void enqueue_and_echo_commands_P(const char * const pgcode) {
+void enqueue_and_echo_commands(const tuna::flash_string & __restrict pgcode) {
 	injected_commands_P = pgcode;
 	drain_injected_commands_P(); // first command executed asap (when possible)
 }

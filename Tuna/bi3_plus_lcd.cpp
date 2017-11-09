@@ -73,7 +73,7 @@ namespace tuna::lcd
 			{
 				if (Temperature::current_temperature >= (Temperature::target_temperature - 10_u16))
 				{
-					enqueue_and_echo_commands_P(PSTR("G1 E-1 F120"));
+					enqueue_and_echo_commands("G1 E-1 F120"_p);
 				}
 				nextOpTime = ms + 500;
 			} break;
@@ -81,7 +81,7 @@ namespace tuna::lcd
 			{
 				if (Temperature::current_temperature >= (Temperature::target_temperature - 10_u16))
 				{
-					enqueue_and_echo_commands_P(PSTR("G1 E1 F120"));
+					enqueue_and_echo_commands("G1 E1 F120"_p);
 				}
 				nextOpTime = ms + 500;
 			} break;
@@ -304,13 +304,13 @@ namespace tuna::lcd
 				card.pauseSDPrint();
 				print_job_timer.pause();
 #if ENABLED(PARK_HEAD_ON_PAUSE)
-				enqueue_and_echo_commands_P(PSTR("M125"));
+				enqueue_and_echo_commands("M125"_p);
 #endif
 				break;
 			}
 			case 0x37: {//print start OK
 #if ENABLED(PARK_HEAD_ON_PAUSE)
-				enqueue_and_echo_commands_P(PSTR("M24"));
+				enqueue_and_echo_commands("M24"_p);
 #else
 				card.startFileprint();
 				print_job_timer.start();
@@ -390,7 +390,7 @@ namespace tuna::lcd
 					planner.preheat_preset2_bed = int8{ buffer[14] };
 					planner.preheat_preset3_hotend = int16{ buffer[15] } * 256_i16 + buffer[16];
 					planner.preheat_preset3_bed = int8{ buffer[18] };
-					enqueue_and_echo_commands_P(PSTR("M500"));
+					enqueue_and_echo_commands("M500"_p);
 
 					char command[20];
 					switch (lcdData)
@@ -398,21 +398,21 @@ namespace tuna::lcd
 					case 1: {
 						//thermalManager.setTargetHotend(planner.preheat_preset1_hotend);
 						//Serial.println(thermalManager.target_temperature[0]);
-            sprintf_P(command, PSTR("M104 S%d"), planner.preheat_preset1_hotend); //build heat up command (extruder)
+            sprintf_P(command, "M104 S%d"_p.c_str(), planner.preheat_preset1_hotend); //build heat up command (extruder)
 						enqueue_and_echo_command(command); //enque heat command
-            sprintf_P(command, PSTR("M140 S%d"), planner.preheat_preset1_bed); //build heat up command (bed)
+            sprintf_P(command, "M140 S%d"_p.c_str(), planner.preheat_preset1_bed); //build heat up command (bed)
 						enqueue_and_echo_command(command); //enque heat command
 					} break;
 					case 2: {
-            sprintf_P(command, PSTR("M104 S%d"), planner.preheat_preset2_hotend); //build heat up command (extruder)
+            sprintf_P(command, "M104 S%d"_p.c_str(), planner.preheat_preset2_hotend); //build heat up command (extruder)
 						enqueue_and_echo_command(command); //enque heat command
-            sprintf_P(command, PSTR("M140 S%d"), planner.preheat_preset2_bed); //build heat up command (bed)
+            sprintf_P(command, "M140 S%d"_p.c_str(), planner.preheat_preset2_bed); //build heat up command (bed)
 						enqueue_and_echo_command(command); //enque heat command
 					} break;
 					case 3: {
-            sprintf_P(command, PSTR("M104 S%d"), planner.preheat_preset3_hotend); //build heat up command (extruder)
+            sprintf_P(command, "M104 S%d"_p.c_str(), planner.preheat_preset3_hotend); //build heat up command (extruder)
 						enqueue_and_echo_command(command); //enque heat command
-						sprintf_P(command, PSTR("M140 S%d"), planner.preheat_preset3_bed); //build heat up command (bed)
+						sprintf_P(command, "M140 S%d"_p.c_str(), planner.preheat_preset3_bed); //build heat up command (bed)
 						enqueue_and_echo_command(command); //enque heat command
 					} break;
 					}
@@ -496,13 +496,13 @@ namespace tuna::lcd
 				PID_PARAM(Ki) = scalePID_i(float{ ((uint16)buffer[17] * 256 + buffer[18]) } * 0.1f);
 				PID_PARAM(Kd) = scalePID_d(float{ ((uint16)buffer[19] * 256 + buffer[20]) } * 0.1f);
 
-				enqueue_and_echo_commands_P(PSTR("M500"));
+				enqueue_and_echo_commands("M500"_p);
 				show_page(Page::System_Menu);//show system menu
 				break;
 			}
 			case 0x42: {//factory reset OK
-				enqueue_and_echo_commands_P(PSTR("M502"));
-				enqueue_and_echo_commands_P(PSTR("M500"));
+				enqueue_and_echo_commands("M502"_p);
+				enqueue_and_echo_commands("M500"_p);
 				break;
 			}
 			case 0x47: {//print config open OK
@@ -563,7 +563,7 @@ namespace tuna::lcd
 			case 0x4A: {//load/unload filament back OK
 				opMode = OpMode::None;
 				clear_command_queue();
-				enqueue_and_echo_commands_P(PSTR("G90")); // absolute mode
+				enqueue_and_echo_commands("G90"_p); // absolute mode
 				Temperature::setTargetHotend(0);
 				show_page(Page::Filament);//filament menu
 				break;
@@ -574,38 +574,38 @@ namespace tuna::lcd
 				case 0: {
 					show_page(Page::Level1); //level 1
 					axis_homed[X_AXIS] = axis_homed[Y_AXIS] = axis_homed[Z_AXIS] = false;
-					enqueue_and_echo_commands_P(PSTR("G90")); //absolute mode
-					enqueue_and_echo_commands_P((PSTR("G28")));//homeing
+					enqueue_and_echo_commands("G90"_p); //absolute mode
+					enqueue_and_echo_commands("G28"_p);//homeing
 					nextOpTime = millis24() + 200;
 					opMode = OpMode::Level_Init;
 				} break;
 				case 1: { //fl
-					enqueue_and_echo_commands_P((PSTR("G1 Z10 F2000")));
-					enqueue_and_echo_commands_P((PSTR("G1 X30 Y30 F6000")));
-					enqueue_and_echo_commands_P((PSTR("G1 Z0 F1000")));
+					enqueue_and_echo_commands("G1 Z10 F2000"_p);
+					enqueue_and_echo_commands("G1 X30 Y30 F6000"_p);
+					enqueue_and_echo_commands("G1 Z0 F1000"_p);
 				} break;
 				case 2: { //rr
-					enqueue_and_echo_commands_P((PSTR("G1 Z10 F2000")));
-					enqueue_and_echo_commands_P((PSTR("G1 X170 Y170 F6000")));
-					enqueue_and_echo_commands_P((PSTR("G1 Z0 F1000")));
+					enqueue_and_echo_commands("G1 Z10 F2000"_p);
+					enqueue_and_echo_commands("G1 X170 Y170 F6000"_p);
+					enqueue_and_echo_commands("G1 Z0 F1000"_p);
 				} break;
 				case 3: { //fr
-					enqueue_and_echo_commands_P((PSTR("G1 Z10 F2000")));
-					enqueue_and_echo_commands_P((PSTR("G1 X170 Y30 F6000")));
-					enqueue_and_echo_commands_P((PSTR("G1 Z0 F1000")));
+					enqueue_and_echo_commands("G1 Z10 F2000"_p);
+					enqueue_and_echo_commands("G1 X170 Y30 F6000"_p);
+					enqueue_and_echo_commands("G1 Z0 F1000"_p);
 				} break;
 				case 4: { //rl
-					enqueue_and_echo_commands_P((PSTR("G1 Z10 F2000")));
-					enqueue_and_echo_commands_P((PSTR("G1 X30 Y170 F6000")));
-					enqueue_and_echo_commands_P((PSTR("G1 Z0 F1000")));
+					enqueue_and_echo_commands("G1 Z10 F2000"_p);
+					enqueue_and_echo_commands("G1 X30 Y170 F6000"_p);
+					enqueue_and_echo_commands("G1 Z0 F1000"_p);
 				} break;
 				case 5: { //c
-					enqueue_and_echo_commands_P((PSTR("G1 Z10 F2000")));
-					enqueue_and_echo_commands_P((PSTR("G1 X100 Y100 F6000")));
-					enqueue_and_echo_commands_P((PSTR("G1 Z0 F1000")));
+					enqueue_and_echo_commands("G1 Z10 F2000"_p);
+					enqueue_and_echo_commands("G1 X100 Y100 F6000"_p);
+					enqueue_and_echo_commands("G1 Z0 F1000"_p);
 				} break;
 				case 6: { //back
-					enqueue_and_echo_commands_P((PSTR("G1 Z30 F2000")));
+					enqueue_and_echo_commands("G1 Z30 F2000"_p);
 					show_page(Page::Tool_Menu); //tool menu
 				} break;
 				}
@@ -656,7 +656,7 @@ namespace tuna::lcd
 					}
 					int16 hotendTemp = (int16)buffer[7] * 256 + buffer[8];
 					Temperature::setTargetHotend(hotendTemp);
-					enqueue_and_echo_commands_P(PSTR("G91")); // relative mode
+					enqueue_and_echo_commands("G91"_p); // relative mode
 					nextOpTime = millis24() + 500;
 					if (lcdData == 1) {
 						opMode = OpMode::Load_Filament;
@@ -670,88 +670,88 @@ namespace tuna::lcd
 			}
 			case 0x00: {
 				clear_command_queue();
-				enqueue_and_echo_commands_P(PSTR("G91"));
-				enqueue_and_echo_commands_P(PSTR("G1 X5 F3000"));
-				enqueue_and_echo_commands_P(PSTR("G90"));
+				enqueue_and_echo_commands("G91"_p);
+				enqueue_and_echo_commands("G1 X5 F3000"_p);
+				enqueue_and_echo_commands("G90"_p);
 				break;
 			}
 			case 0x01: {
 				clear_command_queue();
-				enqueue_and_echo_commands_P(PSTR("G91"));
-				enqueue_and_echo_commands_P(PSTR("G1 X-5 F3000"));
-				enqueue_and_echo_commands_P(PSTR("G90"));
+				enqueue_and_echo_commands("G91"_p);
+				enqueue_and_echo_commands("G1 X-5 F3000"_p);
+				enqueue_and_echo_commands("G90"_p);
 
 				break;
 			}
 			case 0x02: {
 				clear_command_queue();
-				enqueue_and_echo_commands_P(PSTR("G91"));
-				enqueue_and_echo_commands_P(PSTR("G1 Y5 F3000"));
-				enqueue_and_echo_commands_P(PSTR("G90"));
+				enqueue_and_echo_commands("G91"_p);
+				enqueue_and_echo_commands("G1 Y5 F3000"_p);
+				enqueue_and_echo_commands("G90"_p);
 
 				break;
 			}
 			case 0x03: {
 				clear_command_queue();
-				enqueue_and_echo_commands_P(PSTR("G91"));
-				enqueue_and_echo_commands_P(PSTR("G1 Y-5 F3000"));
-				enqueue_and_echo_commands_P(PSTR("G90"));
+				enqueue_and_echo_commands("G91"_p);
+				enqueue_and_echo_commands("G1 Y-5 F3000"_p);
+				enqueue_and_echo_commands("G90"_p);
 
 				break;
 			}
 			case 0x04: {
 				clear_command_queue();
-				enqueue_and_echo_commands_P(PSTR("G91"));
-				enqueue_and_echo_commands_P(PSTR("G1 Z0.5 F3000"));
-				enqueue_and_echo_commands_P(PSTR("G90"));
+				enqueue_and_echo_commands("G91"_p);
+				enqueue_and_echo_commands("G1 Z0.5 F3000"_p);
+				enqueue_and_echo_commands("G90"_p);
 
 				break;
 			}
 			case 0x05: {
 				clear_command_queue();
-				enqueue_and_echo_commands_P(PSTR("G91"));
-				enqueue_and_echo_commands_P(PSTR("G1 Z-0.5 F3000"));
-				enqueue_and_echo_commands_P(PSTR("G90"));
+				enqueue_and_echo_commands("G91"_p);
+				enqueue_and_echo_commands("G1 Z-0.5 F3000"_p);
+				enqueue_and_echo_commands("G90"_p);
 
 				break;
 			}
 			case 0x06: {
 				if (Temperature::degHotend() >= 180_C) {
 					clear_command_queue();
-					enqueue_and_echo_commands_P(PSTR("G91"));
-					enqueue_and_echo_commands_P(PSTR("G1 E1 F120"));
-					enqueue_and_echo_commands_P(PSTR("G90"));
+					enqueue_and_echo_commands("G91"_p);
+					enqueue_and_echo_commands("G1 E1 F120"_p);
+					enqueue_and_echo_commands("G90"_p);
 				}
 				break;
 			}
 			case 0x07: {
 				if (Temperature::degHotend() >= 180_C) {
 					clear_command_queue();
-					enqueue_and_echo_commands_P(PSTR("G91"));
-					enqueue_and_echo_commands_P(PSTR("G1 E-1 F120"));
-					enqueue_and_echo_commands_P(PSTR("G90"));
+					enqueue_and_echo_commands("G91"_p);
+					enqueue_and_echo_commands("G1 E-1 F120"_p);
+					enqueue_and_echo_commands("G90"_p);
 				}
 				break;
 			}
 			case 0x54: {//disable motors OK!!!
-				enqueue_and_echo_commands_P(PSTR("M84"));
+				enqueue_and_echo_commands("M84"_p);
 				axis_homed[X_AXIS] = axis_homed[Y_AXIS] = axis_homed[Z_AXIS] = false;
 				break;
 			}
 			case 0x43: {//home x OK!!!
-				enqueue_and_echo_commands_P(PSTR("G28 X0"));
+				enqueue_and_echo_commands("G28 X0"_p);
 				break;
 			}
 			case 0x44: {//home y OK!!!
-				enqueue_and_echo_commands_P(PSTR("G28 Y0"));
+				enqueue_and_echo_commands("G28 Y0"_p);
 				break;
 			}
 			case 0x45: {//home z OK!!!
-				enqueue_and_echo_commands_P(PSTR("G28 Z0"));
+				enqueue_and_echo_commands("G28 Z0"_p);
 				break;
 			}
 			case 0x1C: {//home xyz OK!!!
-				enqueue_and_echo_commands_P(PSTR("G28"));
+				enqueue_and_echo_commands("G28"_p);
 				break;
 			}
 			case 0x5B: { //stats menu
@@ -804,8 +804,8 @@ namespace tuna::lcd
 					uint16 hotendTemp = (uint16)buffer[7] * 256 + buffer[8];
 					//Serial.println(hotendTemp);
 					char command[30];
-					sprintf_P(command, PSTR("M303 S%d E0 C8 U1"), hotendTemp); //build auto pid command (extruder)
-					enqueue_and_echo_command("M106 S255"); //Turn on fan
+					sprintf_P(command, "M303 S%d E0 C8 U1"_p.c_str(), hotendTemp); //build auto pid command (extruder)
+					enqueue_and_echo_commands("M106 S255"_p); //Turn on fan
 					enqueue_and_echo_command(command); //enque pid command
 					tempGraphUpdate = 2;
 				}
@@ -836,8 +836,7 @@ namespace tuna::lcd
 						0x4E
 					};
 					serial<2>::write(buffer);
-					constexpr const char str_buffer[26] = "No SD print";
-					serial<2>::write(str_buffer);
+					serial<2>::write("No SD print"_p);
 				}
 				show_page(Page::Print);//print menu
 			} break;
@@ -955,7 +954,7 @@ namespace tuna::lcd
 					char filament_str[15];
 				} filament_data;
 
-				snprintf_P(filament_data.filament_str, sizeof(filament_data.filament_str), PSTR("%ld.%im"), long(stats.filamentUsed / 1000.0), int(stats.filamentUsed / 100.0) % 10);
+				snprintf_P(filament_data.filament_str, sizeof(filament_data.filament_str), "%ld.%im"_p.c_str(), long(stats.filamentUsed / 1000.0), int(stats.filamentUsed / 100.0) % 10);
 
 				serial<2>::write_struct(filament_data);
 			}

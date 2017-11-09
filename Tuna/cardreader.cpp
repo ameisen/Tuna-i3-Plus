@@ -288,7 +288,7 @@ void CardReader::openAndPrintFile(const char *name) {
   sprintf_P(cmd, PSTR("M23 %s"), name);
   for (char *c = &cmd[4]; *c; c++) *c = tolower(*c);
   enqueue_and_echo_command(cmd);
-  enqueue_and_echo_commands_P(PSTR("M24"));
+  enqueue_and_echo_commands("M24"_p);
 }
 
 void CardReader::startFileprint() {
@@ -872,10 +872,10 @@ void CardReader::printingHasFinished() {
   else {
     sdprinting = false;
     if (SD_FINISHED_STEPPERRELEASE)
-      enqueue_and_echo_commands_P(PSTR(SD_FINISHED_RELEASECOMMAND));
+      enqueue_and_echo_commands(SD_FINISHED_RELEASECOMMAND);
     print_job_timer.stop();
     if (print_job_timer.duration() > 60)
-      enqueue_and_echo_commands_P(PSTR("M31"));
+      enqueue_and_echo_commands("M31"_p);
     #if ENABLED(SDCARD_SORT_ALPHA)
       presort();
     #endif

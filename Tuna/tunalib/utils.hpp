@@ -694,89 +694,6 @@ namespace tuna::utils
 		return type_trait<T>::as_unsigned(value);
 	}
 
-	template <uint8 SerialNumber = 0>
-	struct serial final
-	{
-#if defined(SerialUSB)
-		constexpr static uint8 USB = type_trait<uint8>::max;
-#endif
-
-		serial() = delete;
-
-		constexpr static uint8 number = SerialNumber;
-
-		constexpr static auto & __restrict get_serial_device()
-		{
-			switch (number)
-			{
-			case 0:
-				return Serial;
-			case 1:
-				return Serial1;
-			case 2:
-				return Serial2;
-			case 3:
-				return Serial3;
-#if defined(SerialUSB)
-			case USB:
-				return SerialUSB;
-#endif
-			}
-		}
-
-		template <uint32 baud>
-		static inline void begin()
-		{
-			get_serial_device().begin(baud);
-		}
-
-		template <typename T>
-		constexpr static inline uint8 write_struct(const T & __restrict obj)
-		{
-			return get_serial_device().write((const uint8 * __restrict)&obj, sizeof(T));
-		}
-
-		template <typename T, uint8 N>
-		constexpr static inline uint8 write(const T(&__restrict buffer)[N])
-		{
-			return get_serial_device().write((const uint8 * __restrict )buffer, N);
-		}
-
-		template <typename T>
-		constexpr static inline uint8 write(const T * __restrict buffer, const uint8 length)
-		{
-			return get_serial_device().write((const uint8 * __restrict)buffer, length);
-		}
-
-		template <typename T, uint8 N>
-		constexpr static inline uint8 read_bytes(T (&__restrict buffer)[N])
-		{
-			return get_serial_device().readBytes((uint8 * __restrict)buffer, N);
-		}
-
-		template <typename T>
-		constexpr static inline uint8 read_bytes(T * __restrict buffer, const uint8 length)
-		{
-			return get_serial_device().readBytes((uint8 * __restrict)buffer, length);
-		}
-
-		static inline uint available()
-		{
-			return get_serial_device().available();
-		}
-
-		static inline bool available(uint8 length)
-		{
-			return uint8(min(get_serial_device().available(), 255)) >= length;
-		}
-
-		// TODO handle -1. Didn't want this to be an int.
-		static inline uint8 read()
-		{
-			return get_serial_device().read();
-		}
-	};
-
 	class alignas(uint8) critical_section final
 	{
 		const uint8 m_sReg = SREG;
@@ -1332,6 +1249,17 @@ namespace tuna::utils
     {
       return m_Str;
     }
+
+    // This implicit conversion exists for Arduino SDK support.
+    constexpr operator const __FlashStringHelper * () const
+    {
+      return (const __FlashStringHelper *)m_Str;
+    }
+
+    constexpr auto fsh() const
+    {
+      return (const __FlashStringHelper *)m_Str;
+    }
   };
 
   template <size_t LEN>
@@ -1381,6 +1309,16 @@ namespace tuna::utils
       return m_Str;
     }
 
+    // This implicit conversion exists for Arduino SDK support.
+    constexpr operator const __FlashStringHelper * () const
+    {
+      return (const __FlashStringHelper *)m_Str;
+    }
+
+    constexpr auto fsh() const
+    {
+      return (const __FlashStringHelper *)m_Str;
+    }
   };
 
   namespace _internal
@@ -1399,6 +1337,100 @@ namespace tuna::utils
     //static const char str[] PROGMEM = { Chars..., '\0' };
     return { _internal::progmem_str_store<Chars...>::str };
   }
+
+  template <uint8 SerialNumber = 0>
+  struct serial final
+  {
+#if defined(SerialUSB)
+    constexpr static uint8 USB = type_trait<uint8>::max;
+#endif
+
+    serial() = delete;
+
+    constexpr static uint8 number = SerialNumber;
+
+    constexpr static auto & __restrict get_serial_device()
+    {
+      switch (number)
+      {
+      case 0:
+        return Serial;
+      case 1:
+        return Serial1;
+      case 2:
+        return Serial2;
+      case 3:
+        return Serial3;
+#if defined(SerialUSB)
+      case USB:
+        return SerialUSB;
+#endif
+      }
+    }
+
+    template <uint32 baud>
+    static inline void begin()
+    {
+      get_serial_device().begin(baud);
+    }
+
+    template <typename T>
+    constexpr static inline uint8 write_struct(const T & __restrict obj)
+    {
+      return get_serial_device().write((const uint8 * __restrict)&obj, sizeof(T));
+    }
+
+    template <typename T, uint8 N>
+    constexpr static inline uint8 write(const T(&__restrict buffer)[N])
+    {
+      return get_serial_device().write((const uint8 * __restrict)buffer, N);
+    }
+
+    template <size_t N>
+    constexpr static inline uint8 write(const flash_char_array<N> & __restrict str)
+    {
+      return get_serial_device().write((const uint8 * __restrict)str.c_str(), N + 1);
+    }
+
+    constexpr static inline uint8 write(const flash_string & __restrict str, const uint8 length)
+    {
+      return get_serial_device().write((const uint8 * __restrict)str.c_str(), length);
+    }
+
+    template <typename T>
+    constexpr static inline uint8 write(const T * __restrict buffer, const uint8 length)
+    {
+      return get_serial_device().write((const uint8 * __restrict)buffer, length);
+    }
+
+    template <typename T, uint8 N>
+    constexpr static inline uint8 read_bytes(T(&__restrict buffer)[N])
+    {
+      return get_serial_device().readBytes((uint8 * __restrict)buffer, N);
+    }
+
+    template <typename T>
+    constexpr static inline uint8 read_bytes(T * __restrict buffer, const uint8 length)
+    {
+      return get_serial_device().readBytes((uint8 * __restrict)buffer, length);
+    }
+
+    static inline uint available()
+    {
+      return get_serial_device().available();
+    }
+
+    static inline bool available(uint8 length)
+    {
+      return uint8(min(get_serial_device().available(), 255)) >= length;
+    }
+
+    // TODO handle -1. Didn't want this to be an int.
+    static inline uint8 read()
+    {
+      return get_serial_device().read();
+    }
+  };
 
 	// WIP
 #if 0

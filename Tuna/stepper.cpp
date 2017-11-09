@@ -414,7 +414,7 @@ void Stepper::isr() {
     current_block = nullptr;
     planner.discard_current_block();
     #ifdef SD_FINISHED_RELEASECOMMAND
-      if (!cleaning_buffer_counter && (SD_FINISHED_STEPPERRELEASE)) enqueue_and_echo_commands_P(PSTR(SD_FINISHED_RELEASECOMMAND));
+      if (!cleaning_buffer_counter && (SD_FINISHED_STEPPERRELEASE)) enqueue_and_echo_commands(SD_FINISHED_RELEASECOMMAND);
     #endif
     _NEXT_ISR(200); // Run at max speed - 10 KHz
     _ENABLE_ISRs(); // re-enable ISRs
