@@ -1334,6 +1334,55 @@ namespace tuna::utils
     }
   };
 
+  template <size_t LEN>
+  class flash_char_array final
+  {
+    const char * const m_Str;
+
+  public:
+    static constexpr const auto length = make_uintsz<LEN>;
+
+    constexpr flash_char_array(const char *str) : m_Str(str) {}
+
+    constexpr operator flash_string () const
+    {
+      return { m_Str };
+    }
+
+    constexpr operator bool() const
+    {
+      return m_Str != nullptr;
+    }
+
+    constexpr bool operator == (const flash_string &str) const
+    {
+      return m_Str == str.m_Str;
+    }
+
+    constexpr bool operator != (const flash_string &str) const
+    {
+      return m_Str == str.m_Str;
+    }
+
+    template <size_t U>
+    constexpr bool operator == (const flash_char_array<U> &str) const
+    {
+      return m_Str == str.m_Str;
+    }
+
+    template <size_t U>
+    constexpr bool operator != (const flash_char_array<U> &str) const
+    {
+      return m_Str == str.m_Str;
+    }
+
+    constexpr const char * c_str() const
+    {
+      return m_Str;
+    }
+
+  };
+
   namespace _internal
   {
     template <char... Chars>
@@ -1344,7 +1393,7 @@ namespace tuna::utils
   }
 
   template <typename T, T... Chars>
-  constexpr flash_string operator "" _p()
+  constexpr flash_char_array<sizeof...(Chars)> operator "" _p()
   {
     static_assert(is_same<T, char>, "_p must be used with 'char'");
     //static const char str[] PROGMEM = { Chars..., '\0' };
