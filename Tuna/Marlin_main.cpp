@@ -320,7 +320,7 @@ static char command_queue[BUFSIZE][MAX_CMD_SIZE];
  * Used by Marlin internally to ensure that commands initiated from within
  * are enqueued ahead of any pending serial or sd card commands.
  */
-static tuna::flash_string injected_commands_P = nullptr;
+static Tuna::flash_string injected_commands_P = nullptr;
 
 /**
  * Feed rates are often configured with mm/m
@@ -477,7 +477,7 @@ static bool drain_injected_commands_P() {
  * Aborts the current queue, if any.
  * Note: drain_injected_commands_P() must be called repeatedly to drain the commands afterwards
  */
-void enqueue_and_echo_commands(const tuna::flash_string & __restrict pgcode) {
+void enqueue_and_echo_commands(const Tuna::flash_string & __restrict pgcode) {
 	injected_commands_P = pgcode;
 	drain_injected_commands_P(); // first command executed asap (when possible)
 }
@@ -1519,7 +1519,7 @@ inline void gcode_M104() {
 
 	if (parser.seenval('S')) {
 		const temp_t temp = parser.value_celsius();
-		thermalManager.setTargetHotend(temp);
+    Temperature::setTargetHotend(temp);
 
 		/**
 		 * Stop the timer at the end of print. Start is managed by 'heat and wait' M109.
@@ -1532,7 +1532,7 @@ inline void gcode_M104() {
 			LCD_MESSAGEPGM(WELCOME_MSG);
 		}
 
-		if (parser.value_celsius() > float(thermalManager.degHotend()))
+		if (parser.value_celsius() > float(Temperature::degHotend()))
 			lcd::statusf(0, PSTR("E%i %s"), target_extruder + 1, MSG_HEATING);
 	}
 
@@ -1555,15 +1555,15 @@ void print_heater_state(const float &c, const float &t,
 }
 
 void print_heaterstates() {
-	print_heater_state(thermalManager.degHotend(), thermalManager.degTargetHotend()
+	print_heater_state(Temperature::degHotend(), Temperature::degTargetHotend()
 	);
-	print_heater_state(thermalManager.degBed(), thermalManager.degTargetBed(),
+	print_heater_state(Temperature::degBed(), Temperature::degTargetBed(),
 		-1 // BED
 	);
 	SERIAL_PROTOCOLPGM(" @:");
-	SERIAL_PROTOCOL(thermalManager.getHeaterPower<Temperature::Manager::Hotend>());
+	SERIAL_PROTOCOL(Temperature::getHeaterPower<Temperature::Manager::Hotend>());
 	SERIAL_PROTOCOLPGM(" B@:");
-	SERIAL_PROTOCOL(thermalManager.getHeaterPower<Temperature::Manager::Bed>());
+	SERIAL_PROTOCOL(Temperature::getHeaterPower<Temperature::Manager::Bed>());
 }
 
 /**
@@ -1657,7 +1657,7 @@ inline void gcode_M109() {
 	const bool no_wait_for_cooling = parser.seenval('S');
 	if (no_wait_for_cooling || parser.seenval('R')) {
 		const temp_t temp = parser.value_celsius();
-		thermalManager.setTargetHotend(temp);
+    Temperature::setTargetHotend(temp);
 
 		/**
 		 * Use half EXTRUDE_MINTEMP to allow nozzles to be put into hot
@@ -1671,7 +1671,7 @@ inline void gcode_M109() {
 		else
 			print_job_timer.start();
 
-		if (thermalManager.isHeatingHotend()) lcd::statusf(0, PSTR("E%i %s"), target_extruder + 1, MSG_HEATING);
+		if (Temperature::isHeatingHotend()) lcd::statusf(0, PSTR("E%i %s"), target_extruder + 1, MSG_HEATING);
 	}
 	else return;
 
@@ -1690,9 +1690,9 @@ inline void gcode_M109() {
 
 	do {
 		// Target temperature might be changed during the loop
-		if (target_temp != float(thermalManager.degTargetHotend())) {
-			wants_to_cool = thermalManager.isCoolingHotend();
-			target_temp = float(thermalManager.degTargetHotend());
+		if (target_temp != float(Temperature::degTargetHotend())) {
+			wants_to_cool = Temperature::isCoolingHotend();
+			target_temp = float(Temperature::degTargetHotend());
 
 			// Exit if S<lower>, continue if S<higher>, R<lower>, or R<higher>
 			if (no_wait_for_cooling && wants_to_cool) break;
@@ -1713,7 +1713,7 @@ inline void gcode_M109() {
 		idle();
 		refresh_cmd_timeout(); // to prevent stepper_inactive_time from running out
 
-		const float temp = thermalManager.degHotend();
+		const float temp = Temperature::degHotend();
 
 		const float temp_diff = FABS(target_temp - temp);
 
@@ -1759,7 +1759,7 @@ inline void gcode_M190() {
 	LCD_MESSAGEPGM(MSG_BED_HEATING);
 	const bool no_wait_for_cooling = parser.seenval('S');
 	if (no_wait_for_cooling || parser.seenval('R')) {
-		thermalManager.setTargetBed(parser.value_celsius());
+    Temperature::setTargetBed(parser.value_celsius());
 		if (parser.value_celsius() > BED_MINTEMP)
 			print_job_timer.start();
 	}
@@ -1780,9 +1780,9 @@ inline void gcode_M190() {
 
 	do {
 		// Target temperature might be changed during the loop
-		if (target_temp != float(thermalManager.degTargetBed())) {
-			wants_to_cool = thermalManager.isCoolingBed();
-			target_temp = float(thermalManager.degTargetBed());
+		if (target_temp != float(Temperature::degTargetBed())) {
+			wants_to_cool = Temperature::isCoolingBed();
+			target_temp = float(Temperature::degTargetBed());
 
 			// Exit if S<lower>, continue if S<higher>, R<lower>, or R<higher>
 			if (no_wait_for_cooling && wants_to_cool) break;
@@ -1803,7 +1803,7 @@ inline void gcode_M190() {
 		idle();
 		refresh_cmd_timeout(); // to prevent stepper_inactive_time from running out
 
-		const float temp = thermalManager.degBed();
+		const float temp = Temperature::degBed();
 
 		const float temp_diff = FABS(target_temp - temp);
 
@@ -1894,7 +1894,7 @@ inline void gcode_M113() {
  */
 inline void gcode_M140() {
 	if (DEBUGGING(DRYRUN)) return;
-	if (parser.seenval('S')) thermalManager.setTargetBed(parser.value_celsius());
+	if (parser.seenval('S')) Temperature::setTargetBed(parser.value_celsius());
 }
 
 /**
@@ -1903,7 +1903,7 @@ inline void gcode_M140() {
  *      This code should ALWAYS be available for EMERGENCY SHUTDOWN!
  */
 inline void gcode_M81() {
-	thermalManager.disable_all_heaters();
+  Temperature::disable_all_heaters();
 	stepper.finish_and_disable();
 
 	for (uint8_t i = 0; i < FAN_COUNT; i++) fanSpeeds[i] = 0;
@@ -2288,6 +2288,8 @@ inline void gcode_M226() {
  *   L[float] LPQ length
  */
 inline void gcode_M301() {
+  // TODO FIXME
+#if 0
 
 	// multi-extruder PID patch: M301 updates or prints a single extruder's PID values
 	// default behaviour (omitting E parameter) is to update for extruder 0 only
@@ -2298,7 +2300,7 @@ inline void gcode_M301() {
 		if (parser.seen('I')) PID_PARAM(Ki) = scalePID_i(parser.value_float());
 		if (parser.seen('D')) PID_PARAM(Kd) = scalePID_d(parser.value_float());
 
-		thermalManager.updatePID();
+    Temperature::updatePID();
 		SERIAL_ECHO_START();
 		SERIAL_ECHOPAIR(" p:", PID_PARAM(Kp));
 		SERIAL_ECHOPAIR(" i:", unscalePID_i(PID_PARAM(Ki)));
@@ -2309,6 +2311,7 @@ inline void gcode_M301() {
 		SERIAL_ERROR_START();
 		SERIAL_ERRORLN(MSG_INVALID_EXTRUDER);
 	}
+#endif
 }
 
 /**
@@ -2329,17 +2332,17 @@ inline void gcode_M301() {
 inline void gcode_M302() {
 	const bool seen_S = parser.seen('S');
 	if (seen_S) {
-		thermalManager.min_extrude_temp = parser.value_celsius();
-		thermalManager.allow_cold_extrude = (thermalManager.min_extrude_temp == 0_C);
+		Temperature::min_extrude_temp = parser.value_celsius();
+		Temperature::allow_cold_extrude = (Temperature::min_extrude_temp == 0_C);
 	}
 
 	if (parser.seen('P'))
-		thermalManager.allow_cold_extrude = (thermalManager.min_extrude_temp == 0_C) || parser.value_bool();
+    Temperature::allow_cold_extrude = (Temperature::min_extrude_temp == 0_C) || parser.value_bool();
 	else if (!seen_S) {
 		// Report current state
 		SERIAL_ECHO_START();
-		SERIAL_ECHOPAIR("Cold extrudes are ", (thermalManager.allow_cold_extrude ? "en" : "dis"));
-		SERIAL_ECHOPAIR("abled (min temp ", float(thermalManager.min_extrude_temp));
+		SERIAL_ECHOPAIR("Cold extrudes are ", (Temperature::allow_cold_extrude ? "en" : "dis"));
+		SERIAL_ECHOPAIR("abled (min temp ", float(Temperature::min_extrude_temp));
 		SERIAL_ECHOLNPGM("C)");
 	}
 }
@@ -2363,7 +2366,7 @@ inline void gcode_M303() {
 
 	KEEPALIVE_STATE(NOT_BUSY); // don't send "busy: processing" messages during autotune output
 
-	thermalManager.PID_autotune(temp, c, u);
+  Temperature::PID_autotune(temp, c, u);
 
 	KEEPALIVE_STATE(IN_HANDLER);
 }
@@ -2956,7 +2959,7 @@ void prepare_move_to_destination() {
 
 	if (!DEBUGGING(DRYRUN)) {
 		if (destination[E_AXIS] != current_position[E_AXIS]) {
-			if (thermalManager.tooColdToExtrude()) {
+			if (Temperature::tooColdToExtrude()) {
 				current_position[E_AXIS] = destination[E_AXIS]; // Behave as if the move really took place, but ignore E part
 				SERIAL_ECHO_START();
 				SERIAL_ECHOLNPGM(MSG_ERR_COLD_EXTRUDE_STOP);
@@ -3068,7 +3071,7 @@ void plan_arc(
 
 	for (uint16_t i = 1; i < segments; i++) { // Iterate (segments-1) times
 
-		thermalManager.manage_heater();
+    Temperature::manage_heater();
 		if (ELAPSED(millis(), next_idle_ms)) {
 			next_idle_ms = millis() + 200UL;
 			idle();
@@ -3207,13 +3210,11 @@ void idle(
 
 	auto_report_temperatures();
 
-	manage_inactivity(
-	);
+	manage_inactivity();
 
-	thermalManager.manage_heater();
+  Temperature::manage_heater();
 
 	print_job_timer.tick();
-
 }
 
 /**
@@ -3224,20 +3225,20 @@ void kill(const char* lcd_msg) {
 	SERIAL_ERROR_START();
 	SERIAL_ERRORLNPGM(MSG_ERR_KILLED);
 
-	thermalManager.disable_all_heaters();
+  Temperature::disable_all_heaters();
 	disable_all_steppers();
 
 	UNUSED(lcd_msg);
 
 	_delay_ms(600); // Wait a short time (allows messages to get out before shutting down.
-	tuna::cli(); // Stop interrupts
+	Tuna::cli(); // Stop interrupts
 
 	_delay_ms(250); //Wait to ensure all interrupts routines stopped
-	thermalManager.disable_all_heaters(); //turn off heaters again
+  Temperature::disable_all_heaters(); //turn off heaters again
 
 	suicide();
 	while (1) {
-		tuna::wdr();
+		Tuna::wdr();
 	} // Wait for reset
 }
 
@@ -3246,7 +3247,7 @@ void kill(const char* lcd_msg) {
  * After a stop the machine may be resumed with M999
  */
 void stop() {
-	thermalManager.disable_all_heaters(); // 'unpause' taken care of in here
+	Temperature::disable_all_heaters(); // 'unpause' taken care of in here
 
 	if (IsRunning()) {
 		Stopped_gcode_LastN = gcode_LastN; // Save last g_code for restart
@@ -3322,7 +3323,7 @@ void setup() {
 	// Vital to init stepper/planner equivalent for current_position
 	SYNC_PLAN_POSITION_KINEMATIC();
 
-	thermalManager.init();    // Initialize temperature loop
+  Temperature::init();    // Initialize temperature loop
 
 	watchdog_init();
 

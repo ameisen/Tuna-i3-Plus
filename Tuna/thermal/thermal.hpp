@@ -30,244 +30,216 @@
 
 #include <tuna.h>
 
-namespace Tuna {}
-using namespace Tuna;
-
-namespace Thermal
+namespace Tuna
 {
-	constexpr const auto max_temperature = make_uintsz<300>;
-}
+  constexpr const auto printer_max_temperature = make_uintsz<300>;
 
-// generate a fixed-precision type that can hold up to at least the maximum temperature,
-// and has at least 4 bits of decimal precision.
-using temp_t = tuna::fixedsz<Thermal::max_temperature, 4>;
+  // generate a fixed-precision type that can hold up to at least the maximum temperature,
+  // and has at least 4 bits of decimal precision.
+  using temp_t = Tuna::fixedsz<printer_max_temperature, 4>;
 
-constexpr temp_t operator "" _C(long double temperature)
-{
-	return {float(temperature)};
-}
+  constexpr temp_t operator "" _C(long double temperature)
+  {
+    return { float(temperature) };
+  }
 
-constexpr temp_t operator "" _C(unsigned long long int temperature)
-{
-	return { (typename temp_t::type)(temperature) };
+  constexpr temp_t operator "" _C(unsigned long long int temperature)
+  {
+    return { (typename temp_t::type)(temperature) };
+  }
 }
 
 #include "thermistors/thermistortables.h"
 
-// Minimum number of Temperature::ISR loops between sensor readings.
-// Multiplied by 16 (OVERSAMPLENR) to obtain the total time to
-// get all oversampled sensor readings
-#define MIN_ADC_ISR_LOOPS 10
-
-constexpr int ACTUAL_ADC_SAMPLES = int(MIN_ADC_ISR_LOOPS);
-
-class Temperature
+namespace Tuna
 {
-public:
+  class Temperature final : ce_only
+  {
+  public:
+    // Minimum number of Temperature::ISR loops between sensor readings.
+    // Multiplied by 16 (OVERSAMPLENR) to obtain the total time to
+    // get all oversampled sensor readings
+    static constexpr const uint8 ACTUAL_ADC_SAMPLES = 10;
 
-	enum class Manager : uint8
-	{
-		Hotend = 0,
-		Bed = 1
-	};
+	  enum class Manager : uint8
+	  {
+		  Hotend = 0,
+		  Bed = 1
+	  };
 
-	static constexpr uint8 num_hotends = 1;
-	static constexpr uint8 num_beds = 1;
+	  static constexpr uint8 num_hotends = 1;
+	  static constexpr uint8 num_beds = 1;
 
-  static temp_t min_extrude_temp;
+    static temp_t min_extrude_temp;
 
-	template <uint16 Celcius>
-	struct TemperatureValueConverter final
-	{
-		TemperatureValueConverter() = delete;
-		static constexpr const auto Temperature = make_uintsz<Celcius>;
-		static constexpr const auto Adc = make_uintsz<Thermistor::ce_convert_temp_to_adc<Celcius>()>;
-	};
+	  template <uint16 Celcius>
+	  struct TemperatureValueConverter final : ce_only
+	  {
+      static constexpr const temp_t Temperature = temp_t{Celcius};
+		  static constexpr const auto Adc = make_uintsz<Thermistor::ce_convert_temp_to_adc<Temperature.raw()>()>;
+	  };
 
-	class Hotend final
-	{
-		Hotend() = delete;
-	public:
-		using max_temperature = TemperatureValueConverter<HEATER_0_MAXTEMP>;
-		using min_temperature = TemperatureValueConverter<HEATER_0_MINTEMP>;
-	};
+	  struct Hotend final : ce_only
+	  {
+		  using max_temperature = TemperatureValueConverter<HEATER_0_MAXTEMP>;
+		  using min_temperature = TemperatureValueConverter<HEATER_0_MINTEMP>;
+      static_assert(max_temperature::Adc != min_temperature::Adc, "these values should never be equal.");
+      static_assert(max_temperature::Temperature != min_temperature::Temperature, "these values should never be equal.");
+	  };
 
-	class Bed final
-	{
-		Bed() = delete;
-	public:
-		using max_temperature = TemperatureValueConverter<BED_MAXTEMP>;
-		using min_temperature = TemperatureValueConverter<BED_MINTEMP>;
-	};
+    struct Bed final : ce_only
+	  {
+		  using max_temperature = TemperatureValueConverter<BED_MAXTEMP>;
+		  using min_temperature = TemperatureValueConverter<BED_MINTEMP>;
+      static_assert(max_temperature::Adc != min_temperature::Adc, "these values should never be equal.");
+      static_assert(max_temperature::Temperature != min_temperature::Temperature, "these values should never be equal.");
+	  };
 
-	static temp_t current_temperature,
-		current_temperature_bed;
-	static volatile uint16_t current_temperature_raw;
-	static temp_t target_temperature;
-	static volatile uint16_t current_temperature_bed_raw;
-	static temp_t target_temperature_bed;
+	  static temp_t current_temperature,
+		  current_temperature_bed;
+	  static volatile uint16_t current_temperature_raw;
+	  static temp_t target_temperature;
+	  static volatile uint16_t current_temperature_bed_raw;
+	  static temp_t target_temperature_bed;
 
-	static volatile bool in_temp_isr;
+	  static volatile bool in_temp_isr;
 
-	static uint8_t soft_pwm_amount,
-		soft_pwm_amount_bed;
+    static volatile uint8_t soft_pwm_amount;
+		static volatile uint8_t soft_pwm_amount_bed;
 
-#define PID_dT ((OVERSAMPLENR * float(ACTUAL_ADC_SAMPLES)) / (F_CPU / 64.0f / 256.0f))
+	  static temp_t watch_target_temp;
+	  static millis_t watch_heater_next_ms;
 
-	static float Kp, Ki, Kd;
-#define PID_PARAM(param) Temperature::param
+	  static temp_t watch_target_bed_temp;
+	  static millis_t watch_bed_next_ms;
 
-	// Apply the scale factors to the PID values
-#define scalePID_i(i)   ( (i) * PID_dT )
-#define unscalePID_i(i) ( (i) / PID_dT )
-#define scalePID_d(d)   ( (d) / PID_dT )
-#define unscalePID_d(d) ( (d) * PID_dT )
+	  static bool allow_cold_extrude;
+	  static bool tooColdToExtrude() {
+		  return allow_cold_extrude ? false : degHotend() < min_extrude_temp;
+	  }
 
-	static temp_t watch_target_temp;
-	static millis_t watch_heater_next_ms;
+  private:
 
-	static temp_t watch_target_bed_temp;
-	static millis_t watch_bed_next_ms;
+	  static volatile bool temp_meas_ready;
+	  static_assert(sizeof(Temperature::temp_meas_ready) == 1, "atomic boolean must be one byte");
 
-	static bool allow_cold_extrude;
-	static bool tooColdToExtrude() {
-		return allow_cold_extrude ? false : degHotend() < min_extrude_temp;
-	}
+	  static millis_t next_bed_check_ms;
 
-private:
+	  static uint16_t raw_temp_value,
+		  raw_temp_bed_value;
 
-	static volatile bool temp_meas_ready;
-	static_assert(sizeof(Temperature::temp_meas_ready) == 1, "atomic boolean must be one byte");
+  public:
+	  /**
+	   * Instance Methods
+	   */
 
-	static float temp_iState,
-		temp_dState,
-		pTerm,
-		iTerm,
-		dTerm;
+	  static void init();
 
-	static float pid_error;
-	static bool pid_reset;
+    static pair<temp_t, bool> get_temperature_trend();
 
-	static millis_t next_bed_check_ms;
+	  /**
+	   * Static (class) methods
+	   */
+	  static temp_t analog2temp(arg_type<uint16> raw);
+	  static temp_t analog2tempBed(arg_type<uint16> raw);
 
-	static uint16_t raw_temp_value,
-		raw_temp_bed_value;
+	  /**
+	   * Called from the Temperature ISR
+	   */
+	  static void isr();
 
-public:
-	/**
-	 * Instance Methods
-	 */
+	  /**
+	   * Call periodically to manage heaters
+	   */
+	  static bool manage_heater();
 
-	Temperature();
+	  /**
+	   * Preheating hotends
+	   */
+	  static constexpr bool is_preheating() { return false; }
 
-	void init();
+	   //high level conversion routines, for use outside of temperature.cpp
+	   //inline so that there is no performance decrease.
+	   //deg=degreeCelsius
 
-	/**
-	 * Static (class) methods
-	 */
-	static temp_t analog2temp(uint16 raw);
-	static temp_t analog2tempBed(uint16 raw);
+	  static temp_t degHotend() { return current_temperature; }
+	  static temp_t degBed() { return current_temperature_bed; }
 
-	/**
-	 * Called from the Temperature ISR
-	 */
-	static void isr();
+	  static temp_t degTargetHotend() { return target_temperature; }
 
-	/**
-	 * Call periodically to manage heaters
-	 */
-	static void manage_heater();
+	  static temp_t degTargetBed() { return target_temperature_bed; }
 
-	/**
-	 * Preheating hotends
-	 */
-	static constexpr bool is_preheating() { return false; }
+	  static void start_watching_heater();
 
-	 //high level conversion routines, for use outside of temperature.cpp
-	 //inline so that there is no performance decrease.
-	 //deg=degreeCelsius
+	  static void start_watching_bed();
 
-	static temp_t degHotend() { return current_temperature; }
-	static temp_t degBed() { return current_temperature_bed; }
+	  static void setTargetHotend(arg_type<temp_t> celsius) {
+		  target_temperature = celsius;
+		  start_watching_heater();
+	  }
 
-	static temp_t degTargetHotend() { return target_temperature; }
+	  static void setTargetBed(arg_type<temp_t> celsius) {
+		  target_temperature_bed = min(celsius, temp_t(BED_MAXTEMP));
+		  start_watching_bed();
+	  }
 
-	static temp_t degTargetBed() { return target_temperature_bed; }
+	  static bool isHeatingHotend() {
+		  return current_temperature <= target_temperature;
+	  }
+	  static bool isHeatingBed() { return current_temperature_bed <= target_temperature_bed; }
 
-	static void start_watching_heater();
+	  static bool isCoolingHotend() {
+		  return current_temperature > target_temperature;
+	  }
+	  static bool isCoolingBed() { return current_temperature_bed > target_temperature_bed; }
 
-	static void start_watching_bed();
+	  /**
+	   * The software PWM power for a heater
+	   */
+	  template <Manager manager_type>
+	  static uint8 getHeaterPower();
 
-	static void setTargetHotend(const temp_t celsius) {
-		target_temperature = celsius;
-		start_watching_heater();
-	}
+	  /**
+	   * Switch off all heaters, set all target temperatures to 0
+	   */
+	  static void disable_all_heaters();
 
-	static void setTargetBed(const temp_t celsius) {
-		target_temperature_bed = min(celsius, temp_t(BED_MAXTEMP));
-		start_watching_bed();
-	}
+	  /**
+	   * Perform auto-tuning for hotend or bed in response to M303
+	   */
+	  static void PID_autotune(arg_type<temp_t> temp, arg_type<int> ncycles, bool set_result = false);
 
-	static bool isHeatingHotend() {
-		return current_temperature <= target_temperature;
-	}
-	static bool isHeatingBed() { return current_temperature_bed <= target_temperature_bed; }
+	  /**
+	   * Update the temp manager when PID values change
+	   */
+	  static void updatePID();
 
-	static bool isCoolingHotend() {
-		return current_temperature > target_temperature;
-	}
-	static bool isCoolingBed() { return current_temperature_bed > target_temperature_bed; }
+  private:
 
-	/**
-	 * The software PWM power for a heater
-	 */
-	template <Manager manager_type>
-	static uint8 getHeaterPower();
+	  static void set_current_temp_raw();
 
-	/**
-	 * Switch off all heaters, set all target temperatures to 0
-	 */
-	static void disable_all_heaters();
+	  static bool updateTemperaturesFromRawValues();
 
-	/**
-	 * Perform auto-tuning for hotend or bed in response to M303
-	 */
-	static void PID_autotune(temp_t temp, int ncycles, bool set_result = false);
+	  static void checkExtruderAutoFans();
 
-	/**
-	 * Update the temp manager when PID values change
-	 */
-	static void updatePID();
+	  template <Manager manager_type>
+	  static void _temp_error(const char * __restrict const serial_msg, const char * __restrict const lcd_msg);
+	  template <Manager manager_type>
+	  static void min_temp_error();
+	  template <Manager manager_type>
+	  static void max_temp_error();
 
-private:
+	  typedef enum TRState { TRInactive, TRFirstHeating, TRStable, TRRunaway } TRstate;
 
-	static void set_current_temp_raw();
+	  template <Manager manager_type>
+	  static void thermal_runaway_protection(TRState & __restrict state, millis_t & __restrict timer, arg_type<temp_t> temperature, arg_type<temp_t> target_temperature, arg_type<int> period_seconds, arg_type<int> hysteresis_degc);
 
-	static bool updateTemperaturesFromRawValues();
+	  static TRState thermal_runaway_state_machine;
+	  static millis_t thermal_runaway_timer;
 
-	static void checkExtruderAutoFans();
+	  static TRState thermal_runaway_bed_state_machine;
+	  static millis_t thermal_runaway_bed_timer;
 
-	static float get_pid_output();
+  };
 
-	template <Manager manager_type>
-	static void _temp_error(const char * const serial_msg, const char * const lcd_msg);
-	template <Manager manager_type>
-	static void min_temp_error();
-	template <Manager manager_type>
-	static void max_temp_error();
-
-	typedef enum TRState { TRInactive, TRFirstHeating, TRStable, TRRunaway } TRstate;
-
-	template <Manager manager_type>
-	static void thermal_runaway_protection(TRState* state, millis_t* timer, temp_t temperature, temp_t target_temperature, int period_seconds, int hysteresis_degc);
-
-	static TRState thermal_runaway_state_machine;
-	static millis_t thermal_runaway_timer;
-
-	static TRState thermal_runaway_bed_state_machine;
-	static millis_t thermal_runaway_bed_timer;
-
-};
-
-extern Temperature thermalManager;
-
+}

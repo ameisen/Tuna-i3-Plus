@@ -14,9 +14,9 @@
 # include "duration_t.h"
 #endif
 
-using namespace tuna::utils;
+using namespace Tuna::utils;
 
-namespace tuna::lcd
+namespace Tuna::lcd
 {
 	namespace
 	{
@@ -33,28 +33,25 @@ namespace tuna::lcd
 		inline void read_data();
 		void write_statistics();
 
-		millis24_t nextOpTime = 0;
-		millis24_t nextLcdUpdate = 0;
+    chrono::time_ms<uint16> opTime = 0;
+    chrono::duration_ms<uint16> opDuration = 0;
+    chrono::time_ms<uint16> lcdUpdateTime = 0;
+    chrono::duration_ms<uint16> lcdUpdateDuration = 0;
+    constexpr const auto lcdUpdatePeriod = 100_ms16;
+
 		uint16 fileIndex = 0;
 		OpMode opMode = OpMode::None;
 		uint8 tempGraphUpdate = 0;
 		Page currentPage = Page::Main_Menu;
 		Page lastPage = Page::Main_Menu; // main menu
 
-		constexpr const millis24_t update_period = { 100 }; // originally 500
-
-		template <typename MS>
-		inline bool passed(const MS & __restrict cur_time, const MS & __restrict target)
+		void execute_looped_operation(arg_type<chrono::time_ms<uint16>> ms)
 		{
-			return (cur_time - target) < (type_trait<MS>::max() / 2); // will roll around with 24 and 16-bit values.
-		}
+      if (!opTime.elapsed(ms, opDuration))
+      {
+        return;
+      }
 
-		void execute_looped_operation(millis24_t ms)
-		{
-			if (ms < nextOpTime)
-			{
-				return;
-			}
 			switch (opMode)
 			{
 			case OpMode::Level_Init:
@@ -66,7 +63,8 @@ namespace tuna::lcd
 				}
 				else
 				{
-					nextOpTime = ms + 200;
+          opTime = ms;
+          opDuration = 200_ms16;
 				}
 			} break;
 			case OpMode::Unload_Filament:
@@ -75,7 +73,8 @@ namespace tuna::lcd
 				{
 					enqueue_and_echo_commands("G1 E-1 F120"_p);
 				}
-				nextOpTime = ms + 500;
+        opTime = ms;
+        opDuration = 500_ms16;
 			} break;
 			case OpMode::Load_Filament:
 			{
@@ -83,21 +82,22 @@ namespace tuna::lcd
 				{
 					enqueue_and_echo_commands("G1 E1 F120"_p);
 				}
-				nextOpTime = ms + 500;
+        opTime = ms;
+        opDuration = 500_ms16;
 			} break;
 			}
 		}
 
-		void status_update(millis24_t ms)
+		void status_update(arg_type<chrono::time_ms<uint16>> ms)
 		{
-			if (ms < nextLcdUpdate)
-			{
-				return;
-			}
+      const auto elapsedPair = lcdUpdateTime.elapsed_over(ms, lcdUpdateDuration);
+      if (!elapsedPair)
+      {
+        return;
+      }
 
-			const auto difference = ms - nextLcdUpdate;
-
-			nextLcdUpdate = ms + (update_period - min(difference, update_period));
+      lcdUpdateTime = ms;
+      lcdUpdateDuration = lcdUpdatePeriod - min(lcdUpdatePeriod, elapsedPair.second);
 
       const uint16 target_hotend_temperature = Temperature::target_temperature.rounded_to<uint16>();
 			const uint16 hotend_temperature = Temperature::degHotend().rounded_to<uint16>();
@@ -431,9 +431,9 @@ namespace tuna::lcd
 					uint16{ planner.axis_steps_per_mm[E_AXIS] * 10.0f },
 				};
 
-				const uint16 Kp = uint16{ PID_PARAM(Kp) * 10.0f };
-				const uint16 Ki = uint16{ unscalePID_i(PID_PARAM(Ki)) * 10.0f };
-				const uint16 Kd = uint16{ unscalePID_d(PID_PARAM(Kd)) * 10.0f };
+        const uint16 Kp = 0;// uint16{ PID_PARAM(Kp) * 10.0f };
+        const uint16 Ki = 0;// uint16{ unscalePID_i(PID_PARAM(Ki)) * 10.0f };
+        const uint16 Kd = 0;// uint16{ unscalePID_d(PID_PARAM(Kd)) * 10.0f };
 
 				const uint8 buffer[20] = {
 					0x5A,
@@ -492,9 +492,9 @@ namespace tuna::lcd
 				planner.axis_steps_per_mm[Z_AXIS] = float{ ((uint16)buffer[11] * 256 + buffer[12]) } * 0.1f;
 				planner.axis_steps_per_mm[E_AXIS] = float{ ((uint16)buffer[13] * 256 + buffer[14]) } * 0.1f;
 
-				PID_PARAM(Kp) = float{ ((uint16)buffer[15] * 256 + buffer[16]) } * 0.1f;
-				PID_PARAM(Ki) = scalePID_i(float{ ((uint16)buffer[17] * 256 + buffer[18]) } * 0.1f);
-				PID_PARAM(Kd) = scalePID_d(float{ ((uint16)buffer[19] * 256 + buffer[20]) } * 0.1f);
+				//PID_PARAM(Kp) = float{ ((uint16)buffer[15] * 256 + buffer[16]) } * 0.1f;
+				//PID_PARAM(Ki) = scalePID_i(float{ ((uint16)buffer[17] * 256 + buffer[18]) } * 0.1f);
+				//PID_PARAM(Kd) = scalePID_d(float{ ((uint16)buffer[19] * 256 + buffer[20]) } * 0.1f);
 
 				enqueue_and_echo_commands("M500"_p);
 				show_page(Page::System_Menu);//show system menu
@@ -576,7 +576,8 @@ namespace tuna::lcd
 					axis_homed[X_AXIS] = axis_homed[Y_AXIS] = axis_homed[Z_AXIS] = false;
 					enqueue_and_echo_commands("G90"_p); //absolute mode
 					enqueue_and_echo_commands("G28"_p);//homeing
-					nextOpTime = millis24() + 200;
+          opTime = chrono::time_ms<uint16>::get();
+          opDuration = 200_ms16;
 					opMode = OpMode::Level_Init;
 				} break;
 				case 1: { //fl
@@ -657,7 +658,8 @@ namespace tuna::lcd
 					int16 hotendTemp = (int16)buffer[7] * 256 + buffer[8];
 					Temperature::setTargetHotend(hotendTemp);
 					enqueue_and_echo_commands("G91"_p); // relative mode
-					nextOpTime = millis24() + 500;
+          opTime = chrono::time_ms<uint16>::get();
+          opDuration = 500_ms16;
 					if (lcdData == 1) {
 						opMode = OpMode::Load_Filament;
 					}
@@ -814,7 +816,7 @@ namespace tuna::lcd
 				if (lcdData == 1) // back
 				{
 					tempGraphUpdate = 0;
-					Serial.println(uint8(lastPage));
+					//Serial.println(uint8(lastPage));
 					show_page(lastPage);
 				}
 				else // open temp screen
@@ -843,7 +845,7 @@ namespace tuna::lcd
 					   /*case 0xFF: {
 					   show_page(58); //enable lcd bridge mode
 					   while (1) {
-					   tuna::wdr();
+					   Tuna::wdr();
 					   if (Serial.available())
 					   Serial2.write(Serial.read());
 					   if (Serial2.available())
@@ -975,7 +977,7 @@ namespace tuna::lcd
 	{
 		read_data();
 
-		const millis24_t ms = millis24();
+    const auto ms = chrono::time_ms<uint16>::get();
 		execute_looped_operation(ms);
 		status_update(ms);
 	}

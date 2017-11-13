@@ -7,16 +7,16 @@
 #	undef round
 #endif
 
-namespace tuna
+namespace Tuna
 {
 
 	template <typename T, uint8 N>
-	inline fixed<T, N> round(fixed<T, N> value)
+	inline fixed<T, N> round(arg_type<fixed<T, N>> value)
 	{
 		return value.rounded();
 	}
 
-	inline float round(float x)
+	inline float round(arg_type<float> x)
 	{
 #if ARDUINO_ROUND
 		return ((x) >= 0 ? (long)((x)+0.5) : (long)((x)-0.5)); // Arduino SDK implementation.

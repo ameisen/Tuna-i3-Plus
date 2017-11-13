@@ -122,7 +122,7 @@ void cubic_b_spline(const float position[NUM_AXIS], const float target[NUM_AXIS]
 
   while (t < 1.0) {
 
-    thermalManager.manage_heater();
+    Temperature::manage_heater();
     millis_t now = millis();
     if (ELAPSED(now, next_idle_ms)) {
       next_idle_ms = now + 200UL;

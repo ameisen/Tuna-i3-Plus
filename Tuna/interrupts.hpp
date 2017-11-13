@@ -2,6 +2,6 @@
 
 #include <tuna.h>
 
-namespace tuna::interrupts
+namespace Tuna::interrupts
 {
 }

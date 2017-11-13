@@ -13,7 +13,7 @@
 
 //#define __flash PROGMEM
 
-namespace tuna
+namespace Tuna
 {
 	using uint8 = uint8_t;
 	using uint16 = uint16_t;
@@ -28,6 +28,26 @@ namespace tuna
 
   // sanity checks
   static_assert(sizeof(uint8) == 1);
+  static_assert(sizeof(int8) == 1);
+  static_assert(sizeof(uint16) == 2);
+  static_assert(sizeof(int16) == 2);
+  static_assert(sizeof(uint24) == 3);
+  static_assert(sizeof(int24) == 3);
+  static_assert(sizeof(uint32) == 4);
+  static_assert(sizeof(int32) == 4);
+  static_assert(sizeof(uint64) == 8);
+  static_assert(sizeof(int64) == 8);
+
+  static_assert(alignof(uint8) == 1);
+  static_assert(alignof(int8) == 1);
+  static_assert(alignof(uint16) == 1);
+  static_assert(alignof(int16) == 1);
+  static_assert(alignof(uint24) == 1);
+  static_assert(alignof(int24) == 1);
+  static_assert(alignof(uint32) == 1);
+  static_assert(alignof(int32) == 1);
+  static_assert(alignof(uint64) == 1);
+  static_assert(alignof(int64) == 1);
 
 #if !defined(__INTELLISENSE__)
 	static_assert(sizeof(int) == 2, "atmega int is 2 bytes. Utils need to be rewritten for other sizes.");
@@ -95,7 +115,7 @@ namespace tuna
 	}
 }
 
-namespace tuna::utils
+namespace Tuna::utils
 {
 	struct ce_only { ce_only() = delete; };
 
@@ -116,7 +136,58 @@ namespace tuna::utils
 	struct _is_same<T, T> final : true_type {};
 	template <typename T, typename U> constexpr const bool is_same = _is_same<T, U>::value;
 
-	using namespace tuna;
+  template <typename T, typename U>
+  class _larger_type final : ce_only
+  {
+    static constexpr auto typer()
+    {
+      if constexpr (sizeof(U) > sizeof(T))
+      {
+        return U{};
+      }
+      return T{};
+    }
+  public:
+    using type = decltype(typer());
+  };
+  template <typename T, typename U> using larger_type = typename _larger_type<T, U>::type;
+
+  template <typename T, typename U>
+  class _smaller_type final : ce_only
+  {
+    static constexpr auto typer()
+    {
+      if constexpr (sizeof(U) < sizeof(T))
+      {
+        return U{};
+      }
+      return T{};
+    }
+  public:
+    using type = decltype(typer());
+  };
+  template <typename T, typename U> using smaller_type = typename _smaller_type<T, U>::type;
+
+  template <typename T, bool by_value>
+  struct _arg_type;
+
+  template <typename T>
+  struct _arg_type<T, true> final : ce_only
+  {
+    using type = const T;
+  };
+
+  template <typename T>
+  struct _arg_type<T, false> final : ce_only
+  {
+    using type = const T & __restrict;
+  };
+
+  //template <typename T> using arg_type = typename _arg_type<T, sizeof(T) <= sizeof(void *)>::type;
+
+  template <typename T> using arg_type = const T & __restrict;
+
+	using namespace Tuna;
 
 	constexpr inline __attribute__((always_inline)) void sei()
 	{
@@ -163,12 +234,12 @@ namespace tuna::utils
 		return __builtin_avr_fmulsu(val0, val1);
 	}
 
-	constexpr inline __attribute__((always_inline)) void delay_cycles(uint32 ticks)
+	constexpr inline __attribute__((always_inline)) void delay_cycles(arg_type<uint32> ticks)
 	{
 		__builtin_avr_delay_cycles(ticks);
 	}
 
-	constexpr inline __attribute__((always_inline)) uint8 insert_bits(uint32 map, uint8 bits, uint8 val)
+	constexpr inline __attribute__((always_inline)) uint8 insert_bits(arg_type<uint32> map, uint8 bits, uint8 val)
 	{
 		return __builtin_avr_insert_bits(map, bits, val);
 	}
@@ -199,19 +270,19 @@ namespace tuna::utils
 #endif
 
 	template <typename T>
-	constexpr inline const T & __restrict max(const T & __restrict a, const T & __restrict b)
+	constexpr inline T max(arg_type<T> a, arg_type<T> b)
 	{
 		return (a >= b) ? a : b;
 	}
 
 	template <typename T>
-	constexpr inline const T & __restrict min(const T & __restrict a, const T & __restrict b)
+	constexpr inline T min(arg_type<T> a, arg_type<T> b)
 	{
 		return (a < b) ? a : b;
 	}
 
 	template <typename T>
-	constexpr inline T clamp(const T val, const T _min, const T _max)
+	constexpr inline T clamp(arg_type<T> val, arg_type<T> _min, arg_type<T> _max)
 	{
 		return min(max(val, _min), _max);
 	}
@@ -286,8 +357,8 @@ namespace tuna::utils
 		constexpr static bool is_atomic = true;
 		constexpr static bool is_emulated = false;
 
-		constexpr inline static unsigned_type as_unsigned(type val) { return { val }; }
-		constexpr inline static unsigned_type as_safe_unsigned(type val) { return { val }; }
+		constexpr inline static unsigned_type as_unsigned(arg_type<type> val) { return { val }; }
+		constexpr inline static unsigned_type as_safe_unsigned(arg_type<type> val) { return { val }; }
 
 		// We really don't want to be able to generate bools with values that aren't 0x00 and 0x01... it's
 		// perfectly possible but is likely to confuse the runtime due to UB.
@@ -322,9 +393,9 @@ namespace tuna::utils
 		constexpr static bool is_atomic = true;
 		constexpr static bool is_emulated = false;
 
-		constexpr inline static unsigned_type as_unsigned(type val) { return { val }; }
-		constexpr inline static unsigned_type as_safe_unsigned(type val) { return { val }; }
-		constexpr inline static signed_type as_signed(type val) { return val; }
+		constexpr inline static unsigned_type as_unsigned(arg_type<type> val) { return { val }; }
+		constexpr inline static unsigned_type as_safe_unsigned(arg_type<type> val) { return { val }; }
+		constexpr inline static signed_type as_signed(arg_type<type> val) { return val; }
 
 		constexpr static type max = { 0xFF_u8 };
 		constexpr static type min = { 0x00_u8 };
@@ -357,9 +428,9 @@ namespace tuna::utils
 		constexpr static bool is_atomic = true;
 		constexpr static bool is_emulated = false;
 
-		constexpr inline static unsigned_type as_unsigned(type val) { return val; }
-		constexpr inline static typename type_trait<unsigned_type>::larger_type as_safe_unsigned(type val) { return val; }
-		constexpr inline static signed_type as_signed(type val) { return { val }; }
+		constexpr inline static unsigned_type as_unsigned(arg_type<type> val) { return val; }
+		constexpr inline static typename type_trait<unsigned_type>::larger_type as_safe_unsigned(arg_type<type> val) { return val; }
+		constexpr inline static signed_type as_signed(arg_type<type> val) { return { val }; }
 
 		constexpr static type max = { 0x7F_i8 };
 		constexpr static type min = { 0x80_i8 };
@@ -392,9 +463,9 @@ namespace tuna::utils
 		constexpr static bool is_atomic = false;
 		constexpr static bool is_emulated = true;
 
-		constexpr inline static unsigned_type as_unsigned(type val) { return { val }; }
-		constexpr inline static unsigned_type as_safe_unsigned(type val) { return { val }; }
-		constexpr inline static signed_type as_signed(type val) { return val; }
+		constexpr inline static unsigned_type as_unsigned(arg_type<type> val) { return { val }; }
+		constexpr inline static unsigned_type as_safe_unsigned(arg_type<type> val) { return { val }; }
+		constexpr inline static signed_type as_signed(arg_type<type> val) { return val; }
 
 		constexpr static type max = { 0xFFFF_u16 };
 		constexpr static type min = { 0x0000_u16 };
@@ -427,9 +498,9 @@ namespace tuna::utils
 		constexpr static bool is_atomic = false;
 		constexpr static bool is_emulated = true;
 
-		constexpr inline static unsigned_type as_unsigned(type val) { return val; }
-		constexpr inline static typename type_trait<unsigned_type>::larger_type as_safe_unsigned(type val) { return val; }
-		constexpr inline static signed_type as_signed(type val) { return { val }; }
+		constexpr inline static unsigned_type as_unsigned(arg_type<type> val) { return val; }
+		constexpr inline static typename type_trait<unsigned_type>::larger_type as_safe_unsigned(arg_type<type> val) { return val; }
+		constexpr inline static signed_type as_signed(arg_type<type> val) { return { val }; }
 
 		constexpr static type max = { 0x7FFF_i16 };
 		constexpr static type min = { 0x8000_i16 };
@@ -462,9 +533,9 @@ namespace tuna::utils
 		constexpr static bool is_atomic = false;
 		constexpr static bool is_emulated = true;
 
-		constexpr inline static unsigned_type as_unsigned(type val) { return { val }; }
-		constexpr inline static unsigned_type as_safe_unsigned(type val) { return { val }; }
-		constexpr inline static signed_type as_signed(type val) { return val; }
+		constexpr inline static unsigned_type as_unsigned(arg_type<type> val) { return { val }; }
+		constexpr inline static unsigned_type as_safe_unsigned(arg_type<type> val) { return { val }; }
+		constexpr inline static signed_type as_signed(arg_type<type> val) { return val; }
 
 		constexpr static type max = { 0xFFFFFF_u24 };
 		constexpr static type min = { 0x000000_u24 };
@@ -497,9 +568,9 @@ namespace tuna::utils
 		constexpr static bool is_atomic = false;
 		constexpr static bool is_emulated = true;
 
-		constexpr inline static unsigned_type as_unsigned(type val) { return val; }
-		constexpr inline static typename type_trait<unsigned_type>::larger_type as_safe_unsigned(type val) { return val; }
-		constexpr inline static signed_type as_signed(type val) { return { val }; }
+		constexpr inline static unsigned_type as_unsigned(arg_type<type> val) { return val; }
+		constexpr inline static typename type_trait<unsigned_type>::larger_type as_safe_unsigned(arg_type<type> val) { return val; }
+		constexpr inline static signed_type as_signed(arg_type<type> val) { return { val }; }
 
 		constexpr static type max = { 0x7FFFFF_i24 };
 		constexpr static type min = { 0x800000_i24 };
@@ -532,9 +603,9 @@ namespace tuna::utils
 		constexpr static bool is_atomic = false;
 		constexpr static bool is_emulated = true;
 
-		constexpr inline static unsigned_type as_unsigned(type val) { return { val }; }
-		constexpr inline static unsigned_type as_safe_unsigned(type val) { return { val }; }
-		constexpr inline static signed_type as_signed(type val) { return val; }
+		constexpr inline static unsigned_type as_unsigned(arg_type<type> val) { return { val }; }
+		constexpr inline static unsigned_type as_safe_unsigned(arg_type<type> val) { return { val }; }
+		constexpr inline static signed_type as_signed(arg_type<type> val) { return val; }
 
 		constexpr static type max = { 0xFFFFFFFF_u32 };
 		constexpr static type min = { 0x00000000_u32 };
@@ -567,9 +638,9 @@ namespace tuna::utils
 		constexpr static bool is_atomic = false;
 		constexpr static bool is_emulated = true;
 
-		constexpr inline static unsigned_type as_unsigned(type val) { return val; }
-		constexpr inline static typename type_trait<unsigned_type>::larger_type as_safe_unsigned(type val) { return val; }
-		constexpr inline static signed_type as_signed(type val) { return { val }; }
+		constexpr inline static unsigned_type as_unsigned(arg_type<type> val) { return val; }
+		constexpr inline static typename type_trait<unsigned_type>::larger_type as_safe_unsigned(arg_type<type> val) { return val; }
+		constexpr inline static signed_type as_signed(arg_type<type> val) { return { val }; }
 
 		constexpr static type max = { 0x7FFFFFFF_i32 };
 		constexpr static type min = { 0x80000000_i32 };
@@ -602,9 +673,9 @@ namespace tuna::utils
 		constexpr static bool is_atomic = false;
 		constexpr static bool is_emulated = true;
 
-		constexpr inline static unsigned_type as_unsigned(type val) { return { val }; }
-		constexpr inline static unsigned_type as_safe_unsigned(type val) { return { val }; }
-		constexpr inline static signed_type as_signed(type val) { return val; }
+		constexpr inline static unsigned_type as_unsigned(arg_type<type> val) { return { val }; }
+		constexpr inline static unsigned_type as_safe_unsigned(arg_type<type> val) { return { val }; }
+		constexpr inline static signed_type as_signed(arg_type<type> val) { return val; }
 
 		constexpr static type max = { 0xFFFFFFFFFFFFFFFF_u64 };
 		constexpr static type min = { 0x0000000000000000_u64 };
@@ -637,8 +708,8 @@ namespace tuna::utils
 		constexpr static bool is_atomic = false;
 		constexpr static bool is_emulated = true;
 
-		constexpr inline static unsigned_type as_unsigned(type val) { return val; }
-		constexpr inline static signed_type as_signed(type val) { return { val }; }
+		constexpr inline static unsigned_type as_unsigned(arg_type<type> val) { return val; }
+		constexpr inline static signed_type as_signed(arg_type<type> val) { return { val }; }
 
 		constexpr static type max = { 0x7FFFFFFFFFFFFFFF_i64 };
 		constexpr static type min = { 0x8000000000000000_i64 };
@@ -671,7 +742,7 @@ namespace tuna::utils
 		constexpr static bool is_atomic = false;
 		constexpr static bool is_emulated = true;
 
-		constexpr inline static signed_type as_signed(type val) { return { val }; }
+		constexpr inline static signed_type as_signed(arg_type<type> val) { return { val }; }
 
 		//constexpr static type max = { FLT_MAX };
 		//constexpr static type min = { FLT_MIN };
@@ -681,7 +752,7 @@ namespace tuna::utils
 	template <> struct type_trait<long double> final : type_trait<float> {};
 
 	template <typename T, typename R = typename type_trait<typename type_trait<T>::unsigned_type>::smaller_type>
-	constexpr inline R hi(T value)
+	constexpr inline R hi(arg_type<T> value)
 	{
 		constexpr uint8 shift = (sizeof(R) * 8);
 
@@ -689,7 +760,7 @@ namespace tuna::utils
 	}
 
 	template <typename T, typename R = typename type_trait<typename type_trait<T>::unsigned_type>::smaller_type>
-	constexpr inline R lo(T value)
+	constexpr inline R lo(arg_type<T> value)
 	{
 		return type_trait<T>::as_unsigned(value);
 	}
@@ -782,8 +853,10 @@ namespace tuna::utils
 
   template <uint64 value> constexpr auto make_uintsz = uintsz<value>{ value };
 
+  extern uint32 millis32();
 	extern uint24 millis24();
 	extern uint16 millis16();
+  extern uint8 millis8();
 
   template <typename T>
   struct flash_ptr final
@@ -793,9 +866,9 @@ namespace tuna::utils
   private:
     const uint16  m_Ptr;
   public:
-    constexpr flash_ptr(const T &value) : m_Ptr(uint16(&value)) {}
+    constexpr flash_ptr(arg_type<T> value) : m_Ptr(uint16(&value)) {}
 
-    constexpr inline operator uint16 () const
+    constexpr inline operator uint16 () const __restrict
     {
       return m_Ptr;
     }
@@ -977,13 +1050,13 @@ namespace tuna::utils
   }
 
   template <typename U, typename T>
-  static inline U read_pgm(const flash_ptr<T> &value)
+  static inline U read_pgm(arg_type<flash_ptr<T>> value)
   {
     return read_pgm_ptr<U>(uint16(value));
   }
 
   template <typename U, typename T>
-  static inline U read_pgm(const T &value)
+  static inline U read_pgm(arg_type<T> value)
   {
     return read_pgm_ptr<U>(uint16(&value));
   }
@@ -994,7 +1067,7 @@ namespace tuna::utils
   {
     const T m_Value = T{};
 
-    static inline T _read_pgm(const T &value)
+    static inline T _read_pgm(arg_type<T> value)
     {
       return read_pgm<T>(value);
     }
@@ -1003,11 +1076,11 @@ namespace tuna::utils
     using type = T;
 
     constexpr flash() = default;
-    constexpr flash(const flash &data) : m_Value(data.m_Value) {}
-    constexpr flash(const T &value) : m_Value(value) {}
+    constexpr flash(arg_type<flash> data) : m_Value(data.m_Value) {}
+    constexpr flash(arg_type<T> value) : m_Value(value) {}
 
     template <typename U = T>
-    constexpr T get() const
+    constexpr T get() const __restrict
     {
       if (__builtin_constant_p(m_Value))
       {
@@ -1025,151 +1098,151 @@ namespace tuna::utils
     //}
 
     template <typename U>
-    constexpr operator U () const
+    constexpr operator U () const __restrict
     {
       static_assert(sizeof(T) <= sizeof(U), "Cannot extract pgm value larger than declared storage.");
       return get<U>();
     }
 
-    constexpr bool operator == (const flash &other) const
+    constexpr bool operator == (arg_type<flash> other) const __restrict
     {
       return get() == other.get();
     }
 
-    constexpr bool operator != (const flash &other) const
+    constexpr bool operator != (arg_type<flash> other) const __restrict
     {
       return get() != other.get();
     }
 
-    constexpr bool operator > (const flash &other) const
+    constexpr bool operator > (arg_type<flash> other) const __restrict
     {
       return get() > other.get();
     }
 
-    constexpr bool operator >= (const flash &other) const
+    constexpr bool operator >= (arg_type<flash> other) const __restrict
     {
       return get() >= other.get();
     }
 
-    constexpr bool operator < (const flash &other) const
+    constexpr bool operator < (arg_type<flash> other) const __restrict
     {
       return get() < other.get();
     }
 
-    constexpr bool operator <= (const flash &other) const
+    constexpr bool operator <= (arg_type<flash> other) const __restrict
     {
       return get() <= other.get();
     }
 
     template <typename U>
-    constexpr bool operator == (const U &other) const
+    constexpr bool operator == (arg_type<U> other) const __restrict
     {
       return get() == other;
     }
 
     template <typename U>
-    constexpr bool operator != (const U &other) const
+    constexpr bool operator != (arg_type<U> other) const __restrict
     {
       return get() != other;
     }
 
     template <typename U>
-    constexpr bool operator > (const U &other) const
+    constexpr bool operator > (arg_type<U> other) const __restrict
     {
       return get() > other;
     }
 
     template <typename U>
-    constexpr bool operator >= (const U &other) const
+    constexpr bool operator >= (arg_type<U> other) const __restrict
     {
       return get() >= other;
     }
 
     template <typename U>
-    constexpr bool operator < (const U &other) const
+    constexpr bool operator < (arg_type<U> other) const __restrict
     {
       return get() < other;
     }
 
     template <typename U>
-    constexpr bool operator <= (const U &other) const
+    constexpr bool operator <= (arg_type<U> other) const __restrict
     {
       return get() <= other;
     }
 
-    constexpr T operator + (const flash &other) const
+    constexpr T operator + (arg_type<flash> other) const __restrict
     {
       return get() + other.get();
     }
 
-    constexpr T operator - (const flash &other) const
+    constexpr T operator - (arg_type<flash> other) const __restrict
     {
       return get() - other.get();
     }
 
-    constexpr T operator / (const flash &other) const
+    constexpr T operator / (arg_type<flash> other) const __restrict
     {
       return get() / other.get();
     }
 
-    constexpr T operator * (const flash &other) const
+    constexpr T operator * (arg_type<flash> other) const __restrict
     {
       return get() * other.get();
     }
 
-    constexpr T operator % (const flash &other) const
+    constexpr T operator % (arg_type<flash> other) const __restrict
     {
       return get() % other.get();
     }
 
-    constexpr T operator >> (const flash &other) const
+    constexpr T operator >> (arg_type<flash> other) const __restrict
     {
       return get() >> other.get();
     }
 
-    constexpr T operator << (const flash &other) const
+    constexpr T operator << (arg_type<flash> other) const __restrict
     {
       return get() << other.get();
     }
 
     template <typename U>
-    constexpr T operator + (const U &other) const
+    constexpr T operator + (arg_type<U> other) const __restrict
     {
       return get() + other;
     }
 
     template <typename U>
-    constexpr T operator - (const U &other) const
+    constexpr T operator - (arg_type<U> other) const __restrict
     {
       return get() - other;
     }
 
     template <typename U>
-    constexpr T operator / (const U &other) const
+    constexpr T operator / (arg_type<U> other) const __restrict
     {
       return get() / other;
     }
 
     template <typename U>
-    constexpr T operator * (const U &other) const
+    constexpr T operator * (arg_type<U> other) const __restrict
     {
       return get() * other;
     }
 
     template <typename U>
-    constexpr T operator % (const U &other) const
+    constexpr T operator % (arg_type<U> other) const __restrict
     {
       return get() % other;
     }
 
     template <typename U>
-    constexpr T operator >> (const U &other) const
+    constexpr T operator >> (arg_type<U> other) const __restrict
     {
       return get() >> other;
     }
 
     template <typename U>
-    constexpr T operator << (const U &other) const
+    constexpr T operator << (arg_type<U> other) const __restrict
     {
       return get() << other;
     }
@@ -1183,7 +1256,7 @@ namespace tuna::utils
 
   // Simple static-cast like routine. Also makes extracting sub-types easier from encapsulations like 'flash'.
   template <typename T = void, typename U>
-  constexpr inline auto as(const U &value)
+  constexpr inline auto as(arg_type<U> value)
   {
     if constexpr (is_same<T, void>)
     {
@@ -1208,50 +1281,50 @@ namespace tuna::utils
     const char *m_Str = nullptr;
   public:
     constexpr flash_string() = default;
-    constexpr flash_string(const char *str) : m_Str(str) {}
-    constexpr flash_string(const flash_string &str) : m_Str(str.m_Str) {}
+    constexpr flash_string(const char * __restrict str) : m_Str(str) {}
+    constexpr flash_string(arg_type<flash_string> str) : m_Str(str.m_Str) {}
 
-    constexpr flash_string & operator = (const char *str)
+    constexpr flash_string & __restrict operator = (const char * __restrict str) __restrict
     {
       m_Str = str;
       return *this;
     }
 
-    constexpr flash_string & operator = (const flash_string &str)
+    constexpr flash_string & __restrict operator = (arg_type<flash_string> str) __restrict
     {
       m_Str = str.m_Str;
       return *this;
     }
 
-    constexpr operator bool() const
+    constexpr operator bool() const __restrict
     {
       return m_Str != nullptr;
     }
 
-    constexpr bool operator == (const flash_string &str) const
+    constexpr bool operator == (arg_type<flash_string> str) const __restrict
     {
       return m_Str == str.m_Str;
     }
 
-    constexpr bool operator != (const flash_string &str) const
+    constexpr bool operator != (arg_type<flash_string> str) const __restrict
     {
       return m_Str == str.m_Str;
     }
 
-    constexpr const char * c_str() const
+    constexpr const char * __restrict c_str() const __restrict
     {
       return m_Str;
     }
 
     // This implicit conversion exists for Arduino SDK support.
-    constexpr operator const __FlashStringHelper * () const
+    constexpr operator const __FlashStringHelper * __restrict () const __restrict
     {
-      return (const __FlashStringHelper *)m_Str;
+      return (const __FlashStringHelper * __restrict)m_Str;
     }
 
-    constexpr auto fsh() const
+    constexpr auto fsh() const __restrict
     {
-      return (const __FlashStringHelper *)m_Str;
+      return (const __FlashStringHelper * __restrict)m_Str;
     }
   };
 
@@ -1263,54 +1336,54 @@ namespace tuna::utils
   public:
     static constexpr const auto length = make_uintsz<LEN>;
 
-    constexpr flash_char_array(const char *str) : m_Str(str) {}
+    constexpr flash_char_array(const char * const __restrict str) : m_Str(str) {}
 
-    constexpr operator flash_string () const
+    constexpr operator flash_string () const __restrict
     {
       return { m_Str };
     }
 
-    constexpr operator bool() const
+    constexpr operator bool() const __restrict
     {
       return m_Str != nullptr;
     }
 
-    constexpr bool operator == (const flash_string &str) const
+    constexpr bool operator == (arg_type<flash_string> str) const __restrict
     {
       return m_Str == str.m_Str;
     }
 
-    constexpr bool operator != (const flash_string &str) const
-    {
-      return m_Str == str.m_Str;
-    }
-
-    template <size_t U>
-    constexpr bool operator == (const flash_char_array<U> &str) const
+    constexpr bool operator != (arg_type<flash_string> str) const __restrict
     {
       return m_Str == str.m_Str;
     }
 
     template <size_t U>
-    constexpr bool operator != (const flash_char_array<U> &str) const
+    constexpr bool operator == (arg_type<flash_char_array<U>> str) const __restrict
     {
       return m_Str == str.m_Str;
     }
 
-    constexpr const char * c_str() const
+    template <size_t U>
+    constexpr bool operator != (arg_type<flash_char_array<U>> str) const __restrict
+    {
+      return m_Str == str.m_Str;
+    }
+
+    constexpr const char * __restrict c_str() const __restrict
     {
       return m_Str;
     }
 
     // This implicit conversion exists for Arduino SDK support.
-    constexpr operator const __FlashStringHelper * () const
+    constexpr operator const __FlashStringHelper * __restrict () const __restrict
     {
-      return (const __FlashStringHelper *)m_Str;
+      return (const __FlashStringHelper * __restrict)m_Str;
     }
 
-    constexpr auto fsh() const
+    constexpr auto fsh() const __restrict
     {
-      return (const __FlashStringHelper *)m_Str;
+      return (const __FlashStringHelper * __restrict)m_Str;
     }
   };
 
@@ -1368,7 +1441,7 @@ namespace tuna::utils
     }
 
     template <typename T>
-    constexpr static inline uint8 write_struct(const T & __restrict obj)
+    constexpr static inline uint8 write_struct(arg_type<T> obj)
     {
       return get_serial_device().write((const uint8 * __restrict)&obj, sizeof(T));
     }
@@ -1385,13 +1458,13 @@ namespace tuna::utils
       return get_serial_device().write((const uint8 * __restrict)str.c_str(), N + 1);
     }
 
-    constexpr static inline uint8 write(const flash_string & __restrict str, const uint8 length)
+    constexpr static inline uint8 write(arg_type<flash_string> str, const uint8 length)
     {
       return get_serial_device().write((const uint8 * __restrict)str.c_str(), length);
     }
 
     template <typename T>
-    constexpr static inline uint8 write(const T * __restrict buffer, const uint8 length)
+    constexpr static inline uint8 write(arg_type<T> buffer, const uint8 length)
     {
       return get_serial_device().write((const uint8 * __restrict)buffer, length);
     }
@@ -1425,6 +1498,29 @@ namespace tuna::utils
     }
   };
 
+  template <typename T, typename U>
+  struct pair final
+  {
+    T first;
+    U second;
+
+    constexpr pair() = default;
+    constexpr pair(const T & __restrict _1) : first(_1) {}
+    constexpr pair(const T & __restrict _1, const U & __restrict _2) : first(_1), second(_2) {}
+    constexpr pair(const pair & __restrict other) : first(other.first), second(other.second) {}
+
+    constexpr operator bool() const __restrict
+    {
+      return bool(first);
+    }
+  };
+
+  template <typename T, typename U>
+  constexpr inline pair<T, U> make_pair(const T & __restrict first, const U & __restrict second)
+  {
+    return { first, second };
+  }
+
 	// WIP
 #if 0
 	template <typename T>
@@ -1455,11 +1551,11 @@ namespace tuna::utils
 #endif
 }
 
-namespace tuna
+namespace Tuna
 {
 	using namespace utils;
 }
 
 // TODO remove when done
-using namespace tuna;
+using namespace Tuna;
 

@@ -174,6 +174,10 @@
  */
 #include "configuration_store.h"
 
+// FIXME TODO TEMPORARY HACK
+static const float z_float = 0.0f;
+#define PID_PARAM(x) z_float
+
 MarlinSettings settings;
 
 #include "Marlin.h"
@@ -183,6 +187,7 @@ MarlinSettings settings;
 #include "thermal/thermal.hpp"
 #include "bi3_plus_lcd.h"
 #include "stepper.h"
+#include "thermal/managers/simple.hpp"
 
 #if ENABLED(INCH_MODE_SUPPORT) || (ENABLED(ULTIPANEL) && ENABLED(TEMPERATURE_UNITS_SUPPORT))
   #include "gcode.h"
@@ -218,7 +223,7 @@ void MarlinSettings::postprocess() {
   planner.refresh_positioning();
 
   #if ENABLED(PIDTEMP)
-    thermalManager.updatePID();
+  Temperature::updatePID();
   #endif
 
   calculate_volumetric_multipliers();
@@ -506,9 +511,9 @@ void MarlinSettings::postprocess() {
       dummy = DUMMY_PID_VALUE;
       for (uint8_t q = 3; q--;) EEPROM_WRITE(dummy);
     #else
-      EEPROM_WRITE(thermalManager.bedKp);
-      EEPROM_WRITE(thermalManager.bedKi);
-      EEPROM_WRITE(thermalManager.bedKd);
+      EEPROM_WRITE(Temperature::bedKp);
+      EEPROM_WRITE(Temperature::bedKi);
+      EEPROM_WRITE(Temperature::bedKd);
     #endif
 
     #if !HAS_LCD_CONTRAST
@@ -650,6 +655,12 @@ void MarlinSettings::postprocess() {
       const uint32_t dummyui32 = 0;
       for (uint8_t q = 3; q--;) EEPROM_WRITE(dummyui32);
     #endif
+
+      // TUNA
+      const auto calib = Tuna::Thermal::Manager::Simple::GetCalibration();
+      EEPROM_WRITE(calib.first);
+      EEPROM_WRITE(calib.second);
+      // ~TUNA
 
     if (!eeprom_error) {
       const int eeprom_size = eeprom_index;
@@ -881,9 +892,10 @@ void MarlinSettings::postprocess() {
           EEPROM_READ(dummy); // Kp
           if (e < HOTENDS && dummy != DUMMY_PID_VALUE) {
             // do not need to scale PID values as the values in EEPROM are already scaled
-            PID_PARAM(Kp) = dummy;
-            EEPROM_READ(PID_PARAM(Ki));
-            EEPROM_READ(PID_PARAM(Kd));
+            // TODO FIXME
+            //PID_PARAM(Kp) = dummy;
+            EEPROM_READ(/*PID_PARAM(Ki)*/dummy);
+            EEPROM_READ(/*PID_PARAM(Kd)*/dummy);
             #if ENABLED(PID_EXTRUSION_SCALING)
               EEPROM_READ(PID_PARAM(Kc));
             #else
@@ -907,9 +919,9 @@ void MarlinSettings::postprocess() {
       #if ENABLED(PIDTEMPBED)
         EEPROM_READ(dummy); // bedKp
         if (dummy != DUMMY_PID_VALUE) {
-          thermalManager.bedKp = dummy;
-          EEPROM_READ(thermalManager.bedKi);
-          EEPROM_READ(thermalManager.bedKd);
+          Temperature::bedKp = dummy;
+          EEPROM_READ(Temperature::bedKi);
+          EEPROM_READ(Temperature::bedKd);
         }
       #else
         for (uint8_t q=3; q--;) EEPROM_READ(dummy); // bedKp, bedKi, bedKd
@@ -1026,6 +1038,13 @@ void MarlinSettings::postprocess() {
         uint32_t dummyui32;
         for (uint8_t q = 3; q--;) EEPROM_READ(dummyui32);
       #endif
+
+        // TUNA
+        pair<float, float> calib;
+        EEPROM_READ(calib.first);
+        EEPROM_READ(calib.second);
+        Tuna::Thermal::Manager::Simple::SetCalibration(calib);
+        // ~TUNA
 
       if (working_crc == stored_crc) {
         postprocess();
@@ -1301,9 +1320,10 @@ void MarlinSettings::reset() {
       HOTEND_LOOP()
     #endif
     {
-      PID_PARAM(Kp) = DEFAULT_Kp;
-      PID_PARAM(Ki) = scalePID_i(DEFAULT_Ki);
-      PID_PARAM(Kd) = scalePID_d(DEFAULT_Kd);
+        // TODO FIXME
+      //PID_PARAM(Kp) = DEFAULT_Kp;
+      //PID_PARAM(Ki) = scalePID_i(DEFAULT_Ki);
+      //PID_PARAM(Kd) = scalePID_d(DEFAULT_Kd);
       #if ENABLED(PID_EXTRUSION_SCALING)
         PID_PARAM(Kc) = DEFAULT_Kc;
       #endif
@@ -1314,9 +1334,9 @@ void MarlinSettings::reset() {
   #endif // PIDTEMP
 
   #if ENABLED(PIDTEMPBED)
-    thermalManager.bedKp = DEFAULT_bedKp;
-    thermalManager.bedKi = scalePID_i(DEFAULT_bedKi);
-    thermalManager.bedKd = scalePID_d(DEFAULT_bedKd);
+    Temperature::bedKp = DEFAULT_bedKp;
+    Temperature::bedKi = scalePID_i(DEFAULT_bedKi);
+    Temperature::bedKd = scalePID_d(DEFAULT_bedKd);
   #endif
 
   #if ENABLED(FWRETRACT)
@@ -1746,9 +1766,10 @@ void MarlinSettings::reset() {
         // !forReplay || HOTENDS == 1
         {
           CONFIG_ECHO_START;
-          SERIAL_ECHOPAIR("  M301 P", PID_PARAM(Kp)); // for compatibility with hosts, only echo values for E0
-          SERIAL_ECHOPAIR(" I", unscalePID_i(PID_PARAM(Ki)));
-          SERIAL_ECHOPAIR(" D", unscalePID_d(PID_PARAM(Kd)));
+          // TODO FIXME
+          //SERIAL_ECHOPAIR("  M301 P", PID_PARAM(Kp)); // for compatibility with hosts, only echo values for E0
+          //SERIAL_ECHOPAIR(" I", unscalePID_i(PID_PARAM(Ki)));
+          //SERIAL_ECHOPAIR(" D", unscalePID_d(PID_PARAM(Kd)));
           #if ENABLED(PID_EXTRUSION_SCALING)
             SERIAL_ECHOPAIR(" C", PID_PARAM(Kc));
             SERIAL_ECHOPAIR(" L", lpq_len);

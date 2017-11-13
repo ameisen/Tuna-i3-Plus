@@ -38,7 +38,7 @@
 
 // Bracket code that shouldn't be interrupted
 #ifndef CRITICAL_SECTION_START
-  #define CRITICAL_SECTION_START  unsigned char _sreg = SREG; tuna::cli();
+  #define CRITICAL_SECTION_START  unsigned char _sreg = SREG; Tuna::cli();
   #define CRITICAL_SECTION_END    SREG = _sreg;
 #endif
 

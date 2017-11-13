@@ -103,7 +103,7 @@
   static uint8_t spiRec() {
     uint8_t data = 0;
     // no interrupts during byte receive - about 8 us
-	tuna::cli();
+	Tuna::cli();
     // output pin high - like sending 0XFF
     WRITE(SPI_MOSI_PIN, HIGH);
 
@@ -121,7 +121,7 @@
       WRITE(SPI_SCK_PIN, LOW);
     }
     // enable interrupts
-    tuna::sei();
+    Tuna::sei();
     return data;
   }
   //------------------------------------------------------------------------------
@@ -134,7 +134,7 @@
   /** Soft SPI send byte */
   static void spiSend(uint8_t data) {
     // no interrupts during byte send - about 8 us
-    tuna::cli();
+    Tuna::cli();
     for (uint8_t i = 0; i < 8; i++) {
       WRITE(SPI_SCK_PIN, LOW);
 
@@ -152,7 +152,7 @@
 
     WRITE(SPI_SCK_PIN, LOW);
     // enable interrupts
-	tuna::sei();
+	Tuna::sei();
   }
   //------------------------------------------------------------------------------
   /** Soft SPI send block */
@@ -306,7 +306,7 @@ bool Sd2Card::init(uint8_t sckRateID, uint8_t chipSelectPin) {
 
   // If init takes more than 4s it could trigger
   // watchdog leading to a reboot loop.
-  tuna::wdr();
+  Tuna::wdr();
 
   // set pin modes
   pinMode(chipSelectPin_, OUTPUT);

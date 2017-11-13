@@ -1,6 +1,6 @@
 #pragma once
 
-namespace tuna::config::thermal
+namespace Tuna::config::thermal
 {
 
 }

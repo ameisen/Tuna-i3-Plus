@@ -36,7 +36,7 @@
 
 // #include <bits/c++config.h>
 
-namespace tuna
+namespace Tuna
 {
   /// initializer_list
   template<class _E>

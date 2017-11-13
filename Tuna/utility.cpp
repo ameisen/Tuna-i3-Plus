@@ -28,10 +28,10 @@ void safe_delay(millis_t ms) {
   while (ms > 50) {
     ms -= 50;
     delay(50);
-    thermalManager.manage_heater();
+    Temperature::manage_heater();
   }
   delay(ms);
-  thermalManager.manage_heater(); // This keeps us safe if too many small safe_delay() calls are made
+  Temperature::manage_heater(); // This keeps us safe if too many small safe_delay() calls are made
 }
 
 #if ENABLED(EEPROM_SETTINGS)

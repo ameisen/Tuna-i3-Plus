@@ -135,7 +135,7 @@ namespace Tuna::Thermistor
     return clamp(adc, uint16(min_adc), max_adc);
   }
 
-  static_assert(Thermistor::max_temperature_integer >= Thermal::max_temperature, "the system max temperature must be representable in the temperature table.");
+  static_assert(Thermistor::max_temperature_integer >= printer_max_temperature, "the system max temperature must be representable in the temperature table.");
 
   template <uint8_t i = 1, uint8_t end = temp_table_size - 1>
   constexpr uint16_t get_max_adc_delta(uint16_t delta = 0)
@@ -293,29 +293,32 @@ namespace Tuna::Thermistor
 
     if constexpr (cur_idx == temp_table_size)
     {
-      if constexpr (best_le == temp_table_size - 1)
+      if constexpr (best_le == low_temp_idx)
       {
-        return temp_table[best_le].Adc;
+        return as<>(temp_table[best_le].Adc);
       }
       else
       {
-        constexpr auto &best_value = temp_table[best_le];
-        constexpr auto &next_value = temp_table[best_le + higher_temp_idx];
-        constexpr auto interp = interpoland<temperature, best_value.Temperature, next_value.Temperature>();
+        constexpr auto best_temp = as<>(temp_table[best_le].Temperature);
+        constexpr auto next_temp = as<>(temp_table[best_le + higher_temp_idx].Temperature);
+        constexpr auto best_adc = as<>(temp_table[best_le].Adc);
+        constexpr auto next_adc = as<>(temp_table[best_le + higher_temp_idx].Adc);
+
+        constexpr auto interp = interpoland<temperature, best_temp, next_temp>();
         return interpolate<
-          interp.delta, interp.max, best_value.Adc, next_value.Adc
+          interp.delta, interp.max, best_adc, next_adc
         >();
       }
     }
     else
     {
-      constexpr auto &cur_value = temp_table[cur_idx];
-      constexpr auto &best_value = temp_table[best_le];
+      constexpr auto cur_temp = as<>(temp_table[cur_idx].Temperature);
+      constexpr auto best_temp = as<>(temp_table[best_le].Temperature);
       return ce_convert_temp_to_adc<
         temperature, false, cur_idx + 1,
-        (cur_value.Temperature <= temperature && cur_value.Temperature > best_value.Temperature) ?
-        cur_idx : best_le
-  >();
+        (cur_temp <= temperature && cur_temp > best_temp) ?
+          cur_idx : best_le
+      >();
     }
   }
 
@@ -353,7 +356,7 @@ namespace Tuna::Thermistor
   }
 
   template <bool small_adc, bool small_temp>
-  inline temp_t binsearch_temp_get_branched(uintsz<small_adc ? 0xFF : 0xFFFF> adc)
+  inline temp_t binsearch_temp_get_branched(arg_type<uintsz<small_adc ? 0xFF : 0xFFFF>> adc)
   {
     constexpr const uint8_t max_idx = small_adc ? max_adc_uint8_idx : (temp_table_size - 1);
     constexpr const uint8_t min_idx = small_temp ? min_adc_uint8_temp_idx : 0;
@@ -388,7 +391,7 @@ namespace Tuna::Thermistor
     adc_t le_value = as<adc_t>(temp_table[L - 1].Adc);
     adc_t g_value = as<adc_t>(temp_table[L].Adc);
 
-    const auto get_interpoland = [](adc_t a, adc_t b, adc_t x) -> interpolator<delta_t>
+    const auto get_interpoland = [](arg_type<adc_t> a, arg_type<adc_t> b, arg_type<adc_t> x) -> interpolator<delta_t>
     {
       delta_t delta = x - a;
       delta_t max_diff = b - a;
@@ -396,12 +399,12 @@ namespace Tuna::Thermistor
       return { delta, max_diff };
     };
 
-    const auto interpolate = [](deltatemp_t b, deltatemp_t a, const interpolator<delta_t> &delta) -> deltatemp_t
+    const auto interpolate = [](arg_type<deltatemp_t> b, arg_type<deltatemp_t> a, arg_type<interpolator<delta_t>> delta) -> deltatemp_t
     {
       constexpr const auto MaxTemp = make_uintsz<Thermistor::max_temperature.raw()>;
       constexpr const auto DeltaTimesTemp = make_uintsz<uint64(max_adc_delta_local) * MaxTemp>;
 
-      static_assert(DeltaTimesTemp <= tuna::type_trait<uint32>::max, "ridiculous temperature values in table.");
+      static_assert(DeltaTimesTemp <= type_trait<uint32>::max, "ridiculous temperature values in table.");
 
       using operand_t = uintsz<DeltaTimesTemp>;
       using operation_t = uintsz<(DeltaTimesTemp * 2)>;
@@ -431,7 +434,7 @@ namespace Tuna::Thermistor
     return temp_t::from(interpolate(le_value_t, g_value_t, interpoland));
   }
 
-  inline temp_t binsearch_temp_get(uint16_t adc)
+  inline temp_t binsearch_temp_get(arg_type<uint16_t> adc)
   {
     static constexpr bool branched_binsearch = false;
 
@@ -477,7 +480,7 @@ namespace Tuna::Thermistor
     }
   }
 
-  inline temp_t adc_to_temperature(uint16_t adc)
+  inline temp_t adc_to_temperature(arg_type<uint16_t> adc)
   {
     return binsearch_temp_get(adc);
   }

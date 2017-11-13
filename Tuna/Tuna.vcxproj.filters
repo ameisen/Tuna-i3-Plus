@@ -189,6 +189,12 @@
     <ClInclude Include="thermistors\ThermistorUtils.hpp">
       <Filter>thermistors</Filter>
     </ClInclude>
+    <ClInclude Include="thermal\managers\simple.hpp">
+      <Filter>thermal\managers</Filter>
+    </ClInclude>
+    <ClInclude Include="tunalib\chrono.hpp">
+      <Filter>tunalib</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tunalib">
@@ -214,6 +220,9 @@
     </Filter>
     <Filter Include="system">
       <UniqueIdentifier>{c4554f4d-804d-4ec1-a2d9-22bb19f117d2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="thermal\managers">
+      <UniqueIdentifier>{9e6df1d2-882d-418a-82c8-4e8a3845e462}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -247,6 +256,9 @@
     </ClCompile>
     <ClCompile Include="system\system.cpp">
       <Filter>system</Filter>
+    </ClCompile>
+    <ClCompile Include="thermal\managers\simple.cpp">
+      <Filter>thermal\managers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

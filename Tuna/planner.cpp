@@ -387,7 +387,7 @@ void Planner::recalculate() {
     static float oldt = 0;
 
     if (!autotemp_enabled) return;
-    if (float(thermalManager.degTargetHotend() + 2) < autotemp_min) return; // probably temperature set to zero.
+    if (float(Temperature::degTargetHotend() + 2) < autotemp_min) return; // probably temperature set to zero.
 
     float high = 0.0;
     for (uint8_t b = block_buffer_tail; b != block_buffer_head; b = next_block_index(b)) {
@@ -402,7 +402,7 @@ void Planner::recalculate() {
     t = constrain(t, autotemp_min, autotemp_max);
     if (t < oldt) t = t * (1 - (AUTOTEMP_OLDWEIGHT)) + oldt * (AUTOTEMP_OLDWEIGHT);
     oldt = t;
-    thermalManager.setTargetHotend(t);
+    Temperature::setTargetHotend(t);
   }
 
 #endif // AUTOTEMP
@@ -765,7 +765,7 @@ void Planner::_buffer_line(const float &a, const float &b, const float &c, const
 
   #if ENABLED(PREVENT_COLD_EXTRUSION)
     if (de) {
-      if (thermalManager.tooColdToExtrude()) {
+      if (Temperature::tooColdToExtrude()) {
         position[E_AXIS] = target[E_AXIS]; // Behave as if the move really took place, but ignore E part
         de = 0; // no difference
         #if ENABLED(LIN_ADVANCE)

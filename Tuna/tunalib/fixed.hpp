@@ -2,7 +2,7 @@
 
 #include "tunalib/utils.hpp"
 
-namespace tuna
+namespace Tuna
 {
 	template <typename T, uint8 fraction_bits>
 	class fixed final
@@ -27,10 +27,10 @@ namespace tuna
 		using bigint_t = typename type_trait<T>::larger_type;
 
 		// internal constructor used to construct from raw.
-		constexpr fixed(T val, bool) : m_Value(val) {}
+		constexpr fixed(arg_type<T> val, bool) : m_Value(val) {}
 
 		template <typename U = integer_t>
-		constexpr inline U get_integer() const
+		constexpr inline U get_integer() const __restrict
 		{
 			constexpr const U integer_mask = (U{ 1 } << integer_bits) - 1;
 			if constexpr (integer_mask >= type_trait<U>::max)
@@ -45,7 +45,7 @@ namespace tuna
 		}
 
 		template <typename U = fractional_t>
-		constexpr inline U get_fraction() const
+		constexpr inline U get_fraction() const __restrict
 		{
 			constexpr const U fractional_mask = (U{ 1 } << fractional_bits) - 1;
 			if constexpr (fractional_mask >= type_trait<U>::max)
@@ -60,14 +60,14 @@ namespace tuna
 		}
 
 		template <typename U = integer_t>
-		constexpr inline void set_integer(U value)
+		constexpr inline void set_integer(arg_type<U> value) __restrict
 		{
 			constexpr const T integer_mask = (T{ 1 } << integer_bits) - 1;
 			m_Value ^= ((m_Value ^ (T(value) << fractional_bits)) & integer_mask);
 		}
 
 		template <typename U = fractional_t>
-		constexpr inline void set_fraction(U value)
+		constexpr inline void set_fraction(arg_type<U> value) __restrict
 		{
 			if constexpr (type_trait<U>::bits >= fractional_bits)
 			{
@@ -82,21 +82,21 @@ namespace tuna
 		}
 
 	public:
-		constexpr static fixed from(T val)
+		constexpr static fixed from(arg_type<T> val)
 		{
 			return { val, true };
 		}
 
-		constexpr type raw() const
+		constexpr const type & __restrict raw() const __restrict
 		{
 			return m_Value;
 		}
 
 		constexpr fixed() = default;
-		constexpr fixed(const fixed &val) : m_Value(val.m_Value) {}
+		constexpr fixed(arg_type<fixed> val) : m_Value(val.m_Value) {}
 		// Move constructor/operators seem unnecessary since it stores POD.
 		template <typename A>
-		constexpr fixed(A val) : m_Value(
+		constexpr fixed(arg_type<A> val) : m_Value(
 			(sizeof(T) > sizeof(A)) ?
 			T(((typename type_trait<A>::larger_type)(val)) << fractional_bits) :
 			val << fractional_bits
@@ -104,21 +104,21 @@ namespace tuna
 		{
 			static_assert(type_trait<A>::is_integral, "constructor argument must be an integer or a float.");
 		}
-		constexpr fixed(float val) : m_Value(
+		constexpr fixed(arg_type<float> val) : m_Value(
 			T((val * float(T(1) << fractional_bits)) + 0.5f)
 		)
 		{}
 
-		constexpr fixed(double val) : fixed(float(val)) {}
+		constexpr fixed(arg_type<double> val) : fixed(float(val)) {}
 
-		constexpr fixed & operator = (const fixed &val)
+		constexpr fixed & __restrict operator = (arg_type<fixed> val) __restrict
 		{
 			m_Value = val.m_Value;
 			return *this;
 		}
 
 		template <typename A>
-		constexpr fixed & operator = (A val)
+		constexpr fixed & __restrict operator = (arg_type<A> val) __restrict
 		{
 			static_assert(type_trait<A>::is_integral, "assignment argument must be an integer or a float.");
 			if constexpr (sizeof(T) > sizeof(A))
@@ -134,169 +134,198 @@ namespace tuna
 			}
 		}
 
-		constexpr fixed & operator = (float val)
+		constexpr fixed & __restrict operator = (arg_type<float> val) __restrict
 		{
 			constexpr const T multiplicand = T(1) << fractional_bits;
 			constexpr const float multiplicandf = float(multiplicand);
-			val *= multiplicandf;
-			m_Value = T(val + 0.5f);
+			m_Value = T((val * multiplicandf) + 0.5f);
 
 			return *this;
 		}
 
-		constexpr fixed & operator = (double val)
+		constexpr fixed & __restrict operator = (arg_type<double> val) __restrict
 		{
 			return *this = float(val);
 		}
 
-		constexpr operator float() const
+		constexpr operator float() const __restrict
 		{
 			return float(get_integer()) + (float(get_fraction()) / float(T{ 1 } << fractional_bits));
 		}
 
-		constexpr operator double() const
+		constexpr operator double() const __restrict
 		{
 			return float(*this);
 		}
 
-		constexpr operator T() const
+		constexpr operator T() const __restrict
 		{
 			constexpr const T fractional_mask = (T{ 1 } << fractional_bits) - 1;
 			constexpr const uint8 half = 1_u8 << (fractional_bits - 1);
 			return ((m_Value + half) & ~fractional_mask) >> fractional_bits;
 		}
 
-		constexpr bool operator == (fixed val) const
+		constexpr bool operator == (arg_type<fixed> val) const __restrict
 		{
 			return m_Value == val.m_Value;
 		}
 
-		constexpr bool operator != (fixed val) const
+		constexpr bool operator != (arg_type<fixed> val) const __restrict
 		{
 			return m_Value != val.m_Value;
 		}
 
-		constexpr bool operator > (fixed val) const
+		constexpr bool operator > (arg_type<fixed> val) const __restrict
 		{
 			return m_Value > val.m_Value;
 		}
 
-		constexpr bool operator >= (fixed val) const
+		constexpr bool operator >= (arg_type<fixed> val) const __restrict
 		{
 			return m_Value >= val.m_Value;
 		}
 
-		constexpr bool operator < (fixed val) const
+		constexpr bool operator < (arg_type<fixed> val) const __restrict
 		{
 			return m_Value < val.m_Value;
 		}
 
-		constexpr bool operator <= (fixed val) const
+		constexpr bool operator <= (arg_type<fixed> val) const __restrict
 		{
 			return m_Value <= val.m_Value;
 		}
 
-		constexpr bool operator == (integer_t val) const
+    constexpr bool operator == (arg_type<float> val) const __restrict
+    {
+      return m_Value == fixed(val);
+    }
+
+    constexpr bool operator != (arg_type<float> val) const __restrict
+    {
+      return m_Value != fixed(val);
+    }
+
+    constexpr bool operator > (arg_type<float> val) const __restrict
+    {
+      return m_Value > fixed(val);
+    }
+
+    constexpr bool operator >= (arg_type<float> val) const __restrict
+    {
+      return m_Value >= fixed(val);
+    }
+
+    constexpr bool operator < (arg_type<float> val) const __restrict
+    {
+      return m_Value < fixed(val);
+    }
+
+    constexpr bool operator <= (arg_type<float> val) const __restrict
+    {
+      return m_Value <= fixed(val);
+    }
+
+		constexpr bool operator == (arg_type<integer_t> val) const __restrict
 		{
-			return get_integer() == val;
+			return m_Value == T(T(val) << fractional_bits);
 		}
 
-		constexpr bool operator != (integer_t val) const
+		constexpr bool operator != (arg_type<integer_t> val) const __restrict
 		{
-			return get_integer() != val;
+			return m_Value != T(T(val) << fractional_bits);
 		}
 
-		constexpr bool operator > (integer_t val) const
+		constexpr bool operator > (arg_type<integer_t> val) const __restrict
 		{
-			return get_integer() > val;
+			return m_Value > T(T(val) << fractional_bits);
 		}
 
-		constexpr bool operator >= (integer_t val) const
+		constexpr bool operator >= (arg_type<integer_t> val) const __restrict
 		{
-			return get_integer() >= val;
+			return m_Value >= T(T(val) << fractional_bits);
 		}
 
-		constexpr bool operator < (integer_t val) const
+		constexpr bool operator < (arg_type<integer_t> val) const __restrict
 		{
-			return get_integer() < val;
+			return m_Value < T(T(val) << fractional_bits);
 		}
 
-		constexpr bool operator <= (integer_t val) const
+		constexpr bool operator <= (arg_type<integer_t> val) const __restrict
 		{
-			return get_integer() <= val;
+			return m_Value <= T(T(val) << fractional_bits );
 		}
 
-		constexpr fixed & operator *= (fixed val)
+		constexpr fixed & __restrict operator *= (arg_type<fixed> val) __restrict
 		{
 			const T y = val.m_Value;
 			const T x = m_Value;
-			m_Value = (bigint_t(x) * y) >> fractional_bits;
+			m_Value = bigint_t(bigint_t(x) * y) >> fractional_bits;
 			return *this;
 		}
 
-		constexpr fixed & operator /= (fixed val)
+		constexpr fixed & __restrict operator /= (arg_type<fixed> val) __restrict
 		{
 			const T y = val.m_Value;
 			const T x = m_Value;
 
-			m_Value = (bigint_t(x) << fractional_bits) / y;
+			m_Value = bigint_t(bigint_t(x) << fractional_bits) / y;
 			return *this;
 		}
 
-		constexpr fixed & operator %= (fixed val)
+		constexpr fixed & __restrict operator %= (arg_type<fixed> val) __restrict
 		{
 			const T y = val.m_Value;
 			const T x = m_Value;
 
-			m_Value = (bigint_t(x) << fractional_bits) % y;
+			m_Value = bigint_t(bigint_t(x) << fractional_bits) % y;
 			return *this;
 		}
 
-		constexpr fixed & operator += (fixed val)
+		constexpr fixed & __restrict operator += (arg_type<fixed> val) __restrict
 		{
 			m_Value += val.m_Value;
 			return *this;
 		}
 
-		constexpr fixed & operator -= (fixed val)
+		constexpr fixed & __restrict operator -= (arg_type<fixed> val) __restrict
 		{
 			m_Value -= val.m_Value;
 			return *this;
 		}
 
-		constexpr fixed operator * (fixed val) const
+		constexpr fixed operator * (arg_type<fixed> val) const __restrict
 		{
 			const T y = val.m_Value;
 			const T x = m_Value;
-			return from((bigint_t(x) * y) >> fractional_bits);
+			return from(bigint_t(bigint_t(x) * y) >> fractional_bits);
 		}
 
-		constexpr fixed operator / (fixed val) const
+		constexpr fixed operator / (arg_type<fixed> val) const __restrict
 		{
 			const T y = val.m_Value;
 			const T x = m_Value;
-			return from((bigint_t(x) << fractional_bits) / y);
+			return from(bigint_t(bigint_t(x) << fractional_bits) / y);
 		}
 
-		constexpr fixed operator % (fixed val) const
+		constexpr fixed operator % (arg_type<fixed> val) const __restrict
 		{
 			const T y = val.m_Value;
 			const T x = m_Value;
-			return from((bigint_t(x) << fractional_bits) % y);
+			return from(bigint_t(bigint_t(x) << fractional_bits) % y);
 		}
 
-		constexpr fixed operator + (fixed val) const
+		constexpr fixed operator + (arg_type<fixed> val) const __restrict
 		{
 			return from(m_Value + val.m_Value);
 		}
 
-		constexpr fixed operator - (fixed val) const
+		constexpr fixed operator - (arg_type<fixed> val) const __restrict
 		{
 			return from(m_Value - val.m_Value);
 		}
 
 		template <typename A>
-		constexpr fixed & operator *= (A val)
+		constexpr fixed & __restrict operator *= (arg_type<A> val) __restrict
 		{
 			static_assert(type_trait<A>::is_integral, "operator argument must be an integer or a float.");
 			m_Value *= val;
@@ -304,7 +333,7 @@ namespace tuna
 		}
 
 		template <typename A>
-		constexpr fixed & operator /= (A val)
+		constexpr fixed & __restrict operator /= (arg_type<A> val) __restrict
 		{
 			static_assert(type_trait<A>::is_integral, "operator argument must be an integer or a float.");
 			m_Value /= val;
@@ -312,7 +341,7 @@ namespace tuna
 		}
 
 		template <typename A>
-		constexpr fixed & operator %= (A val)
+		constexpr fixed & __restrict operator %= (arg_type<A> val) __restrict
 		{
 			static_assert(type_trait<A>::is_integral, "operator argument must be an integer or a float.");
 			m_Value %= val;
@@ -320,7 +349,7 @@ namespace tuna
 		}
 
 		template <typename A>
-		constexpr fixed & operator += (A val)
+		constexpr fixed & __restrict operator += (arg_type<A> val) __restrict
 		{
 			static_assert(type_trait<A>::is_integral, "operator argument must be an integer or a float.");
 			set_integer(get_integer() + val);
@@ -328,7 +357,7 @@ namespace tuna
 		}
 
 		template <typename A>
-		constexpr fixed & operator -= (A val)
+		constexpr fixed & __restrict operator -= (arg_type<A> val) __restrict
 		{
 			static_assert(type_trait<A>::is_integral, "operator argument must be an integer or a float.");
 			set_integer(get_integer() - val);
@@ -336,28 +365,28 @@ namespace tuna
 		}
 
 		template <typename A>
-		constexpr fixed operator * (A val) const
+		constexpr fixed operator * (arg_type<A> val) const __restrict
 		{
 			static_assert(type_trait<A>::is_integral, "operator argument must be an integer or a float.");
 			return from(m_Value * val);
 		}
 
 		template <typename A>
-		constexpr fixed operator / (A val) const
+		constexpr fixed operator / (arg_type<A> val) const __restrict
 		{
 			static_assert(type_trait<A>::is_integral, "operator argument must be an integer or a float.");
 			return from(m_Value / val);
 		}
 
 		template <typename A>
-		constexpr fixed operator % (A val) const
+		constexpr fixed operator % (arg_type<A> val) const __restrict
 		{
 			static_assert(type_trait<A>::is_integral, "operator argument must be an integer or a float.");
 			return from(m_Value % val);
 		}
 
 		template <typename A>
-		constexpr fixed operator + (A val) const
+		constexpr fixed operator + (arg_type<A> val) const __restrict
 		{
 			static_assert(type_trait<A>::is_integral, "operator argument must be an integer or a float.");
 			fixed ret{ from(m_Value) };
@@ -366,7 +395,7 @@ namespace tuna
 		}
 
 		template <typename A>
-		constexpr fixed operator - (A val) const
+		constexpr fixed operator - (arg_type<A> val) const __restrict
 		{
 			static_assert(type_trait<A>::is_integral, "operator argument must be an integer or a float.");
 			fixed ret{ from(m_Value) };
@@ -374,18 +403,18 @@ namespace tuna
 			return ret;
 		}
 
-		constexpr fixed rounded() const
+		constexpr fixed rounded() const __restrict
 		{
 			constexpr const T fractional_mask = (T{ 1 } << fractional_bits) - 1;
-			constexpr const uint8 half = 1_u8 << (fractional_bits - 1);
-			return from((m_Value + half) & ~fractional_mask);
+			constexpr const uintsz<(1 << fractional_bits) - 1> half = 1 << (fractional_bits - 1);
+			return from(T(m_Value + half) & ~fractional_mask);
 		}
 
 		template <typename U>
-		constexpr U rounded_to() const
+		constexpr U rounded_to() const __restrict
 		{
-			constexpr const uint8 half = 1_u8 << (fractional_bits - 1);
-			return { (m_Value + half) >> fractional_bits };
+			constexpr const uintsz<(1 << fractional_bits) - 1> half = 1 << (fractional_bits - 1);
+			return { T(m_Value + half) >> fractional_bits };
 		}
 	};
 

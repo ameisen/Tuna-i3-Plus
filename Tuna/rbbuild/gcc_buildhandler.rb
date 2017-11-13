@@ -225,7 +225,7 @@ $gpp_buildhandler = Class.new do
 			lib_str += "-L#{quote_wrap(dir)} "
 		}
 
-		command = gcc_path() + " " + buildline() +  "-Wl,--sort-common -s -fuse-linker-plugin -Wl,--gc-sections,--relax -o \"#{outfile}\" \"#{archive}\" #{lib_str}-lm"
+		command = gcc_path() + " " + buildline() +  "-Wl,-u,vfprintf -lprintf_flt -Wl,--sort-common -s -fuse-linker-plugin -Wl,--gc-sections,--relax -o \"#{outfile}\" \"#{archive}\" #{lib_str}-lm"
 		#command = gcc_path() + " " + buildline() +  "-Wl,--sort-common -s -fuse-linker-plugin -Wl,--relax -o \"#{outfile}\" \"#{archive}\" #{lib_str}-lm"
 		if (print_cmd)
 			puts $TAB + command

@@ -28,7 +28,7 @@
 template <typename T>
 struct _duration_t final
 {
-	static_assert(tuna::is_same<T, uint24> || tuna::is_same<T, uint32>, "duration_t can only be 24 or 32 bits");
+	static_assert(Tuna::is_same<T, uint24> || Tuna::is_same<T, uint32>, "duration_t can only be 24 or 32 bits");
 
 	using type = T;
 
@@ -49,7 +49,7 @@ private:
 	};
 	constexpr static auto typer()
 	{
-		if constexpr (tuna::is_same<T, uint24>)
+		if constexpr (Tuna::is_same<T, uint24>)
 		{
 			return short_types{};
 		}

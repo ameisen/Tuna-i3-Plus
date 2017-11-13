@@ -4,7 +4,7 @@
 #include "Marlin.h"
 #include <tuna.h>
 
-namespace tuna::lcd
+namespace Tuna::lcd
 {
 	enum class Page : uint8
 	{
@@ -60,7 +60,7 @@ namespace tuna::lcd
 	constexpr inline void set_status(const char* const, const bool = false) { }
 	constexpr inline void set_status_PGM(const char* const, const int8_t = 0) { }
 	constexpr inline void set_alert_status_PGM(const char*) { }
-	constexpr inline void statusf(const uint8_t, const char * const, ...) { }
+	constexpr inline void statusf(const uint8_t, const char * __restrict const, ...) { }
 	constexpr inline void reset_alert_level() {}
 	constexpr inline void refresh() {}
 }
