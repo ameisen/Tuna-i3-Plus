@@ -31,7 +31,7 @@
 
 #if ENABLED(SDSUPPORT)
 
-#include "SdBaseFile.h"
+#import "SdBaseFile.h"
 //------------------------------------------------------------------------------
 // pointer to cwd directory
 SdBaseFile* SdBaseFile::cwd_ = 0;

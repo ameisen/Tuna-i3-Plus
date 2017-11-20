@@ -22,8 +22,8 @@
 
 #import <tuna.h>
 
-#include "printcounter.h"
-#include "duration_t.h"
+#import "printcounter.h"
+#import "duration_t.h"
 
 PrintCounter::PrintCounter(): super() {
   this->loadStats();

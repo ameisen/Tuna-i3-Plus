@@ -47,7 +47,7 @@ namespace Tuna
   }
 }
 
-#include "thermistors/thermistortables.h"
+#import "thermistors/thermistortables.h"
 
 namespace Tuna
 {

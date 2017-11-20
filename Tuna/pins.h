@@ -35,7 +35,7 @@
 #ifndef __PINS_H__
 #define __PINS_H__
 
-#include "pins_BI3_PLUS.h"
+#import "pins_BI3_PLUS.h"
 
 // Define certain undefined pins
 #ifndef X_MS1_PIN

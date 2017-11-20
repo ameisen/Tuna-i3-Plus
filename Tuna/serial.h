@@ -23,17 +23,17 @@
 #ifndef __SERIAL_H__
 #define __SERIAL_H__
 
-#include "MarlinConfig.h"
+#import "MarlinConfig.h"
 
 #if defined(USBCON) || defined(ARDUINO_SERIAL)
-  #include "HardwareSerial.h"
+  #import "HardwareSerial.h"
   #if ENABLED(BLUETOOTH)
     #define MYSERIAL bluetoothSerial
   #else
     #define MYSERIAL Serial
   #endif // BLUETOOTH
 #else
-  #include "MarlinSerial.h"
+  #import "MarlinSerial.h"
   #define MYSERIAL customizedSerial
 #endif
 

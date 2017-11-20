@@ -31,9 +31,9 @@
 
 #if ENABLED(BEZIER_CURVE_SUPPORT)
 
-#include "planner.h"
-#include "language.h"
-#include "thermal/thermal.hpp"
+#import "planner.h"
+#import "language.h"
+#import "thermal/thermal.hpp"
 
 // See the meaning in the documentation of cubic_b_spline().
 #define MIN_STEP 0.002

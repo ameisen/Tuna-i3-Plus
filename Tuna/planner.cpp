@@ -60,15 +60,15 @@
 
 #import <tuna.h>
 
-#include "planner.h"
-#include "bi3_plus_lcd.h"
-#include "stepper.h"
-#include "thermal/thermal.hpp"
-#include "language.h"
-#include "gcode.h"
+#import "planner.h"
+#import "bi3_plus_lcd.h"
+#import "stepper.h"
+#import "thermal/thermal.hpp"
+#import "language.h"
+#import "gcode.h"
 
 #if ENABLED(MESH_BED_LEVELING)
-  #include "mesh_bed_leveling.h"
+  #import "mesh_bed_leveling.h"
 #endif
 
 Planner planner;

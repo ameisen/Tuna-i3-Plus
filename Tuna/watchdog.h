@@ -23,7 +23,7 @@
 #ifndef WATCHDOG_H
 #define WATCHDOG_H
 
-#include <avr/wdt.h>
+#import <avr/wdt.h>
 
 // Initialize watchdog with a 4 second interrupt time
 void watchdog_init();

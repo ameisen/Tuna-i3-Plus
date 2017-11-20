@@ -22,7 +22,7 @@
 
 #import <tuna.h>
 
-#include "stopwatch.h"
+#import "stopwatch.h"
 
 Stopwatch::Stopwatch() {
   this->reset();

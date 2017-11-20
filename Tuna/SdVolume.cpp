@@ -29,7 +29,7 @@
 #import <tuna.h>
 #if ENABLED(SDSUPPORT)
 
-#include "SdVolume.h"
+#import "SdVolume.h"
 //------------------------------------------------------------------------------
 #if !USE_MULTIPLE_CARDS
   // raw block cache

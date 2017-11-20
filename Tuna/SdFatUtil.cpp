@@ -29,7 +29,7 @@
 #import <tuna.h>
 
 #if ENABLED(SDSUPPORT)
-#include "SdFatUtil.h"
+#import "SdFatUtil.h"
 
 //------------------------------------------------------------------------------
 /** Amount of free RAM

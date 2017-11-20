@@ -23,16 +23,16 @@
 #ifndef CARDREADER_H
 #define CARDREADER_H
 
-#include "MarlinConfig.h"
+#import "MarlinConfig.h"
 
 #if ENABLED(SDSUPPORT)
 
 #define MAX_DIR_DEPTH 10          // Maximum folder depth
 
-#include "SdFile.h"
+#import "SdFile.h"
 
-#include "types.h"
-#include "enum.h"
+#import "types.h"
+#import "enum.h"
 
 class CardReader final {
 public:

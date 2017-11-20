@@ -29,9 +29,9 @@
 #ifndef GCODE_H
 #define GCODE_H
 
-#include "enum.h"
-#include "types.h"
-#include "MarlinConfig.h"
+#import "enum.h"
+#import "types.h"
+#import "MarlinConfig.h"
 
 //#define DEBUG_GCODE_PARSER
 
@@ -39,9 +39,9 @@
   #if ENABLED(AUTO_BED_LEVELING_UBL)
     extern char* hex_address(const void * const w);
   #else
-    #include "hex_print_routines.h"
+    #import "hex_print_routines.h"
   #endif
-  #include "serial.h"
+  #import "serial.h"
 #endif
 
 #if ENABLED(INCH_MODE_SUPPORT)

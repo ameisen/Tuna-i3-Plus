@@ -23,10 +23,10 @@
 #ifndef PRINTCOUNTER_H
 #define PRINTCOUNTER_H
 
-#include "macros.h"
-#include "language.h"
-#include "stopwatch.h"
-#include <avr/eeprom.h>
+#import "macros.h"
+#import "language.h"
+#import "stopwatch.h"
+#import <avr/eeprom.h>
 
 
 // Print debug messages with M111 S2

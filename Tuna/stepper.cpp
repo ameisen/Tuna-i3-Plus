@@ -46,17 +46,17 @@
 
 #import <tuna.h>
 
-#include "stepper.h"
-#include "endstops.h"
-#include "planner.h"
-#include "thermal/thermal.hpp"
-#include "bi3_plus_lcd.h"
-#include "language.h"
-#include "cardreader.h"
-#include "speed_lookuptable.h"
+#import "stepper.h"
+#import "endstops.h"
+#import "planner.h"
+#import "thermal/thermal.hpp"
+#import "bi3_plus_lcd.h"
+#import "language.h"
+#import "cardreader.h"
+#import "speed_lookuptable.h"
 
 #if HAS_DIGIPOTSS
-  #include <SPI.h>
+  #import <SPI.h>
 #endif
 
 Stepper stepper; // Singleton

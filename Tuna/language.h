@@ -23,7 +23,7 @@
 #ifndef LANGUAGE_H
 #define LANGUAGE_H
 
-#include "MarlinConfig.h"
+#import "MarlinConfig.h"
 
 #define _UxGT(a) a
 
@@ -291,7 +291,7 @@
 #define MSG_DIAM_E4 " 4"
 #define MSG_DIAM_E5 " 5"
 
-#include INCLUDE_LANGUAGE
+#import INCLUDE_LANGUAGE
 
 #if DISABLED(SIMULATE_ROMFONT) \
  && DISABLED(DISPLAY_CHARSET_ISO10646_1) \
@@ -305,6 +305,6 @@
   #define DISPLAY_CHARSET_ISO10646_1 // use the better font on full graphic displays.
 #endif
 
-#include "language_en.h"
+#import "language_en.h"
 
 #endif // __LANGUAGE_H

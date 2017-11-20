@@ -1,3 +1,3 @@
-#include "interrupts.hpp"
+#import "interrupts.hpp"
 
 using namespace Tuna;

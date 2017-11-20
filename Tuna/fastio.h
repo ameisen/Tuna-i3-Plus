@@ -29,8 +29,8 @@
 #ifndef _FASTIO_ARDUINO_H
 #define _FASTIO_ARDUINO_H
 
-#include <avr/io.h>
-#include "macros.h"
+#import <avr/io.h>
+#import "macros.h"
 
 #define AVR_AT90USB1286_FAMILY (defined(__AVR_AT90USB1287__) || defined(__AVR_AT90USB1286__) || defined(__AVR_AT90USB1286P__) || defined(__AVR_AT90USB646__) || defined(__AVR_AT90USB646P__)  || defined(__AVR_AT90USB647__))
 #define AVR_ATmega1284_FAMILY (defined(__AVR_ATmega644__) || defined(__AVR_ATmega644P__) || defined(__AVR_ATmega644PA__) || defined(__AVR_ATmega1284P__))
@@ -43,15 +43,15 @@
  * Include Ports and Functions
  */
 #if AVR_ATmega328_FAMILY
-  #include "fastio_168.h"
+  #import "fastio_168.h"
 #elif AVR_ATmega1284_FAMILY
-  #include "fastio_644.h"
+  #import "fastio_644.h"
 #elif AVR_ATmega2560_FAMILY
-  #include "fastio_1280.h"
+  #import "fastio_1280.h"
 #elif AVR_AT90USB1286_FAMILY
-  #include "fastio_AT90USB.h"
+  #import "fastio_AT90USB.h"
 #elif AVR_ATmega2561_FAMILY
-  #include "fastio_1281.h"
+  #import "fastio_1281.h"
 #else
   #error "Pins for this chip not defined in Arduino.h! If you have a working pins definition, please contribute!"
 #endif

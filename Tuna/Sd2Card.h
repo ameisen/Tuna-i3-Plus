@@ -35,8 +35,8 @@
  * \file
  * \brief Sd2Card class for V2 SD/SDHC cards
  */
-#include "SdFatConfig.h"
-#include "SdInfo.h"
+#import "SdFatConfig.h"
+#import "SdInfo.h"
 //------------------------------------------------------------------------------
 // SPI speed is F_CPU/2^(1 + index), 0 <= index <= 6
 /** Set SCK to max rate of F_CPU/2. See Sd2Card::setSckRate(). */

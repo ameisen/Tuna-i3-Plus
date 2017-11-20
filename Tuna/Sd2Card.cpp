@@ -29,10 +29,10 @@
 #import <tuna.h>
 
 #if ENABLED(SDSUPPORT)
-#include "Sd2Card.h"
+#import "Sd2Card.h"
 
 #if ENABLED(USE_WATCHDOG)
-  #include "watchdog.h"
+  #import "watchdog.h"
 #endif
 
 //------------------------------------------------------------------------------

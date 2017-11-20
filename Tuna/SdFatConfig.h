@@ -34,7 +34,7 @@
 
 #ifndef SdFatConfig_h
   #define SdFatConfig_h
-  #include <stdint.h>
+  #import <stdint.h>
   //------------------------------------------------------------------------------
   /**
   * To use multiple SD cards set USE_MULTIPLE_CARDS nonzero.

@@ -22,8 +22,8 @@
 
 #import <tuna.h>
 
-#include "utility.h"
-#include "thermal/thermal.hpp"
+#import "utility.h"
+#import "thermal/thermal.hpp"
 
 void safe_delay(millis_t ms) {
   while (ms > 50) {

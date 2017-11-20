@@ -32,11 +32,11 @@
 #ifndef PLANNER_H
 #define PLANNER_H
 
-#include "types.h"
-#include "enum.h"
+#import "types.h"
+#import "enum.h"
 
 #if HAS_ABL
-  #include "vector_3.h"
+  #import "vector_3.h"
 #endif
 
 enum BlockFlagBit : uint8_t {

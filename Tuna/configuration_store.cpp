@@ -175,7 +175,7 @@
 
 #import <tuna.h>
 
-#include "configuration_store.h"
+#import "configuration_store.h"
 
 // FIXME TODO TEMPORARY HACK
 static const float z_float = 0.0f;
@@ -183,24 +183,24 @@ static const float z_float = 0.0f;
 
 MarlinSettings settings;
 
-#include "language.h"
-#include "endstops.h"
-#include "planner.h"
-#include "thermal/thermal.hpp"
-#include "bi3_plus_lcd.h"
-#include "stepper.h"
-#include "thermal/managers/simple.hpp"
+#import "language.h"
+#import "endstops.h"
+#import "planner.h"
+#import "thermal/thermal.hpp"
+#import "bi3_plus_lcd.h"
+#import "stepper.h"
+#import "thermal/managers/simple.hpp"
 
 #if ENABLED(INCH_MODE_SUPPORT) || (ENABLED(ULTIPANEL) && ENABLED(TEMPERATURE_UNITS_SUPPORT))
-  #include "gcode.h"
+  #import "gcode.h"
 #endif
 
 #if ENABLED(MESH_BED_LEVELING)
-  #include "mesh_bed_leveling.h"
+  #import "mesh_bed_leveling.h"
 #endif
 
 #if ENABLED(HAVE_TMC2130)
-  #include "stepper_indirection.h"
+  #import "stepper_indirection.h"
 #endif
 
 #if ENABLED(AUTO_BED_LEVELING_BILINEAR)
