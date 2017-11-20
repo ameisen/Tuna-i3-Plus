@@ -23,10 +23,9 @@
 #ifndef THERMISTORTABLES_H_
 #define THERMISTORTABLES_H_
 
-#include "Marlin.h"
-#include "macros.h"
+#import <tuna.h>
 
-#include <tuna.h>
+#import "macros.h"
 
 constexpr const uint8 OVERSAMPLENR = 16;
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <math.h>
+#import <math.h>
 
 #ifdef round
 #	define ARDUINO_ROUND 1

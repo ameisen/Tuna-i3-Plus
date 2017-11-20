@@ -179,7 +179,6 @@
     <ClInclude Include="config\thermal.hpp">
       <Filter>config</Filter>
     </ClInclude>
-    <ClInclude Include="thermal.hpp" />
     <ClInclude Include="thermal\thermal.hpp">
       <Filter>thermal</Filter>
     </ClInclude>
@@ -195,6 +194,7 @@
     <ClInclude Include="tunalib\chrono.hpp">
       <Filter>tunalib</Filter>
     </ClInclude>
+    <ClInclude Include="Tuna_VM.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tunalib">
@@ -215,11 +215,11 @@
     <Filter Include="config">
       <UniqueIdentifier>{d40ea8a6-eaf0-4def-b971-ade2c292151c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="thermal">
-      <UniqueIdentifier>{8319d257-26a3-4d61-87c0-4070057a5e26}</UniqueIdentifier>
-    </Filter>
     <Filter Include="system">
       <UniqueIdentifier>{c4554f4d-804d-4ec1-a2d9-22bb19f117d2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="thermal">
+      <UniqueIdentifier>{8319d257-26a3-4d61-87c0-4070057a5e26}</UniqueIdentifier>
     </Filter>
     <Filter Include="thermal\managers">
       <UniqueIdentifier>{9e6df1d2-882d-418a-82c8-4e8a3845e462}</UniqueIdentifier>
@@ -247,7 +247,6 @@
     <ClCompile Include="stepper_indirection.cpp" />
     <ClCompile Include="stopwatch.cpp" />
     <ClCompile Include="utility.cpp" />
-    <ClCompile Include="thermal.cpp" />
     <ClCompile Include="thermal\thermal.cpp">
       <Filter>thermal</Filter>
     </ClCompile>

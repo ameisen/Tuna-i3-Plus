@@ -29,7 +29,7 @@
 
 #include "enum.h"
 
-class Endstops {
+class Endstops final {
 
   public:
 

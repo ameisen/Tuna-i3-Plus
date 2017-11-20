@@ -26,9 +26,7 @@
 
 #pragma once
 
-#include "MarlinConfig.h"
-
-#include <tuna.h>
+#import "MarlinConfig.h"
 
 namespace Tuna
 {
@@ -156,18 +154,18 @@ namespace Tuna
 	  /**
 	   * Preheating hotends
 	   */
-	  static constexpr bool is_preheating() { return false; }
+	  static __const constexpr bool is_preheating() { return false; }
 
 	   //high level conversion routines, for use outside of temperature.cpp
 	   //inline so that there is no performance decrease.
 	   //deg=degreeCelsius
 
-	  static temp_t degHotend() { return current_temperature; }
-	  static temp_t degBed() { return current_temperature_bed; }
+	  static __pure const temp_t & degHotend() { return current_temperature; }
+	  static __pure const temp_t & degBed() { return current_temperature_bed; }
 
-	  static temp_t degTargetHotend() { return target_temperature; }
+	  static __pure const temp_t & degTargetHotend() { return target_temperature; }
 
-	  static temp_t degTargetBed() { return target_temperature_bed; }
+	  static __pure const temp_t & degTargetBed() { return target_temperature_bed; }
 
 	  static void start_watching_heater();
 
@@ -183,21 +181,21 @@ namespace Tuna
 		  start_watching_bed();
 	  }
 
-	  static bool isHeatingHotend() {
+	  static __pure bool isHeatingHotend() {
 		  return current_temperature <= target_temperature;
 	  }
-	  static bool isHeatingBed() { return current_temperature_bed <= target_temperature_bed; }
+	  static __pure bool isHeatingBed() { return current_temperature_bed <= target_temperature_bed; }
 
-	  static bool isCoolingHotend() {
+	  static __pure bool isCoolingHotend() {
 		  return current_temperature > target_temperature;
 	  }
-	  static bool isCoolingBed() { return current_temperature_bed > target_temperature_bed; }
+	  static __pure bool isCoolingBed() { return current_temperature_bed > target_temperature_bed; }
 
 	  /**
 	   * The software PWM power for a heater
 	   */
 	  template <Manager manager_type>
-	  static uint8 getHeaterPower();
+	  static __pure uint8 getHeaterPower();
 
 	  /**
 	   * Switch off all heaters, set all target temperatures to 0

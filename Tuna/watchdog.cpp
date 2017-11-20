@@ -20,7 +20,7 @@
  *
  */
 
-#include "Marlin.h"
+#import <tuna.h>
 
 #if ENABLED(USE_WATCHDOG)
 

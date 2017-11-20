@@ -24,7 +24,8 @@
  * endstops.cpp - A singleton object to manage endstops
  */
 
-#include "Marlin.h"
+#import <tuna.h>
+
 #include "cardreader.h"
 #include "endstops.h"
 #include "thermal/thermal.hpp"

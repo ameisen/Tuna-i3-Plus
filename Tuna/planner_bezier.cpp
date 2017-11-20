@@ -27,7 +27,7 @@
  *
  */
 
-#include "Marlin.h"
+#import <tuna.h>
 
 #if ENABLED(BEZIER_CURVE_SUPPORT)
 

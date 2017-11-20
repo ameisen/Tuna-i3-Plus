@@ -30,8 +30,6 @@
  * \file
  * \brief SdFile class
  */
-#include "Marlin.h"
-
 #if ENABLED(SDSUPPORT)
 #include "SdBaseFile.h"
 #include <Print.h>
@@ -42,7 +40,7 @@
  * \class SdFile
  * \brief SdBaseFile with Print.
  */
-class SdFile : public SdBaseFile, public Print {
+class SdFile final : public SdBaseFile, public Print {
  public:
   SdFile() {}
   SdFile(const char* name, uint8_t oflag);

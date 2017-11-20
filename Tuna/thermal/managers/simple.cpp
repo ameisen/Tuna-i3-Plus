@@ -1,12 +1,12 @@
-#include "simple.hpp"
-//#include "Marlin.h"
-#include <tuna.h>
+#import <tuna.h>
 
-#include "bi3_plus_lcd.h"
+#import "simple.hpp"
 
-#include <math.h>
+#import "bi3_plus_lcd.h"
 
-#include "configuration_store.h"
+#import <math.h>
+
+#import "configuration_store.h"
 
 // TODO FIXME remove floats after initial testing. They're here to establish sane ranges to help with
 // the fixed-point math for exponents.
@@ -45,10 +45,8 @@ namespace
   using tableidx_t = uintsz<1 << relevant_total_bits>;
 
   bool calibrating = false;
-  uint8 pwm_table_up[numTableEntries] = {};
-  //uint8 pwm_table_down[numTableEntries] = {};
-  float pwm_exponent_up = -1.0f;
-  float pwm_exponent_down = -1.0f;
+  uint8 pwm_table[numTableEntries] = {};
+  float pwm_exponent = -1.0f;
 
   static pair<bool, tableidx_t> get_diff_idx(arg_type<temp_t> current, arg_type<temp_t> target)
   {
@@ -67,31 +65,18 @@ namespace
 
 pair<float, float> Simple::GetCalibration()
 {
-  return { pwm_exponent_up, pwm_exponent_down };
+  return { pwm_exponent, 0.0f };
 }
 
 void Simple::SetCalibration(arg_type<pair<float, float>> exponent)
 {
-  Log::d<>(Tag, "SetCalibration: %.6f %.6f"_p, exponent.first, exponent.second);
+  Log::d<>(Tag, "SetCalibration: %.6f"_p, exponent.first);
 
-  pwm_exponent_up = exponent.first;
-  pwm_exponent_down = exponent.second;
+  pwm_exponent = exponent.first;
 
-  // =ROUND(POWER(($B7/255.5), C$4) * 255.5, 0)
   for (tableidx_t i = 0; i < numTableEntries; ++i)
   {
-    pwm_table_up[i] = uint8(roundf(powf(float(i) / float(numTableEntries), exponent.first) * 255.5f));
-    //pwm_table_down[i] = uint8(roundf(powf(float(i) / float(numTableEntries), exponent.second) * 255.5f));
-  }
-
-  // logging. TODO add some kind of if constexpr for logigng level.
-  for (tableidx_t i = 0; i < numTableEntries; ++i)
-  {
-    //Log::d<1>(Tag, "pwm_table_up[%u] = %u"_p, i, pwm_table_up[i]);
-  }
-  for (tableidx_t i = 0; i < numTableEntries; ++i)
-  {
-    //Log::d<1>(Tag, "pwm_table_down[%u] = %u"_p, i, pwm_table_down[i]);
+    pwm_table[i] = uint8(roundf(powf(float(i) / float(numTableEntries), exponent.first) * 255.5f));
   }
 }
 
@@ -185,12 +170,11 @@ bool Simple::calibrate(arg_type<temp_t> target)
 
   const auto populate_pwm_table_const = [](uint8 value)
   {
-    pwm_exponent_up = 0.0f;
-    pwm_exponent_down = 0.0f;
+    pwm_exponent = 0.0f;
 
     for (tableidx_t i = 0; i < numTableEntries; ++i)
     {
-      pwm_table_up[i] = value;
+      pwm_table[i] = value;
       //pwm_table_down[i] = value;
     }
   };
@@ -214,10 +198,9 @@ bool Simple::calibrate(arg_type<temp_t> target)
   Log::d<1>(Tag, "temp_t integer bits: %u"_p, temp_t::integer_bits);
   Log::d<1>(Tag, "temp_t fraction bits: %u"_p, temp_t::fractional_bits);
 
-  const auto execute_test = [&, target](arg_type<float> exponent_up, arg_type<float> exponent_down, oscillation & __restrict error)
+  const auto execute_test = [&, target](arg_type<float> exponent, oscillation & __restrict error)
   {
-    Log::d<1>(Tag, "Upswing Exponent: %.6f"_p, exponent_up);
-    Log::d<1>(Tag, "Downswing Exponent: %.6f"_p, exponent_down);
+    Log::d<1>(Tag, "Exponent: %.6f"_p, exponent);
 
     // Reset the PWM table to 0xFF for low-target setting.
     populate_pwm_table_const(0xFF);
@@ -227,7 +210,7 @@ bool Simple::calibrate(arg_type<temp_t> target)
     Log::d<>(Tag, "Low Target Reached, beginning test"_p);
 
     // Populate the PWM table.
-    SetCalibration({ exponent_up, exponent_down });
+    SetCalibration({ exponent, 0.0f });
 
     // Set target temperature.
     set_temp_target(target, false);
@@ -243,15 +226,6 @@ bool Simple::calibrate(arg_type<temp_t> target)
     {
       upswing = !upswing;
       ++num_cycles;
-      //Log::d<>(Tag, "Half Cycle: %u"_p, num_cycles);
-      if (upswing)
-      {
-      //  Log::d<>(Tag, "Upswing"_p);
-      }
-      else
-      {
-      //  Log::d<>(Tag, "Downswing"_p);
-      }
       //return num_cycles >= test_cycles;
       return false;
     };
@@ -365,127 +339,53 @@ bool Simple::calibrate(arg_type<temp_t> target)
   uint32 bestError = type_trait<uint32>::max;
   uint16 bestIndex = 0;
 
-  constexpr const auto total_tests = num_tests * num_tests;
+  constexpr const auto total_tests = num_tests;
 
-  for (uint8 iu = 0; iu < num_tests; ++iu)
+  for (uint8 i = 0; i < num_tests; ++i)
   {
-    bool any_best = false;
-    uint32 bestErrorThis = type_trait<uint32>::max;
-    for (uint8 id = 0; id < num_tests; ++id)
+    const auto & __restrict exponent = test_exponents[i];
+    oscillation error;
+
+    Log::d<>(Tag, "Executing Test: %u / %u *****************"_p, i, total_tests);
+    execute_test(exponent, error);
+
+    Log::d<>(Tag, "Test Complete: %u / %u"_p, i, total_tests);
+    Log::d<1>(Tag, "valid: %u"_p, error.valid ? 1 : 0);
+
+    if (error.valid)
     {
-      const uint16 index = (iu * num_tests) + id;
+      Log::d<1>(Tag, "high: %.6f"_p, float(error.high));
+      Log::d<1>(Tag, "low: %.6f"_p, float(error.low));
+      Log::d<1>(Tag, "highMean: %lu"_p, uint32(error.highMean));
+      Log::d<1>(Tag, "tempMean: %lu"_p, uint32(error.tempMean));
+      Log::d<1>(Tag, "lowMean: %lu"_p, uint32(error.lowMean));
+    }
 
-      const auto & __restrict exponent_up = test_exponents[iu];
-      const auto & __restrict exponent_down = test_exponents[id];
-      oscillation error;
-
-      Log::d<>(Tag, "Executing Test: %u / %u *****************"_p, index, total_tests);
-      execute_test(exponent_up, exponent_down, error);
-
-      Log::d<>(Tag, "Test Complete: %u / %u"_p, index, total_tests);
-      Log::d<1>(Tag, "valid: %u"_p, error.valid ? 1 : 0);
-
-      if constexpr (shortcut_results)
+    if (error.valid)
+    {
+      if constexpr (true)
       {
-        if (!error.valid && bestErrorThis != type_trait<uint32>::max)
+        const uint32 errorVal = errorCalculate(error);
+        Log::d<1>(Tag, "error: %lu"_p, uint32(errorVal));
+        if (errorVal < bestError)
         {
-          break;
-        }
-      }
-
-      if (error.valid)
-      {
-        Log::d<1>(Tag, "high: %.6f"_p, float(error.high));
-        Log::d<1>(Tag, "low: %.6f"_p, float(error.low));
-        Log::d<1>(Tag, "highMean: %lu"_p, uint32(error.highMean));
-        Log::d<1>(Tag, "tempMean: %lu"_p, uint32(error.tempMean));
-        Log::d<1>(Tag, "lowMean: %lu"_p, uint32(error.lowMean));
-      }
-
-      if (error.valid)
-      {
-        if constexpr (true)
-        {
-          const uint32 errorVal = errorCalculate(error);
-          Log::d<1>(Tag, "error: %lu"_p, uint32(errorVal));
-          if (errorVal < bestError)
-          {
-            any_best = true;
-            Log::d<1>(Tag, "New Best &&&&&&&&&&&&&&"_p);
-            bestError = errorVal;
-            bestIndex = index;
-          }
-          else if constexpr (shortcut_results)
-          {
-            if (any_best)
-            {
-              break;
-            }
-            if (errorVal > bestErrorThis)
-            {
-              break;
-            }
-            else
-            {
-              bestErrorThis = errorVal;
-            }
-          }
-        }
-        else
-        {
-          const tempavg_t errorVal = tempavg_t(error.high.raw()) + tempavg_t(error.low.raw());
-          Log::d<1>(Tag, "error: %lu"_p, uint32(errorVal));
           Log::d<1>(Tag, "New Best &&&&&&&&&&&&&&"_p);
-          if (errorVal < bestError)
-          {
-            any_best = true;
-            bestError = errorVal;
-            bestIndex = index;
-          }
-          else if constexpr (shortcut_results)
-          {
-            if (any_best)
-            {
-              break;
-            }
-            if (errorVal > bestErrorThis)
-            {
-              break;
-            }
-            else
-            {
-              bestErrorThis = errorVal;
-            }
-          }
+          bestError = errorVal;
+          bestIndex = i;
         }
       }
-      break;
-    }
-    if constexpr (shortcut_results)
-    {
-      if (!any_best)
+      else
       {
-        break;
+        const tempavg_t errorVal = tempavg_t(error.high.raw()) + tempavg_t(error.low.raw());
+        Log::d<1>(Tag, "error: %lu"_p, uint32(errorVal));
+        Log::d<1>(Tag, "New Best &&&&&&&&&&&&&&"_p);
+        if (errorVal < bestError)
+        {
+          bestError = errorVal;
+          bestIndex = i;
+        }
       }
     }
-
-    //if (error.high < best_high)
-    //{
-    //  best_high = error.high;
-    //  best_high_idx = i;
-    //}
-    //
-    //if (error.low < best_low)
-    //{
-    //  // We prefer error.high, but we use error.low as secondary.
-    //  if (error.high == best_high)
-    //  {
-    //    best_high = error.high;
-    //    best_high_idx = i;
-    //  }
-    //  best_low = error.low;
-    //  best_low_idx = i;
-    //}
   }
 
   Temperature::disable_all_heaters();
@@ -493,13 +393,11 @@ bool Simple::calibrate(arg_type<temp_t> target)
   // For now, choose the best high.
   Log::d<>(Tag, "Best Index: %u"_p, bestIndex);
 
-  const float & __restrict best_high = test_exponents[bestIndex / num_tests];
-  const float & __restrict best_low = test_exponents[bestIndex % num_tests];
+  const float & __restrict best_exp = test_exponents[bestIndex];
 
-  Log::d<1>(Tag, "Upswing Exponent: %.6f"_p, float(best_high));
-  Log::d<1>(Tag, "Downswing Exponent: %.6f"_p, float(best_low));
+  Log::d<1>(Tag, "Exponent: %.6f"_p, float(best_exp));
 
-  SetCalibration({ best_high, best_low });
+  SetCalibration({ best_exp, 0.0f });
 
   lcd::show_page(lcd::Page::PID_Finished);
   enqueue_and_echo_command("M106 S0");
@@ -515,7 +413,7 @@ bool Simple::calibrating()
   return calibrating;
 }
 
-uint8 Simple::get_power(arg_type<temp_t> current, arg_type<temp_t> target)
+uint8 Simple::get_power(arg_type<temp_t> current, arg_type<temp_t> target) 
 {
   constexpr const bool tempLog = false;
 
@@ -541,23 +439,23 @@ uint8 Simple::get_power(arg_type<temp_t> current, arg_type<temp_t> target)
   {
     if (!Temperature::get_temperature_trend().second)
     {
-      if constexpr (tempLog) Log::d<>(Tag, "%.6f, %u"_p, float(current), pwm_table_up[diff_idx.second]);
+      if constexpr (tempLog) Log::d<>(Tag, "%.6f, %u"_p, float(current), pwm_table[diff_idx.second]);
 
       // We want to intensify this value a bit, in order to prevent undershooting too much.
       constexpr const uint8 multiplier = 3_u8;
-      return uint8(min(uint16(pwm_table_up[diff_idx.second]) * multiplier, 255_u8));
+      return uint8(min(uint16(pwm_table[diff_idx.second]) * multiplier, 255_u8));
     }
     else
     {
-      if constexpr (tempLog)Log::d<>(Tag, "%.6f, %u"_p, float(current), pwm_table_up[diff_idx.second]);
+      if constexpr (tempLog)Log::d<>(Tag, "%.6f, %u"_p, float(current), pwm_table[diff_idx.second]);
 
       return 0x00;
     }
   }
   else if (Temperature::get_temperature_trend().second)
   {
-    if constexpr (tempLog) Log::d<>(Tag, "%.6f, %u"_p, float(current), pwm_table_up[diff_idx.second]);
-    return pwm_table_up[diff_idx.second];
+    if constexpr (tempLog) Log::d<>(Tag, "%.6f, %u"_p, float(current), pwm_table[diff_idx.second]);
+    return pwm_table[diff_idx.second];
   }
   else
   {

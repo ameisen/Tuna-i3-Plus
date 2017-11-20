@@ -116,7 +116,6 @@
     <ClInclude Include="stepper_indirection.h" />
     <ClInclude Include="stopwatch.h" />
     <ClInclude Include="system\system.hpp" />
-    <ClInclude Include="thermal.hpp" />
     <ClInclude Include="thermal\managers\simple.hpp" />
     <ClInclude Include="thermal\thermal.hpp" />
     <ClInclude Include="thermistors\thermistortables.h" />
@@ -155,6 +154,7 @@
     <ClInclude Include="tunalib\initializer_list.h" />
     <ClInclude Include="tunalib\math.hpp" />
     <ClInclude Include="tunalib\utils.hpp" />
+    <ClInclude Include="Tuna_VM.hpp" />
     <ClInclude Include="types.h" />
     <ClInclude Include="utility.h" />
     <ClInclude Include="Version.h" />
@@ -182,7 +182,6 @@
     <ClCompile Include="stepper_indirection.cpp" />
     <ClCompile Include="stopwatch.cpp" />
     <ClCompile Include="system\system.cpp" />
-    <ClCompile Include="thermal.cpp" />
     <ClCompile Include="thermal\managers\simple.cpp" />
     <ClCompile Include="thermal\thermal.cpp" />
     <ClCompile Include="tunalib\utils.cpp" />

@@ -20,7 +20,8 @@
  *
  */
 
-#include "Marlin.h"
+#import <tuna.h>
+
 #include "printcounter.h"
 #include "duration_t.h"
 

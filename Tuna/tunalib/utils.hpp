@@ -1,9 +1,9 @@
 #pragma once
 
-#include <stdint.h>
+#import <stdint.h>
 
-#include "HardwareSerial.h"
-#include "avr/interrupt.h"
+#import "HardwareSerial.h"
+#import "avr/interrupt.h"
 
 #undef min
 #undef max
@@ -744,8 +744,9 @@ namespace Tuna::utils
 
 		constexpr inline static signed_type as_signed(arg_type<type> val) { return { val }; }
 
-		//constexpr static type max = { FLT_MAX };
-		//constexpr static type min = { FLT_MIN };
+		constexpr static type max = { 3.402823e+38f };
+		constexpr static type min = { 1.175494e-38f };
+    constexpr static type epsilon = { 1.192093e-07f };
 	};
 	// On AVR, float == double == long double, though the compiler doesn't always agree due to strict typing.
 	template <> struct type_trait<double> final : type_trait<float> {};

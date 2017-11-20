@@ -24,12 +24,12 @@
   * temperature.cpp - temperature control
   */
 
-#include "Marlin.h"
-#include "thermal/thermal.hpp"
-#include "bi3_plus_lcd.h"
-#include "planner.h"
-#include "configuration_store.h"
-#include "watchdog.h"
+#import <tuna.h>
+#import "thermal/thermal.hpp"
+#import "bi3_plus_lcd.h"
+#import "planner.h"
+#import "configuration_store.h"
+#import "watchdog.h"
 
 #define ENABLE_ERROR_1 0
 #define ENABLE_ERROR_2 0
@@ -37,7 +37,7 @@
 #define ENABLE_ERROR_4 1
 #define ENABLE_ERROR_5 1
 
-#include "managers/simple.hpp"
+#import "managers/simple.hpp"
 
 using HeaterManager = Tuna::Thermal::Manager::Simple;
 
@@ -456,7 +456,7 @@ void Temperature::start_watching_heater() {
  */
 void Temperature::start_watching_bed() {
 	if (degBed() < degTargetBed() - uint8(WATCH_BED_TEMP_INCREASE + TEMP_BED_HYSTERESIS + 1)) {
-		watch_target_bed_temp = degBed() + uint8(WATCH_BED_TEMP_INCREASE);
+		watch_target_bed_temp = degBed() + (WATCH_BED_TEMP_INCREASE);
 		watch_bed_next_ms = millis() + uint8(WATCH_BED_TEMP_PERIOD) * 1000UL;
 	}
 	else

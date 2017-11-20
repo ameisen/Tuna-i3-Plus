@@ -241,25 +241,27 @@
    *
    */
 
-#include "Marlin.h"
+#import <tuna.h>
 
-#include "bi3_plus_lcd.h"
-#include "planner.h"
-#include "stepper.h"
-#include "endstops.h"
-#include "thermal/thermal.hpp"
-#include "cardreader.h"
-#include "configuration_store.h"
-#include "language.h"
-#include "pins_arduino.h"
-#include "math.h"
-#include "duration_t.h"
-#include "types.h"
-#include "bi3_plus_lcd.h"
-#include "gcode.h"
+#import "bi3_plus_lcd.h"
+#import "planner.h"
+#import "stepper.h"
+#import "endstops.h"
+#import "thermal/thermal.hpp"
+#import "cardreader.h"
+#import "configuration_store.h"
+#import "language.h"
+#import "pins_arduino.h"
+#import "math.h"
+#import "duration_t.h"
+#import "types.h"
+#import "bi3_plus_lcd.h"
+#import "gcode.h"
 
-#include "planner_bezier.h"
-#include "watchdog.h"
+#import "planner_bezier.h"
+#import "watchdog.h"
+
+#import "Tuna_VM.hpp"
 
 CardReader card;
 
@@ -326,10 +328,7 @@ static Tuna::flash_string injected_commands_P = nullptr;
  * Feed rates are often configured with mm/m
  * but the planner and stepper like mm/s units.
  */
-static const float homing_feedrate_mm_s[] PROGMEM = {
-  MMM_TO_MMS(HOMING_FEEDRATE_XY), MMM_TO_MMS(HOMING_FEEDRATE_XY),
-  MMM_TO_MMS(HOMING_FEEDRATE_Z), 0
-};
+static const float homing_feedrate_mm_s[] PROGMEM = { HOMING_FEEDRATE_X, HOMING_FEEDRATE_Y, HOMING_FEEDRATE_Z, 0 };
 FORCE_INLINE float homing_feedrate(const AxisEnum a) { return pgm_read_float(&homing_feedrate_mm_s[a]); }
 
 float feedrate_mm_s = MMM_TO_MMS(1500.0);
@@ -361,13 +360,13 @@ bool soft_endstops_enabled = true;
 float soft_endstop_min[XYZ] = { X_MIN_POS, Y_MIN_POS, Z_MIN_POS },
 soft_endstop_max[XYZ] = { X_MAX_POS, Y_MAX_POS, Z_MAX_POS };
 
-int16_t fanSpeeds[FAN_COUNT] = { 0 };
+uint8 fanSpeeds[FAN_COUNT] = { 0 };
 
 // The active extruder (tool). Set with T<extruder> command.
 uint8_t active_extruder = 0;
 
 // Relative Mode. Enable with G91, disable with G90.
-static bool relative_mode = false;
+bool relative_mode = false;
 
 // For M109 and M190, this flag may be cleared (by M108) to exit the wait loop
 volatile bool wait_for_heatup = true;
@@ -430,7 +429,7 @@ void prepare_move_to_destination();
 void get_cartesian_from_steppers();
 void set_current_from_steppers_for_axis(const AxisEnum axis);
 
-void plan_arc(float target[XYZE], float* offset, uint8_t clockwise);
+//void plan_arc(float target[XYZE], float* offset, uint8_t clockwise);
 
 void plan_cubic_move(const float offset[4]);
 
@@ -881,8 +880,8 @@ inline void line_to_destination(const float fr_mm_s) {
 }
 inline void line_to_destination() { line_to_destination(feedrate_mm_s); }
 
-inline void set_current_to_destination() { COPY(current_position, destination); }
-inline void set_destination_to_current() { COPY(destination, current_position); }
+void set_current_to_destination() { COPY(current_position, destination); }
+void set_destination_to_current() { COPY(destination, current_position); }
 
 /**
  *  Plan a move to (X, Y, Z) and set the current_position
@@ -898,8 +897,10 @@ void do_blocking_move_to(const float &lx, const float &ly, const float &lz, cons
 		line_to_current_position();
 	}
 
-	feedrate_mm_s = fr_mm_s ? fr_mm_s : XY_PROBE_FEEDRATE_MM_S;
+	feedrate_mm_s = fr_mm_s ? fr_mm_s : homing_feedrate(X_AXIS);
 	current_position[X_AXIS] = lx;
+  line_to_current_position();
+  feedrate_mm_s = fr_mm_s ? fr_mm_s : homing_feedrate(Y_AXIS);
 	current_position[Y_AXIS] = ly;
 	line_to_current_position();
 
@@ -1010,6 +1011,25 @@ static void homeaxis(const AxisEnum axis) {
 	destination[axis] = current_position[axis];
 } // homeaxis()
 
+static void quick_home_xy() {
+
+  // Pretend the current position is 0,0
+  current_position[X_AXIS] = current_position[Y_AXIS] = 0.0;
+  sync_plan_position();
+
+  const int x_axis_home_dir = home_dir(X_AXIS);
+
+  const float mlx = max_length(X_AXIS),
+    mly = max_length(Y_AXIS);
+
+  do_blocking_move_to_xy(1.5 * mlx * x_axis_home_dir, 1.5 * mly * home_dir(Y_AXIS), 0.0f);
+  endstops.hit_on_purpose(); // clear endstop hit flags
+  current_position[X_AXIS] = current_position[Y_AXIS] = 0.0;
+
+  set_axis_is_at_home(X_AXIS);
+  set_axis_is_at_home(Y_AXIS);
+}
+
 /**
  * ***************************************************************************
  * ***************************** G-CODE HANDLING *****************************
@@ -1023,19 +1043,57 @@ static void homeaxis(const AxisEnum axis) {
   *  - Set to current for missing axis codes
   *  - Set the feedrate, if included
   */
+template <bool param_feed = true>
 void gcode_get_destination() {
+  float max_feedrate = 0.0f;
 	LOOP_XYZE(i) {
-		if (parser.seen(axis_codes[i]))
-			destination[i] = parser.value_axis_units((AxisEnum)i) + (axis_relative_modes[i] || relative_mode ? current_position[i] : 0);
-		else
-			destination[i] = current_position[i];
+    if (parser.seen(axis_codes[i]))
+    {
+      destination[i] = parser.value_axis_units((AxisEnum)i) + (axis_relative_modes[i] || relative_mode ? current_position[i] : 0);
+      if constexpr (!param_feed)
+      {
+        max_feedrate = max(max_feedrate, planner.max_feedrate_mm_s[i]);
+      }
+    }
+    else
+    {
+      destination[i] = current_position[i];
+    }
 	}
 
-	if (parser.linearval('F') > 0.0)
-		feedrate_mm_s = MMM_TO_MMS(parser.value_feedrate());
+  if constexpr (param_feed)
+  {
+    if (parser.linearval('F') > 0.0)
+      feedrate_mm_s = MMM_TO_MMS(parser.value_feedrate());
+  }
+  else
+  {
+    feedrate_mm_s = max_feedrate;
+  }
 
 	if (!DEBUGGING(DRYRUN))
 		print_job_timer.incFilamentUsed(destination[E_AXIS] - current_position[E_AXIS]);
+}
+
+/**
+* Set E destination and feedrate from the current GCode command. Presumes absolute mode.
+*
+*  - Set destination from included E axis code
+*  - Set to current for missing axis codes
+*  - Set the feedrate, if included
+*/
+bool gcode_get_destination_e_absolute()
+{
+  LOOP_XYZ(i) {
+    destination[i] = current_position[i];
+  }
+  destination[E_AXIS] = parser.value_axis_units(E_AXIS);
+
+  if (parser.linearval('F') > 0.0)
+    feedrate_mm_s = MMM_TO_MMS(parser.value_feedrate());
+
+  if (!DEBUGGING(DRYRUN))
+    print_job_timer.incFilamentUsed(destination[E_AXIS] - current_position[E_AXIS]);
 }
 
 /**
@@ -1075,13 +1133,20 @@ void host_keepalive() {
  /**
   * G0, G1: Coordinated movement of X Y Z E axes
   */
-inline void gcode_G0_G1(
-) {
-	if (IsRunning()) {
-		gcode_get_destination(); // For X Y Z E F
 
-		prepare_move_to_destination();
-	}
+template <Speed speed>
+inline void linear_move()
+{
+  if (!IsRunning())
+  {
+    return;
+  }
+
+  constexpr const bool feed_param = (speed != Speed::Fastest);
+
+  gcode_get_destination<feed_param>(); // For X Y Z E F
+
+  prepare_move_to_destination();
 }
 
 /**
@@ -1111,6 +1176,7 @@ inline void gcode_G0_G1(
  *    G3 X20 Y12 R14   ; CCW circle with r=14 ending at X20 Y12
  */
 
+/*
 inline void gcode_G2_G3(bool clockwise) {
 	if (IsRunning()) {
 		gcode_get_destination();
@@ -1150,6 +1216,7 @@ inline void gcode_G2_G3(bool clockwise) {
 		}
 	}
 }
+*/
 
 /**
  * G4: Dwell S<seconds> or P<milliseconds>
@@ -1182,7 +1249,7 @@ inline void gcode_G4() {
 inline void gcode_G5() {
 	if (IsRunning()) {
 
-		gcode_get_destination();
+		gcode_get_destination<true>();
 
 		const float offset[] = {
 		  parser.linearval('I'),
@@ -1219,14 +1286,21 @@ inline void gcode_G28(const bool always_home_all) {
 	setup_for_endstop_or_probe_move();
 	endstops.enable(true); // Enable endstops for next homing move
 
-	const bool homeX = always_home_all || parser.seen('X'),
-		homeY = always_home_all || parser.seen('Y'),
-		homeZ = always_home_all || parser.seen('Z'),
-		home_all = (!homeX && !homeY && !homeZ) || (homeX && homeY && homeZ);
+  bool home[3] = {
+    always_home_all || parser.seen('X'),
+    always_home_all || parser.seen('Y'),
+    always_home_all || parser.seen('Z')
+  };
+  if (!home[X_AXIS] && !home[Y_AXIS] && !home[Z_AXIS])
+  {
+    home[X_AXIS] = true;
+    home[Y_AXIS] = true;
+    home[Z_AXIS] = true;
+  }
 
 	set_destination_to_current();
 
-	if (home_all || homeX || homeY) {
+	if (home[X_AXIS] || home[Y_AXIS]) {
 		// Raise Z before homing any other axes and z is not already high enough (never lower z)
 		destination[Z_AXIS] = LOGICAL_Z_POSITION(Z_HOMING_HEIGHT);
 		if (destination[Z_AXIS] > current_position[Z_AXIS]) {
@@ -1238,22 +1312,32 @@ inline void gcode_G28(const bool always_home_all) {
 
 			do_blocking_move_to_z(destination[Z_AXIS]);
 		}
-	}
 
-	// Home X
-	if (home_all || homeX) {
-		HOMEAXIS(X);
-	}
+    if (home[X_AXIS] && home[Y_AXIS])
+    {
+      quick_home_xy();
+    }
+    else
+    {
+      // Home X
+      if (home[X_AXIS])
+      {
+        homeaxis(X_AXIS);
+      }
 
-	// Home Y
-	if (home_all || homeY) {
-		HOMEAXIS(Y);
+      // Home Y
+      if (home[Y_AXIS])
+      {
+        homeaxis(Y_AXIS);
+      }
+    }
 	}
 
 	// Home Z last if homing towards the bed
-	if (home_all || homeZ) {
-		HOMEAXIS(Z);
-	} // home_all || homeZ
+  if (home[Z_AXIS])
+  {
+    homeaxis(Z_AXIS);
+	}
 
 	SYNC_PLAN_POSITION_KINEMATIC();
 
@@ -1280,7 +1364,6 @@ inline void gcode_G92() {
 
 	LOOP_XYZE(i) {
 		if (parser.seenval(axis_codes[i])) {
-			const float p = current_position[i];
 			const float v = parser.value_axis_units((AxisEnum)i);
 
 			current_position[i] = v;
@@ -1288,7 +1371,7 @@ inline void gcode_G92() {
 			if (i != E_AXIS) {
 				didXYZ = true;
 
-				position_shift[i] += v - p; // Offset the coordinate space
+				position_shift[i] += v - current_position[i]; // Offset the coordinate space
 				update_software_endstops((AxisEnum)i);
 			}
 		}
@@ -1299,6 +1382,39 @@ inline void gcode_G92() {
 		sync_plan_position_e();
 
 	report_current_position();
+}
+
+template <typename T>
+class value_reset final
+{
+  T & __restrict m_Value;
+  const T m_OldValue;
+public:
+  value_reset(T & __restrict value, const T & __restrict new_value) : m_Value(value), m_OldValue(value)
+  {
+    m_Value = new_value;
+  }
+  ~value_reset()
+  {
+    m_Value = m_OldValue;
+  }
+};
+
+/**
+* G93: Reset E position and extrude.
+*/
+inline void gcode_G93() {
+  if (IsRunning())
+  {
+    current_position[E_AXIS] = 0.0f;
+    sync_plan_position_e();
+
+    report_current_position();
+
+    gcode_get_destination_e_absolute();
+
+    prepare_move_to_destination();
+  }
 }
 
 /**
@@ -1607,8 +1723,7 @@ inline void auto_report_temperatures() {
  *  P<index> Fan index, if more than one fan
  */
 inline void gcode_M106() {
-	uint16_t s = parser.ushortval('S', 255);
-	NOMORE(s, 255);
+	const uint8 s = parser.byteval('S', 255);
 	const uint8_t p = parser.byteval('P', 0);
 	if (p < FAN_COUNT) fanSpeeds[p] = s;
 }
@@ -1617,7 +1732,7 @@ inline void gcode_M106() {
  * M107: Fan Off
  */
 inline void gcode_M107() {
-	const uint16_t p = parser.ushortval('P');
+	const uint8 p = parser.byteval('P');
 	if (p < FAN_COUNT) fanSpeeds[p] = 0;
 }
 
@@ -2553,15 +2668,17 @@ void process_next_command() {
 
 		// G0, G1
 	case 0:
+    linear_move<Speed::Fastest>();
+    break;
 	case 1:
-		gcode_G0_G1();
+		linear_move<Speed::F_Value>();
 		break;
 
 		// G2, G3
-	case 2: // G2  - CW ARC
-	case 3: // G3  - CCW ARC
-		gcode_G2_G3(parser.codenum == 2);
-		break;
+	//case 2: // G2  - CW ARC
+	//case 3: // G3  - CCW ARC
+	//	gcode_G2_G3(parser.codenum == 2);
+	//	break;
 
 		// G4 Dwell
 	case 4:
@@ -2587,6 +2704,10 @@ void process_next_command() {
 	case 92: // G92
 		gcode_G92();
 		break;
+
+  case 93: // G93
+    gcode_G93();
+    break;
 	}
 			  break;
 
@@ -2936,7 +3057,8 @@ void set_current_from_steppers_for_axis(const AxisEnum axis) {
  *
  * Returns true if the caller didn't update current_position.
  */
-inline bool prepare_move_to_destination_cartesian() {
+bool prepare_move_to_destination_cartesian()
+{
 	// Do not use feedrate_percentage for E or Z only moves
 	if (current_position[X_AXIS] == destination[X_AXIS] && current_position[Y_AXIS] == destination[Y_AXIS])
 		line_to_destination();
@@ -2990,6 +3112,7 @@ void prepare_move_to_destination() {
  * larger segments will tend to be more efficient. Your slicer should have
  * options for G2/G3 arc generation. In future these options may be GCode tunable.
  */
+#if 0
 void plan_arc(
 	float logical[XYZE], // Destination position
 	float *offset,       // Center of rotation relative to current_position
@@ -3115,6 +3238,7 @@ void plan_arc(
 	// in any intermediate location.
 	set_current_to_destination();
 }
+#endif
 
 void plan_cubic_move(const float offset[4]) {
 	cubic_b_spline(current_position, destination, offset, MMS_SCALED(feedrate_mm_s), active_extruder);

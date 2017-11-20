@@ -26,8 +26,7 @@
  *
  * This file is part of the Arduino Sd2Card Library
  */
-#include "Marlin.h"
-#include <tuna.h>
+#import <tuna.h>
 
 #if ENABLED(SDSUPPORT)
 #include "Sd2Card.h"

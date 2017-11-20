@@ -34,7 +34,7 @@
 #include "types.h"
 #include "enum.h"
 
-class CardReader {
+class CardReader final {
 public:
   CardReader();
 

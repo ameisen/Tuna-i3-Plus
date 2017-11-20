@@ -34,7 +34,6 @@
 
 #include "types.h"
 #include "enum.h"
-#include "Marlin.h"
 
 #if HAS_ABL
   #include "vector_3.h"
@@ -72,25 +71,26 @@ enum BlockFlag : uint8_t {
  * The "nominal" values are as-specified by gcode, and
  * may never actually be reached due to acceleration limits.
  */
-typedef struct {
+struct block_t final
+{
 
-  uint8_t flag;                             // Block flags (See BlockFlag enum above)
+  uint8 flag;                             // Block flags (See BlockFlag enum above)
 
-  unsigned char active_extruder;            // The extruder to move (if E move)
+  uint8 active_extruder;            // The extruder to move (if E move)
 
   // Fields used by the Bresenham algorithm for tracing the line
-  int32_t steps[NUM_AXIS];                  // Step count along each axis
-  uint32_t step_event_count;                // The number of step events required to complete this block
+  int24 steps[NUM_AXIS];                  // Step count along each axis
+  uint24 step_event_count;                // The number of step events required to complete this block
 
   #if ENABLED(MIXING_EXTRUDER)
     uint32_t mix_event_count[MIXING_STEPPERS]; // Scaled step_event_count for the mixing steppers
   #endif
 
-  int32_t accelerate_until,                 // The index of the step event on which to stop acceleration
+  int24 accelerate_until,                 // The index of the step event on which to stop acceleration
           decelerate_after,                 // The index of the step event on which to start decelerating
           acceleration_rate;                // The acceleration rate used for acceleration calculation
 
-  uint8_t direction_bits;                   // The direction bit set for this block (refers to *_DIRECTION_BIT in config.h)
+  uint8 direction_bits;                   // The direction bit set for this block (refers to *_DIRECTION_BIT in config.h)
 
   // Advance extrusion
   #if ENABLED(LIN_ADVANCE)
@@ -111,26 +111,26 @@ typedef struct {
         acceleration;                       // acceleration mm/sec^2
 
   // Settings for the trapezoid generator
-  uint32_t nominal_rate,                    // The nominal step rate for this block in step_events/sec
+  uint24 nominal_rate,                    // The nominal step rate for this block in step_events/sec
            initial_rate,                    // The jerk-adjusted step rate at start of block
            final_rate,                      // The minimal rate at exit
            acceleration_steps_per_s2;       // acceleration steps/sec^2
 
   #if FAN_COUNT > 0
-    uint16_t fan_speed[FAN_COUNT];
+    uint8 fan_speed[FAN_COUNT];
   #endif
 
   #if ENABLED(BARICUDA)
     uint32_t valve_pressure, e_to_p_pressure;
   #endif
 
-  uint32_t segment_time;
+  uint32 segment_time;
 
-} block_t;
+};
 
 #define BLOCK_MOD(n) ((n)&(BLOCK_BUFFER_SIZE-1))
 
-class Planner {
+class Planner final {
 
   public:
 
@@ -160,7 +160,7 @@ class Planner {
     int8_t preheat_preset2_bed;
     int8_t preheat_preset3_bed;
     
-    static uint32_t max_acceleration_steps_per_s2[XYZE_N],
+    static uint32 max_acceleration_steps_per_s2[XYZE_N],
                     max_acceleration_mm_per_s2[XYZE_N]; // Use M201 to override by software
 
     static millis_t min_segment_time;
@@ -192,7 +192,7 @@ class Planner {
      * The current position of the tool in absolute steps
      * Recalculated if any axis_steps_per_mm are changed by gcode
      */
-    static long position[NUM_AXIS];
+    static int24 position[NUM_AXIS];
 
     /**
      * Speed of previous path line segment
@@ -276,9 +276,9 @@ class Planner {
 
     #else
 
-      #define ARG_X const float &lx
-      #define ARG_Y const float &ly
-      #define ARG_Z const float &lz
+      #define ARG_X const float & __restrict lx
+      #define ARG_Y const float & __restrict ly
+      #define ARG_Z const float & __restrict lz
 
     #endif
 
@@ -293,9 +293,9 @@ class Planner {
      *  fr_mm_s   - (target) speed of the move (mm/s)
      *  extruder  - target extruder
      */
-    static void _buffer_line(const float &a, const float &b, const float &c, const float &e, float fr_mm_s, const uint8_t extruder);
+    static void _buffer_line(const float & __restrict a, const float & __restrict b, const float & __restrict c, const float & __restrict e, float fr_mm_s, const uint8_t extruder);
 
-    static void _set_position_mm(const float &a, const float &b, const float &c, const float &e);
+    static void _set_position_mm(const float & __restrict a, const float & __restrict b, const float & __restrict c, const float & __restrict e);
 
     /**
      * Add a new linear movement to the buffer.
@@ -309,7 +309,7 @@ class Planner {
      *  fr_mm_s      - (target) speed of the move (mm/s)
      *  extruder     - target extruder
      */
-    static FORCE_INLINE void buffer_line(ARG_X, ARG_Y, ARG_Z, const float &e, const float &fr_mm_s, const uint8_t extruder) {
+    static FORCE_INLINE void buffer_line(ARG_X, ARG_Y, ARG_Z, const float & __restrict e, const float & __restrict fr_mm_s, const uint8_t extruder) {
       #if PLANNER_LEVELING && IS_CARTESIAN
         apply_leveling(lx, ly, lz);
       #endif
@@ -325,18 +325,18 @@ class Planner {
      *  fr_mm_s  - (target) speed of the move (mm/s)
      *  extruder - target extruder
      */
-    static FORCE_INLINE void buffer_line_kinematic(const float ltarget[XYZE], const float &fr_mm_s, const uint8_t extruder) {
+    static FORCE_INLINE void buffer_line_kinematic(const float ltarget[XYZE], const float & __restrict fr_mm_s, const uint8_t extruder) {
       #if PLANNER_LEVELING
         float lpos[XYZ] = { ltarget[X_AXIS], ltarget[Y_AXIS], ltarget[Z_AXIS] };
         apply_leveling(lpos);
       #else
-        const float * const lpos = ltarget;
+        const float * __restrict const lpos = ltarget;
       #endif
       #if IS_KINEMATIC
         inverse_kinematics(lpos);
         _buffer_line(delta[A_AXIS], delta[B_AXIS], delta[C_AXIS], ltarget[E_AXIS], fr_mm_s, extruder);
       #else
-        _buffer_line(lpos[X_AXIS], lpos[Y_AXIS], lpos[Z_AXIS], ltarget[E_AXIS], fr_mm_s, extruder);
+        _buffer_line(lpos[X_AXIS], lpos[Y_AXIS], lpos[Z_AXIS], lpos[E_AXIS], fr_mm_s, extruder);
       #endif
     }
 
@@ -349,16 +349,16 @@ class Planner {
      *
      * Clears previous speed values.
      */
-    static FORCE_INLINE void set_position_mm(ARG_X, ARG_Y, ARG_Z, const float &e) {
+    static FORCE_INLINE void set_position_mm(ARG_X, ARG_Y, ARG_Z, const float & __restrict e) {
       #if PLANNER_LEVELING && IS_CARTESIAN
         apply_leveling(lx, ly, lz);
       #endif
       _set_position_mm(lx, ly, lz, e);
     }
     static void set_position_mm_kinematic(const float position[NUM_AXIS]);
-    static void set_position_mm(const AxisEnum axis, const float &v);
-    static FORCE_INLINE void set_z_position_mm(const float &z) { set_position_mm(Z_AXIS, z); }
-    static FORCE_INLINE void set_e_position_mm(const float &e) { set_position_mm(AxisEnum(E_AXIS), e); }
+    static void set_position_mm(const AxisEnum axis, const float & __restrict v);
+    static FORCE_INLINE void set_z_position_mm(const float & __restrict z) { set_position_mm(Z_AXIS, z); }
+    static FORCE_INLINE void set_e_position_mm(const float & __restrict e) { set_position_mm(AxisEnum(E_AXIS), e); }
 
     /**
      * Sync from the stepper positions. (e.g., after an interrupted move)
@@ -383,9 +383,9 @@ class Planner {
      * The current block. nullptr if the buffer is empty.
      * This also marks the block as busy.
      */
-    static block_t* get_current_block() {
+    static block_t * __restrict get_current_block() {
       if (blocks_queued()) {
-        block_t* block = &block_buffer[block_buffer_tail];
+        block_t * __restrict block = &block_buffer[block_buffer_tail];
         #if ENABLED(ULTRA_LCD)
           block_buffer_runtime_us -= block->segment_time; //We can't be sure how long an active block will take, so don't count it.
         #endif
@@ -442,7 +442,7 @@ class Planner {
      * Calculate the distance (not time) it takes to accelerate
      * from initial_rate to target_rate using the given acceleration:
      */
-    static float estimate_acceleration_distance(const float &initial_rate, const float &target_rate, const float &accel) {
+    static float estimate_acceleration_distance(const float & __restrict initial_rate, const float & __restrict target_rate, const float & __restrict accel) {
       if (accel == 0) return 0; // accel was 0, set acceleration distance to 0
       return (sq(target_rate) - sq(initial_rate)) / (accel * 2);
     }
@@ -455,7 +455,7 @@ class Planner {
      * This is used to compute the intersection point between acceleration and deceleration
      * in cases where the "trapezoid" has no plateau (i.e., never reaches maximum speed)
      */
-    static float intersection_distance(const float &initial_rate, const float &final_rate, const float &accel, const float &distance) {
+    static float intersection_distance(const float & __restrict initial_rate, const float & __restrict final_rate, const float & __restrict accel, const float & __restrict distance) {
       if (accel == 0) return 0; // accel was 0, set intersection distance to 0
       return (accel * 2 * distance - sq(initial_rate) + sq(final_rate)) / (accel * 4);
     }
@@ -465,14 +465,14 @@ class Planner {
      * to reach 'target_velocity' using 'acceleration' within a given
      * 'distance'.
      */
-    static float max_allowable_speed(const float &accel, const float &target_velocity, const float &distance) {
+    static float max_allowable_speed(const float & __restrict accel, const float & __restrict target_velocity, const float & __restrict distance) {
       return SQRT(sq(target_velocity) - 2 * accel * distance);
     }
 
-    static void calculate_trapezoid_for_block(block_t* const block, const float &entry_factor, const float &exit_factor);
+    static void calculate_trapezoid_for_block(block_t * __restrict const block, const float & __restrict entry_factor, const float & __restrict exit_factor);
 
-    static void reverse_pass_kernel(block_t* const current, const block_t *next);
-    static void forward_pass_kernel(const block_t *previous, block_t* const current);
+    static void reverse_pass_kernel(block_t * __restrict const current, const block_t * __restrict next);
+    static void forward_pass_kernel(const block_t * __restrict previous, block_t * __restrict const current);
 
     static void reverse_pass();
     static void forward_pass();

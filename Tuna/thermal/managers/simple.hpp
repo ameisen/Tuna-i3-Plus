@@ -1,8 +1,6 @@
 #pragma once
 
-#include <tuna.h>
-
-#include "thermal/thermal.hpp"
+#import "thermal/thermal.hpp"
 
 namespace Tuna::Thermal::Manager
 {
@@ -10,11 +8,11 @@ namespace Tuna::Thermal::Manager
   struct Simple final : ce_only
   {
     static bool calibrate(arg_type<temp_t> target);
-    static bool calibrating();
+    static __pure bool calibrating();
     static uint8 get_power(arg_type<temp_t> current, arg_type<temp_t> target);
-    static void debug_dump();
+    static __pure void debug_dump();
 
-    static pair<float, float> GetCalibration();
+    static __pure pair<float, float> GetCalibration();
     static void SetCalibration(arg_type<pair<float, float>> val);
   };
 }

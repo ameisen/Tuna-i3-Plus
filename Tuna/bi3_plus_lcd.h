@@ -1,9 +1,6 @@
 #ifndef BI3PLUSLCD_H
 #define BI3PLUSLCD_H
 
-#include "Marlin.h"
-#include <tuna.h>
-
 namespace Tuna::lcd
 {
 	enum class Page : uint8

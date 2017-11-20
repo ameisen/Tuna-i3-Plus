@@ -20,7 +20,8 @@
  *
  */
 
-#include "Marlin.h"
+#import <tuna.h>
+
 #include "utility.h"
 #include "thermal/thermal.hpp"
 

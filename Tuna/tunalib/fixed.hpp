@@ -1,6 +1,6 @@
 #pragma once
 
-#include "tunalib/utils.hpp"
+#import "tunalib/utils.hpp"
 
 namespace Tuna
 {

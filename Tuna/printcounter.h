@@ -41,7 +41,7 @@ struct printStatistics {    // 16 bytes (20 with real doubles)
   double   filamentUsed;    // Accumulated filament consumed in mm
 };
 
-class PrintCounter: public Stopwatch {
+class PrintCounter final : public Stopwatch {
   private:
     typedef Stopwatch super;
 

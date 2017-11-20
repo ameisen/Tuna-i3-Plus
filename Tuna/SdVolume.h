@@ -26,7 +26,6 @@
  *
  * This file is part of the Arduino Sd2Card Library
  */
-#include "Marlin.h"
 #if ENABLED(SDSUPPORT)
 #ifndef SdVolume_h
 #define SdVolume_h
@@ -66,7 +65,7 @@ union cache_t {
  * \class SdVolume
  * \brief Access FAT16 and FAT32 volumes on SD and SDHC cards.
  */
-class SdVolume {
+class SdVolume final {
  public:
   /** Create an instance of SdVolume */
   SdVolume() : fatType_(0) {}

@@ -379,6 +379,13 @@ if (build_archive)
 	end
 	
 	$source_files.each { |handler, files|
+		# print binary sizes for each object File
+		#files.each { |src|
+		#	puttabs(src.path, 1);
+		#	object_path = "\"" + src.object_path + "\""
+		#	puttabs(`avr-size #{object_path}`, 2)
+		#}
+		# ~~~
 		handler.archive(archive_path, files)
 	}
 	archiving_time = Time.now - archiving_time

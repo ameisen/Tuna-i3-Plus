@@ -77,11 +77,11 @@ extern Stepper stepper;
                  "r26" \
                )
 
-class Stepper {
+class Stepper final {
 
   public:
 
-    static block_t* current_block;  // A pointer to the block currently being traced
+    static block_t * __restrict current_block;  // A pointer to the block currently being traced
 
     #if ENABLED(ABORT_ON_ENDSTOP_HIT_FEATURE_ENABLED)
       static bool abort_on_endstop_hit;
@@ -108,8 +108,8 @@ class Stepper {
     #endif
 
     // Counter variables for the Bresenham line tracer
-    static long counter_X, counter_Y, counter_Z, counter_E;
-    static volatile uint32_t step_events_completed; // The number of step events executed in the current block
+    static int24 counter_X, counter_Y, counter_Z, counter_E;
+    static volatile uint24 step_events_completed; // The number of step events executed in the current block
 
     #if ENABLED(ADVANCE) || ENABLED(LIN_ADVANCE)
       static uint16_t nextMainISR, nextAdvanceISR, eISR_Rate;

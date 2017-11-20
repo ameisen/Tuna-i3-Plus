@@ -1,4 +1,4 @@
-#include <tuna.h>
+#import <tuna.h>
 
 /* Taken from Arduino wiring.c, reworked for 24 and 16-bit usage. */
 extern "C" volatile uint32 timer0_millis;

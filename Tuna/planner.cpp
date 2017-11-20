@@ -58,14 +58,14 @@
  *
  */
 
+#import <tuna.h>
+
 #include "planner.h"
 #include "bi3_plus_lcd.h"
 #include "stepper.h"
 #include "thermal/thermal.hpp"
 #include "language.h"
 #include "gcode.h"
-
-#include "Marlin.h"
 
 #if ENABLED(MESH_BED_LEVELING)
   #include "mesh_bed_leveling.h"
@@ -102,7 +102,7 @@ int8_t preheat_preset3_bed;
   uint8_t Planner::last_extruder = 0;     // Respond to extruder change
 #endif
 
-uint32_t Planner::max_acceleration_steps_per_s2[XYZE_N],
+uint32 Planner::max_acceleration_steps_per_s2[XYZE_N],
          Planner::max_acceleration_mm_per_s2[XYZE_N]; // Use M201 to override by software
 
 millis_t Planner::min_segment_time;
@@ -135,7 +135,7 @@ float Planner::min_feedrate_mm_s,
 
 // private:
 
-long Planner::position[NUM_AXIS] = { 0 };
+int24 Planner::position[NUM_AXIS] = { 0 };
 
 uint32_t Planner::cutoff_long;
 
@@ -188,7 +188,7 @@ void Planner::init() {
  * Calculate trapezoid parameters, multiplying the entry- and exit-speeds
  * by the provided factors.
  */
-void Planner::calculate_trapezoid_for_block(block_t* const block, const float &entry_factor, const float &exit_factor) {
+void Planner::calculate_trapezoid_for_block(block_t * __restrict const block, const float & __restrict entry_factor, const float & __restrict exit_factor) {
   uint32_t initial_rate = CEIL(block->nominal_rate * entry_factor),
            final_rate = CEIL(block->nominal_rate * exit_factor); // (steps per second)
 
@@ -238,7 +238,7 @@ void Planner::calculate_trapezoid_for_block(block_t* const block, const float &e
 
 
 // The kernel called by recalculate() when scanning the plan from last to first entry.
-void Planner::reverse_pass_kernel(block_t* const current, const block_t *next) {
+void Planner::reverse_pass_kernel(block_t * __restrict const current, const block_t * __restrict next) {
   if (!current || !next) return;
   // If entry speed is already at the maximum entry speed, no need to recheck. Block is cruising.
   // If not, block in state of acceleration or deceleration. Reset entry speed to maximum and
@@ -262,7 +262,7 @@ void Planner::reverse_pass() {
 
   if (movesplanned() > 3) {
 
-    block_t* block[3] = { nullptr, nullptr, nullptr };
+    block_t * __restrict block[3] = { nullptr, nullptr, nullptr };
 
     // Make a local copy of block_buffer_tail, because the interrupt can alter it
     // Is a critical section REALLY needed for a single byte change?
@@ -283,7 +283,7 @@ void Planner::reverse_pass() {
 }
 
 // The kernel called by recalculate() when scanning the plan from first to last entry.
-void Planner::forward_pass_kernel(const block_t* previous, block_t* const current) {
+void Planner::forward_pass_kernel(const block_t * __restrict previous, block_t * __restrict const current) {
   if (!previous) return;
 
   // If the previous block is an acceleration block, but it is not long enough to complete the
@@ -308,7 +308,7 @@ void Planner::forward_pass_kernel(const block_t* previous, block_t* const curren
  * Once in reverse and once forward. This implements the forward pass.
  */
 void Planner::forward_pass() {
-  block_t* block[3] = { nullptr, nullptr, nullptr };
+  block_t * __restrict block[3] = { nullptr, nullptr, nullptr };
 
   for (uint8_t b = block_buffer_tail; b != block_buffer_head; b = next_block_index(b)) {
     block[0] = block[1];
@@ -325,11 +325,11 @@ void Planner::forward_pass() {
  * recalculate() after updating the blocks.
  */
 void Planner::recalculate_trapezoids() {
-  int8_t block_index = block_buffer_tail;
-  block_t *current, *next = nullptr;
+  uint8 block_index = block_buffer_tail;
+  block_t * __restrict next = nullptr;
 
   while (block_index != block_buffer_head) {
-    current = next;
+    block_t * __restrict current = next;
     next = &block_buffer[block_index];
     if (current) {
       // Recalculate if current block entry or exit junction speed has changed.
@@ -391,9 +391,9 @@ void Planner::recalculate() {
 
     float high = 0.0;
     for (uint8_t b = block_buffer_tail; b != block_buffer_head; b = next_block_index(b)) {
-      block_t* block = &block_buffer[b];
-      if (block->steps[X_AXIS] || block->steps[Y_AXIS] || block->steps[Z_AXIS]) {
-        float se = (float)block->steps[E_AXIS] / block->step_event_count * block->nominal_speed; // mm/sec;
+      const block_t & __restrict block = block_buffer[b];
+      if (block.steps[X_AXIS] || block.steps[Y_AXIS] || block.steps[Z_AXIS]) {
+        float se = (float)block.steps[E_AXIS] / block.step_event_count * block.nominal_speed; // mm/sec;
         NOLESS(high, se);
       }
     }
@@ -433,8 +433,6 @@ void Planner::check_axes_activity() {
       for (uint8_t i = 0; i < FAN_COUNT; i++) tail_fan_speed[i] = block_buffer[block_buffer_tail].fan_speed[i];
     #endif
 
-    block_t* block;
-
     #if ENABLED(BARICUDA)
       block = &block_buffer[block_buffer_tail];
       #if HAS_HEATER_1
@@ -446,8 +444,8 @@ void Planner::check_axes_activity() {
     #endif
 
     for (uint8_t b = block_buffer_tail; b != block_buffer_head; b = next_block_index(b)) {
-      block = &block_buffer[b];
-      LOOP_XYZE(i) if (block->steps[i]) axis_active[i]++;
+      const block_t & __restrict block = block_buffer[b];
+      LOOP_XYZE(i) if (block.steps[i]) axis_active[i]++;
     }
   }
   #if ENABLED(DISABLE_X)
@@ -698,12 +696,12 @@ void Planner::check_axes_activity() {
  *  fr_mm_s     - (target) speed of the move
  *  extruder    - target extruder
  */
-void Planner::_buffer_line(const float &a, const float &b, const float &c, const float &e, float fr_mm_s, const uint8_t extruder) {
+void Planner::_buffer_line(const float & __restrict a, const float & __restrict b, const float & __restrict c, const float & __restrict e, float fr_mm_s, const uint8_t extruder) {
 
   // The target position of the tool in absolute steps
   // Calculate target position in absolute steps
   //this should be done after the wait, because otherwise a M92 code within the gcode disrupts this calculation somehow
-  const long target[XYZE] = {
+  const int24 target[XYZE] = {
     LROUND(a * axis_steps_per_mm[X_AXIS]),
     LROUND(b * axis_steps_per_mm[Y_AXIS]),
     LROUND(c * axis_steps_per_mm[Z_AXIS]),
@@ -722,7 +720,7 @@ void Planner::_buffer_line(const float &a, const float &b, const float &c, const
     const float mm_D_float = SQRT(sq(a - position_float[X_AXIS]) + sq(b - position_float[Y_AXIS]));
   #endif
 
-  const long da = target[X_AXIS] - position[X_AXIS],
+  const int24 da = target[X_AXIS] - position[X_AXIS],
              db = target[Y_AXIS] - position[Y_AXIS],
              dc = target[Z_AXIS] - position[Z_AXIS];
 
@@ -757,7 +755,7 @@ void Planner::_buffer_line(const float &a, const float &b, const float &c, const
     #endif
   }
 
-  long de = target[E_AXIS] - position[E_AXIS];
+  int24 de = target[E_AXIS] - position[E_AXIS];
 
   #if ENABLED(LIN_ADVANCE)
     float de_float = e - position_float[E_AXIS];
@@ -1463,14 +1461,14 @@ void Planner::_buffer_line(const float &a, const float &b, const float &c, const
  * On CORE machines stepper ABC will be translated from the given XYZ.
  */
 
-void Planner::_set_position_mm(const float &a, const float &b, const float &c, const float &e) {
+void Planner::_set_position_mm(const float & __restrict a, const float & __restrict b, const float & __restrict c, const float & __restrict e) {
   #if ENABLED(DISTINCT_E_FACTORS)
     #define _EINDEX (E_AXIS + active_extruder)
     last_extruder = active_extruder;
   #else
     #define _EINDEX E_AXIS
   #endif
-  long na = position[X_AXIS] = LROUND(a * axis_steps_per_mm[X_AXIS]),
+  int24 na = position[X_AXIS] = LROUND(a * axis_steps_per_mm[X_AXIS]),
        nb = position[Y_AXIS] = LROUND(b * axis_steps_per_mm[Y_AXIS]),
        nc = position[Z_AXIS] = LROUND(c * axis_steps_per_mm[Z_AXIS]),
        ne = position[E_AXIS] = LROUND(e * axis_steps_per_mm[_EINDEX]);
@@ -1490,7 +1488,7 @@ void Planner::set_position_mm_kinematic(const float position[NUM_AXIS]) {
     float lpos[XYZ] = { position[X_AXIS], position[Y_AXIS], position[Z_AXIS] };
     apply_leveling(lpos);
   #else
-    const float * const lpos = position;
+    const float * __restrict const lpos = position;
   #endif
   #if IS_KINEMATIC
     inverse_kinematics(lpos);
@@ -1519,7 +1517,7 @@ void Planner::sync_from_steppers() {
 /**
  * Setters for planner position (also setting stepper position).
  */
-void Planner::set_position_mm(const AxisEnum axis, const float &v) {
+void Planner::set_position_mm(const AxisEnum axis, const float & __restrict v) {
   #if ENABLED(DISTINCT_E_FACTORS)
     const uint8_t axis_index = axis + (axis == E_AXIS ? active_extruder : 0);
     last_extruder = active_extruder;

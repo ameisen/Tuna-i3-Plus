@@ -25,7 +25,7 @@
 
 #include "MarlinConfig.h"
 
-class MarlinSettings {
+class MarlinSettings final {
   public:
     MarlinSettings() { }
 

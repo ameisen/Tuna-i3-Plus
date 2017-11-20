@@ -1,18 +1,21 @@
-#include "bi3_plus_lcd.h"
+#import <tuna.h>
 
-#include "Marlin.h"
-#include "language.h"
-#include "cardreader.h"
-#include "thermal/thermal.hpp"
-#include "stepper.h"
-#include "configuration_store.h"
-#include "utility.h"
-#include "watchdog.h"
+#import "bi3_plus_lcd.h"
+
+#import "language.h"
+#import "cardreader.h"
+#import "thermal/thermal.hpp"
+#import "stepper.h"
+#import "configuration_store.h"
+#import "utility.h"
+#import "watchdog.h"
 
 #if ENABLED(PRINTCOUNTER)
-# include "printcounter.h"
-# include "duration_t.h"
+#import "printcounter.h"
+#import "duration_t.h"
 #endif
+
+#import "Tuna_VM.hpp"
 
 using namespace Tuna::utils;
 
@@ -105,7 +108,7 @@ namespace Tuna::lcd
 			const uint16 target_bed_temperature = Temperature::target_temperature_bed.rounded_to<uint16>();
 			const uint16 bed_temperature = Temperature::degBed().rounded_to<uint16>();
 
-			const uint16_t fan_speed = (fanSpeeds[0] * 100) / 256;
+			const uint8 fan_speed = (fanSpeeds[0] * 100) / 256;
 
 			const auto card_progress = card.percentDone();
 
@@ -124,8 +127,8 @@ namespace Tuna::lcd
 				lo(target_bed_temperature),
 				hi(bed_temperature), //0x03 target bed temp
 				lo(bed_temperature),
-				hi(fan_speed), //0x04 fan speed
-				lo(fan_speed),
+				0, //0x04 fan speed
+				fan_speed,
 				0x00, //0x05 card progress
 				card.percentDone()
 			};
@@ -508,7 +511,7 @@ namespace Tuna::lcd
 			case 0x47: {//print config open OK
 				const uint16 hotend_target = uint16(Temperature::degTargetHotend());
 				const uint16 bed_target = uint16(Temperature::degTargetBed());
-				const int16 fan_speed = (fanSpeeds[0] * 100) / 256;
+				const uint8 fan_speed = (fanSpeeds[0] * 100) / 256;
 
 				const uint8 buffer[14] = {
 					0x5A,
@@ -523,8 +526,8 @@ namespace Tuna::lcd
 					lo(hotend_target),
 					hi(bed_target), //0x2D
 					lo(bed_target),
-					hi(fan_speed),//0x2E
-					lo(fan_speed)
+					0,//0x2E
+					fan_speed
 				};
 
 				serial<2>::write(buffer);

@@ -172,6 +172,9 @@
  * mat_end = E2END (0xFFF)
  *
  */
+
+#import <tuna.h>
+
 #include "configuration_store.h"
 
 // FIXME TODO TEMPORARY HACK
@@ -180,7 +183,6 @@ static const float z_float = 0.0f;
 
 MarlinSettings settings;
 
-#include "Marlin.h"
 #include "language.h"
 #include "endstops.h"
 #include "planner.h"

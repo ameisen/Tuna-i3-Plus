@@ -22,33 +22,33 @@
 #ifndef MARLIN_H
 #define MARLIN_H
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <inttypes.h>
+#import <math.h>
+#import <stdio.h>
+#import <stdlib.h>
+#import <string.h>
+#import <inttypes.h>
 
-#include <util/delay.h>
-#include <avr/pgmspace.h>
-#include <avr/eeprom.h>
-#include <avr/interrupt.h>
+#import <util/delay.h>
+#import <avr/pgmspace.h>
+#import <avr/eeprom.h>
+#import <avr/interrupt.h>
 
-#include "MarlinConfig.h"
+#import "MarlinConfig.h"
 
 #ifdef DEBUG_GCODE_PARSER
-  #include "gcode.h"
+#import "gcode.h"
 #endif
 
-#include "enum.h"
-#include "types.h"
-#include "fastio.h"
-#include "utility.h"
-#include "serial.h"
+#import "enum.h"
+#import "types.h"
+#import "fastio.h"
+#import "utility.h"
+#import "serial.h"
 
 #if ENABLED(PRINTCOUNTER)
-  #include "printcounter.h"
+# import "printcounter.h"
 #else
-  #include "stopwatch.h"
+# import "stopwatch.h"
 #endif
 
 void idle(
@@ -58,6 +58,19 @@ void idle(
 );
 
 void manage_inactivity(bool ignore_stepper_queue = false);
+
+enum class Speed : uint8
+{
+  Fastest,
+  F_Value
+};
+
+enum class MovementMode : uint8
+{
+  Normal, // whatever the VM configuration is.
+  Relative,
+  Absolute
+};
 
 #if ENABLED(DUAL_X_CARRIAGE) || ENABLED(DUAL_NOZZLE_DUPLICATION_MODE)
   extern bool extruder_duplication_enabled;
@@ -225,6 +238,14 @@ extern bool axis_known_position[XYZ];
 extern bool axis_homed[XYZ];
 extern volatile bool wait_for_heatup;
 
+extern bool relative_mode;
+extern bool prepare_move_to_destination_cartesian();
+extern void set_current_to_destination();
+extern void set_destination_to_current();
+extern float current_position[XYZE];
+extern float destination[XYZE];
+extern float feedrate_mm_s;
+
 #if HAS_RESUME_CONTINUE
   extern volatile bool wait_for_user;
 #endif
@@ -354,7 +375,7 @@ extern float soft_endstop_min[XYZ], soft_endstop_max[XYZ];
 #endif
 
 #if FAN_COUNT > 0
-  extern int16_t fanSpeeds[FAN_COUNT];
+  extern uint8 fanSpeeds[FAN_COUNT];
   #if ENABLED(PROBING_FANS_OFF)
     extern bool fans_paused;
     extern int16_t paused_fanSpeeds[FAN_COUNT];

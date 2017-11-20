@@ -27,7 +27,6 @@
  * This file is part of the Arduino Sd2Card Library
  */
 
-#include "Marlin.h"
 #if ENABLED(SDSUPPORT)
 
 #ifndef Sd2Card_h
@@ -161,7 +160,7 @@ uint8_t const SD_CARD_TYPE_SDHC = 3;
  * \class Sd2Card
  * \brief Raw access to SD and SDHC flash memory cards.
  */
-class Sd2Card {
+class Sd2Card final {
  public:
   /** Construct an instance of Sd2Card. */
   Sd2Card() : errorCode_(SD_CARD_ERROR_INIT_NOT_CALLED), type_(0) {}

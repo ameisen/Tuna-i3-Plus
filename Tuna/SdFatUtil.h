@@ -29,7 +29,6 @@
 #ifndef SdFatUtil_h
 #define SdFatUtil_h
 
-#include "Marlin.h"
 #if ENABLED(SDSUPPORT)
 
 /**

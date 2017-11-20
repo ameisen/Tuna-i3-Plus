@@ -20,13 +20,13 @@
  *
  */
 
+#import <tuna.h>
+
 #include "cardreader.h"
 
 #include "bi3_plus_lcd.h"
 #include "stepper.h"
 #include "language.h"
-
-#include "Marlin.h"
 
 #if ENABLED(SDSUPPORT)
 

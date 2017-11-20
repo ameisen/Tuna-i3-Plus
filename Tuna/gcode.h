@@ -60,7 +60,7 @@
  *    - Parameter has value
  *    - Parameter value in different units and types
  */
-class GCodeParser {
+class GCodeParser final {
 
 private:
   static char *value_ptr;           // Set by seen, used to fetch the value

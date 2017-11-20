@@ -294,7 +294,7 @@
 // When temperature exceeds max temp, your heater will be switched off.
 // This feature exists to protect your hotend from overheating accidentally, but *NOT* from thermistor short/failure!
 // You should use MINTEMP for thermistor short/failure protection.
-#define HEATER_0_MAXTEMP 260
+#define HEATER_0_MAXTEMP 280
 #define HEATER_1_MAXTEMP 275
 #define HEATER_2_MAXTEMP 275
 #define HEATER_3_MAXTEMP 275
@@ -397,8 +397,8 @@
 
 // This option prevents a single extrusion longer than EXTRUDE_MAXLENGTH.
 // Note that for Bowden Extruders a too-small value here may prevent loading.
-#define PREVENT_LENGTHY_EXTRUDE
-#define EXTRUDE_MAXLENGTH 200
+//#define PREVENT_LENGTHY_EXTRUDE
+//#define EXTRUDE_MAXLENGTH 200
 
 //===========================================================================
 //======================== Thermal Runaway Protection =======================
@@ -509,7 +509,7 @@
  * Override with M203
  *                                      X, Y, Z, E0 [, E1[, E2[, E3[, E4]]]]
  */
-#define DEFAULT_MAX_FEEDRATE          { 450, 450, 5, 25 }
+#define DEFAULT_MAX_FEEDRATE          { 700, 450, 30, 225 }
 
 /**
  * Default Max Acceleration (change/s) change = mm/s
@@ -517,7 +517,7 @@
  * Override with M201
  *                                      X, Y, Z, E0 [, E1[, E2[, E3[, E4]]]]
  */
-#define DEFAULT_MAX_ACCELERATION      { 3000, 3000, 100, 3000 }
+#define DEFAULT_MAX_ACCELERATION      { 4000, 3000, 400, 4000 }
 
 /**
  * Default Acceleration (change/s) change = mm/s
@@ -528,8 +528,8 @@
  *   M204 T    Travel Acceleration
  */
 #define DEFAULT_ACCELERATION          800    // X, Y, Z and E acceleration for printing moves
-#define DEFAULT_RETRACT_ACCELERATION  800    // E acceleration for retracts
-#define DEFAULT_TRAVEL_ACCELERATION   800    // X, Y, Z acceleration for travel (non printing) moves
+#define DEFAULT_RETRACT_ACCELERATION  1200    // E acceleration for retracts
+#define DEFAULT_TRAVEL_ACCELERATION   1200    // X, Y, Z acceleration for travel (non printing) moves
 
 /**
  * Default Jerk (mm/s)
@@ -539,10 +539,10 @@
  * When changing speed and direction, if the difference is less than the
  * value set here, it may happen instantaneously.
  */
-#define DEFAULT_XJERK                  8.0 //10.0
+#define DEFAULT_XJERK                  18.0 //10.0
 #define DEFAULT_YJERK                  8.0 //10.0
-#define DEFAULT_ZJERK                  0.4
-#define DEFAULT_EJERK                  1.0
+#define DEFAULT_ZJERK                  2
+#define DEFAULT_EJERK                  35.0
 
 /**
 * Default Preheating Presets
@@ -970,8 +970,10 @@
 #endif
 
 // Homing speeds (mm/m)
-#define HOMING_FEEDRATE_XY (50*60)
-#define HOMING_FEEDRATE_Z  (4*60)
+// #define DEFAULT_MAX_FEEDRATE          { 700, 450, 30, 225 }
+#define HOMING_FEEDRATE_X (700 / 8)
+#define HOMING_FEEDRATE_Y (450 / 8)
+#define HOMING_FEEDRATE_Z  (30)
 
 //=============================================================================
 //============================= Additional Features ===========================

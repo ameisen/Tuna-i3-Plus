@@ -44,7 +44,8 @@
 /* The timer calculations of this module informed by the 'RepRap cartesian firmware' by Zack Smith
    and Philipp Tiefenbacher. */
 
-#include "Marlin.h"
+#import <tuna.h>
+
 #include "stepper.h"
 #include "endstops.h"
 #include "planner.h"
@@ -62,7 +63,7 @@ Stepper stepper; // Singleton
 
 // public:
 
-block_t* Stepper::current_block = nullptr;  // A pointer to the block currently being traced
+block_t * __restrict Stepper::current_block = nullptr;  // A pointer to the block currently being traced
 
 #if ENABLED(ABORT_ON_ENDSTOP_HIT_FEATURE_ENABLED)
   bool Stepper::abort_on_endstop_hit = false;
@@ -86,12 +87,12 @@ uint16_t Stepper::cleaning_buffer_counter = 0;
   bool Stepper::locked_z2_motor = false;
 #endif
 
-long Stepper::counter_X = 0,
+int24 Stepper::counter_X = 0,
      Stepper::counter_Y = 0,
      Stepper::counter_Z = 0,
      Stepper::counter_E = 0;
 
-volatile uint32_t Stepper::step_events_completed = 0; // The number of step events executed in the current block
+volatile uint24 Stepper::step_events_completed = 0; // The number of step events executed in the current block
 
 #if ENABLED(ADVANCE) || ENABLED(LIN_ADVANCE)
 
@@ -259,8 +260,8 @@ volatile long Stepper::endstops_trigsteps[XYZ];
                  : \
                  "=&r" (intRes) \
                  : \
-                 "d" (longIn1), \
-                 "d" (longIn2) \
+                 "d" ((long)longIn1), \
+                 "d" ((long)longIn2) \
                  : \
                  "r26" , "r27" \
                )
