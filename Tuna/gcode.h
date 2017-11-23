@@ -29,9 +29,9 @@
 #ifndef GCODE_H
 #define GCODE_H
 
-#import "enum.h"
-#import "types.h"
-#import "MarlinConfig.h"
+#include "enum.h"
+#include "types.h"
+#include "MarlinConfig.h"
 
 //#define DEBUG_GCODE_PARSER
 
@@ -39,9 +39,9 @@
   #if ENABLED(AUTO_BED_LEVELING_UBL)
     extern char* hex_address(const void * const w);
   #else
-    #import "hex_print_routines.h"
+    #include "hex_print_routines.h"
   #endif
-  #import "serial.h"
+  #include "serial.h"
 #endif
 
 #if ENABLED(INCH_MODE_SUPPORT)
@@ -201,6 +201,9 @@ public:
   inline static int32_t value_long() { return value_ptr ? strtol(value_ptr, nullptr, 10) : 0L; }
   inline static uint32_t value_ulong() { return value_ptr ? strtoul(value_ptr, nullptr, 10) : 0UL; }
 
+  inline static int24 value_i24() { return value_ptr ? int24(strtol(value_ptr, nullptr, 10)) : 0_i24; }
+  inline static uint24 value_u24() { return value_ptr ? uint24(strtoul(value_ptr, nullptr, 10)) : 0_u24; }
+
   // Code value for use as time
   FORCE_INLINE static millis_t value_millis() { return value_ulong(); }
   FORCE_INLINE static millis_t value_millis_from_seconds() { return value_float() * 1000UL; }
@@ -313,6 +316,8 @@ public:
   FORCE_INLINE static uint8_t  byteval(const char c, const uint8_t dval=0)    { return seenval(c) ? value_byte()         : dval; }
   FORCE_INLINE static int16_t  intval(const char c, const int16_t dval=0)     { return seenval(c) ? value_int()          : dval; }
   FORCE_INLINE static uint16_t ushortval(const char c, const uint16_t dval=0) { return seenval(c) ? value_ushort()       : dval; }
+  FORCE_INLINE static int24    i24val(const char c, const int24 dval = 0)     { return seenval(c) ? value_i24()          : dval; }
+  FORCE_INLINE static uint24   u24val(const char c, const uint24 dval = 0)    { return seenval(c) ? value_u24()          : dval; }
   FORCE_INLINE static int32_t  longval(const char c, const int32_t dval=0)    { return seenval(c) ? value_long()         : dval; }
   FORCE_INLINE static uint32_t ulongval(const char c, const uint32_t dval=0)  { return seenval(c) ? value_ulong()        : dval; }
   FORCE_INLINE static float    linearval(const char c, const float dval=0.0)  { return seenval(c) ? value_linear_units() : dval; }

@@ -20,10 +20,10 @@
  *
  */
 
-#import <tuna.h>
+#include <tuna.h>
 
-#import "printcounter.h"
-#import "duration_t.h"
+#include "printcounter.h"
+#include "duration_t.h"
 
 PrintCounter::PrintCounter(): super() {
   this->loadStats();

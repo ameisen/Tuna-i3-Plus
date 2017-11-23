@@ -24,13 +24,13 @@
  * endstops.cpp - A singleton object to manage endstops
  */
 
-#import <tuna.h>
+#include <tuna.h>
 
-#import "cardreader.h"
-#import "endstops.h"
-#import "thermal/thermal.hpp"
-#import "stepper.h"
-#import "bi3_plus_lcd.h"
+#include "cardreader.h"
+#include "endstops.h"
+#include "thermal/thermal.hpp"
+#include "stepper.h"
+#include "bi3_plus_lcd.h"
 
 // TEST_ENDSTOP: test the old and the current status of an endstop
 #define TEST_ENDSTOP(ENDSTOP) (TEST(current_endstop_bits & old_endstop_bits, ENDSTOP))

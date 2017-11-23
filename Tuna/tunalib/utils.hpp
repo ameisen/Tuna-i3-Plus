@@ -1,9 +1,9 @@
 #pragma once
 
-#import <stdint.h>
+#include <stdint.h>
 
-#import "HardwareSerial.h"
-#import "avr/interrupt.h"
+#include "HardwareSerial.h"
+#include "avr/interrupt.h"
 
 #undef min
 #undef max
@@ -1518,6 +1518,29 @@ namespace Tuna::utils
 
   template <typename T, typename U>
   constexpr inline pair<T, U> make_pair(const T & __restrict first, const U & __restrict second)
+  {
+    return { first, second };
+  }
+
+  template <typename T, typename U>
+  struct ref_pair final
+  {
+    const T & __restrict first;
+    const U & __restrict second;
+
+    constexpr ref_pair() = default;
+    constexpr ref_pair(const T & __restrict _1) : first(_1) {}
+    constexpr ref_pair(const T & __restrict _1, const U & __restrict _2) : first(_1), second(_2) {}
+    constexpr ref_pair(const ref_pair & __restrict other) : first(other.first), second(other.second) {}
+
+    constexpr operator bool() const __restrict
+    {
+      return bool(first);
+    }
+  };
+
+  template <typename T, typename U>
+  constexpr inline ref_pair<T, U> make_ref_pair(const T & __restrict first, const U & __restrict second)
   {
     return { first, second };
   }

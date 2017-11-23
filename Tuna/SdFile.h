@@ -31,8 +31,8 @@
  * \brief SdFile class
  */
 #if ENABLED(SDSUPPORT)
-#import "SdBaseFile.h"
-#import <Print.h>
+#include "SdBaseFile.h"
+#include <Print.h>
 #ifndef SdFile_h
 #define SdFile_h
 //------------------------------------------------------------------------------

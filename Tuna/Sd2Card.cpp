@@ -26,13 +26,13 @@
  *
  * This file is part of the Arduino Sd2Card Library
  */
-#import <tuna.h>
+#include <tuna.h>
 
 #if ENABLED(SDSUPPORT)
-#import "Sd2Card.h"
+#include "Sd2Card.h"
 
 #if ENABLED(USE_WATCHDOG)
-  #import "watchdog.h"
+  #include "watchdog.h"
 #endif
 
 //------------------------------------------------------------------------------

@@ -24,11 +24,11 @@
  * gcode.cpp - Parser for a GCode line, providing a parameter interface.
  */
 
-#import <tuna.h>
+#include <tuna.h>
 
-#import "gcode.h"
+#include "gcode.h"
 
-#import "language.h"
+#include "language.h"
 
 // Must be declared for allocation and to satisfy the linker
 // Zero values need no initialization.

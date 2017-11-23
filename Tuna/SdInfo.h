@@ -30,7 +30,7 @@
 
 #ifndef SdInfo_h
 #define SdInfo_h
-#import <stdint.h>
+#include <stdint.h>
 // Based on the document:
 //
 // SD Specifications

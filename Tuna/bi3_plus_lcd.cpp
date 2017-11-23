@@ -1,21 +1,21 @@
-#import <tuna.h>
+#include <tuna.h>
 
-#import "bi3_plus_lcd.h"
+#include "bi3_plus_lcd.h"
 
-#import "language.h"
-#import "cardreader.h"
-#import "thermal/thermal.hpp"
-#import "stepper.h"
-#import "configuration_store.h"
-#import "utility.h"
-#import "watchdog.h"
+#include "language.h"
+#include "cardreader.h"
+#include "thermal/thermal.hpp"
+#include "stepper.h"
+#include "configuration_store.h"
+#include "utility.h"
+#include "watchdog.h"
 
 #if ENABLED(PRINTCOUNTER)
-#import "printcounter.h"
-#import "duration_t.h"
+#include "printcounter.h"
+#include "duration_t.h"
 #endif
 
-#import "Tuna_VM.hpp"
+#include "Tuna_VM.hpp"
 
 using namespace Tuna::utils;
 
@@ -325,15 +325,15 @@ namespace Tuna::lcd
 					//Serial.println(thermalManager.target_temperature[0]);
 					//writing preset temps to lcd
 
-					const int16 preset_hotend[3] = {
-						planner.preheat_preset1_hotend,
-						planner.preheat_preset2_hotend,
-						planner.preheat_preset3_hotend
+					const uint16 preset_hotend[3] = {
+						Planner::preheat_presets[0].hotend,
+						Planner::preheat_presets[1].hotend,
+						Planner::preheat_presets[2].hotend
 					};
-					const int8 preset_bed[3] = {
-						planner.preheat_preset1_bed,
-						planner.preheat_preset2_bed,
-						planner.preheat_preset3_bed
+					const uint8 preset_bed[3] = {
+						Planner::preheat_presets[0].bed,
+						Planner::preheat_presets[1].bed,
+						Planner::preheat_presets[2].bed
 					};
 
 					const uint8 buffer[18] = {
@@ -387,38 +387,20 @@ namespace Tuna::lcd
 					{
 						break;
 					}
-					planner.preheat_preset1_hotend = int16{ buffer[7] } * 256_i16 + buffer[8];
-					planner.preheat_preset1_bed = (int8)buffer[10];
-					planner.preheat_preset2_hotend = int16{ buffer[11] } * 256_i16 + buffer[12];
-					planner.preheat_preset2_bed = int8{ buffer[14] };
-					planner.preheat_preset3_hotend = int16{ buffer[15] } * 256_i16 + buffer[16];
-					planner.preheat_preset3_bed = int8{ buffer[18] };
+					Planner::preheat_presets[0].hotend = uint16{ buffer[7] } * 256_i16 + buffer[8];
+					Planner::preheat_presets[0].bed = (uint8)buffer[10];
+					Planner::preheat_presets[1].hotend = uint16{ buffer[11] } * 256_i16 + buffer[12];
+					Planner::preheat_presets[1].bed = uint8{ buffer[14] };
+					Planner::preheat_presets[2].hotend = uint16{ buffer[15] } * 256_i16 + buffer[16];
+					Planner::preheat_presets[2].bed = uint8{ buffer[18] };
 					enqueue_and_echo_commands("M500"_p);
 
 					char command[20];
-					switch (lcdData)
-					{
-					case 1: {
-						//thermalManager.setTargetHotend(planner.preheat_preset1_hotend);
-						//Serial.println(thermalManager.target_temperature[0]);
-            sprintf_P(command, "M104 S%d"_p.c_str(), planner.preheat_preset1_hotend); //build heat up command (extruder)
-						enqueue_and_echo_command(command); //enque heat command
-            sprintf_P(command, "M140 S%d"_p.c_str(), planner.preheat_preset1_bed); //build heat up command (bed)
-						enqueue_and_echo_command(command); //enque heat command
-					} break;
-					case 2: {
-            sprintf_P(command, "M104 S%d"_p.c_str(), planner.preheat_preset2_hotend); //build heat up command (extruder)
-						enqueue_and_echo_command(command); //enque heat command
-            sprintf_P(command, "M140 S%d"_p.c_str(), planner.preheat_preset2_bed); //build heat up command (bed)
-						enqueue_and_echo_command(command); //enque heat command
-					} break;
-					case 3: {
-            sprintf_P(command, "M104 S%d"_p.c_str(), planner.preheat_preset3_hotend); //build heat up command (extruder)
-						enqueue_and_echo_command(command); //enque heat command
-						sprintf_P(command, "M140 S%d"_p.c_str(), planner.preheat_preset3_bed); //build heat up command (bed)
-						enqueue_and_echo_command(command); //enque heat command
-					} break;
-					}
+					const uint8 idx = lcdData - 1;
+					sprintf_P(command, "M104 S%u"_p.c_str(), Planner::preheat_presets[idx].hotend); //build heat up command (extruder)
+					enqueue_and_echo_command(command); //enque heat command
+					sprintf_P(command, "M140 S%u"_p.c_str(), Planner::preheat_presets[idx].bed); //build heat up command (bed)
+					enqueue_and_echo_command(command); //enque heat command
 				}
 			}
 			case 0x34: {//cool down OK
@@ -577,39 +559,39 @@ namespace Tuna::lcd
 				case 0: {
 					show_page(Page::Level1); //level 1
 					axis_homed[X_AXIS] = axis_homed[Y_AXIS] = axis_homed[Z_AXIS] = false;
-					enqueue_and_echo_commands("G90"_p); //absolute mode
+					//enqueue_and_echo_commands("G90"_p); //absolute mode
 					enqueue_and_echo_commands("G28"_p);//homeing
           opTime = chrono::time_ms<uint16>::get();
           opDuration = 200_ms16;
 					opMode = OpMode::Level_Init;
 				} break;
 				case 1: { //fl
-					enqueue_and_echo_commands("G1 Z10 F2000"_p);
-					enqueue_and_echo_commands("G1 X30 Y30 F6000"_p);
-					enqueue_and_echo_commands("G1 Z0 F1000"_p);
+					enqueue_and_echo_commands("G6 Z10"_p);
+					enqueue_and_echo_commands("G6 X30 Y30"_p);
+					enqueue_and_echo_commands("G6 Z0"_p);
 				} break;
 				case 2: { //rr
-					enqueue_and_echo_commands("G1 Z10 F2000"_p);
-					enqueue_and_echo_commands("G1 X170 Y170 F6000"_p);
-					enqueue_and_echo_commands("G1 Z0 F1000"_p);
+					enqueue_and_echo_commands("G6 Z10"_p);
+					enqueue_and_echo_commands("G6 X170 Y170"_p);
+					enqueue_and_echo_commands("G6 Z0"_p);
 				} break;
 				case 3: { //fr
-					enqueue_and_echo_commands("G1 Z10 F2000"_p);
-					enqueue_and_echo_commands("G1 X170 Y30 F6000"_p);
-					enqueue_and_echo_commands("G1 Z0 F1000"_p);
+					enqueue_and_echo_commands("G6 Z10"_p);
+					enqueue_and_echo_commands("G6 X170 Y30"_p);
+					enqueue_and_echo_commands("G6 Z0"_p);
 				} break;
 				case 4: { //rl
-					enqueue_and_echo_commands("G1 Z10 F2000"_p);
-					enqueue_and_echo_commands("G1 X30 Y170 F6000"_p);
-					enqueue_and_echo_commands("G1 Z0 F1000"_p);
+					enqueue_and_echo_commands("G6 Z10"_p);
+					enqueue_and_echo_commands("G6 X30 Y170"_p);
+					enqueue_and_echo_commands("G6 Z0"_p);
 				} break;
 				case 5: { //c
-					enqueue_and_echo_commands("G1 Z10 F2000"_p);
-					enqueue_and_echo_commands("G1 X100 Y100 F6000"_p);
-					enqueue_and_echo_commands("G1 Z0 F1000"_p);
+					enqueue_and_echo_commands("G6 Z10"_p);
+					enqueue_and_echo_commands("G6 X100 Y100"_p);
+					enqueue_and_echo_commands("G6 Z0"_p);
 				} break;
 				case 6: { //back
-					enqueue_and_echo_commands("G1 Z30 F2000"_p);
+					enqueue_and_echo_commands("G6 Z30"_p);
 					show_page(Page::Tool_Menu); //tool menu
 				} break;
 				}
@@ -675,48 +657,36 @@ namespace Tuna::lcd
 			}
 			case 0x00: {
 				clear_command_queue();
-				enqueue_and_echo_commands("G91"_p);
-				enqueue_and_echo_commands("G1 X5 F3000"_p);
-				enqueue_and_echo_commands("G90"_p);
+				enqueue_and_echo_commands("G8 X5"_p);
 				break;
 			}
 			case 0x01: {
 				clear_command_queue();
-				enqueue_and_echo_commands("G91"_p);
-				enqueue_and_echo_commands("G1 X-5 F3000"_p);
-				enqueue_and_echo_commands("G90"_p);
+				enqueue_and_echo_commands("G8 X-5"_p);
 
 				break;
 			}
 			case 0x02: {
 				clear_command_queue();
-				enqueue_and_echo_commands("G91"_p);
-				enqueue_and_echo_commands("G1 Y5 F3000"_p);
-				enqueue_and_echo_commands("G90"_p);
+				enqueue_and_echo_commands("G8 Y5"_p);
 
 				break;
 			}
 			case 0x03: {
 				clear_command_queue();
-				enqueue_and_echo_commands("G91"_p);
-				enqueue_and_echo_commands("G1 Y-5 F3000"_p);
-				enqueue_and_echo_commands("G90"_p);
+				enqueue_and_echo_commands("G8 Y-5"_p);
 
 				break;
 			}
 			case 0x04: {
 				clear_command_queue();
-				enqueue_and_echo_commands("G91"_p);
-				enqueue_and_echo_commands("G1 Z0.5 F3000"_p);
-				enqueue_and_echo_commands("G90"_p);
+				enqueue_and_echo_commands("G8 Z2"_p);
 
 				break;
 			}
 			case 0x05: {
 				clear_command_queue();
-				enqueue_and_echo_commands("G91"_p);
-				enqueue_and_echo_commands("G1 Z-0.5 F3000"_p);
-				enqueue_and_echo_commands("G90"_p);
+				enqueue_and_echo_commands("G8 Z-2"_p);
 
 				break;
 			}

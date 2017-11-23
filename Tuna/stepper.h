@@ -43,11 +43,11 @@
 #ifndef STEPPER_H
 #define STEPPER_H
 
-#import "planner.h"
-#import "speed_lookuptable.h"
-#import "stepper_indirection.h"
-#import "language.h"
-#import "types.h"
+#include "planner.h"
+#include "speed_lookuptable.h"
+#include "stepper_indirection.h"
+#include "language.h"
+#include "types.h"
 
 class Stepper;
 extern Stepper stepper;

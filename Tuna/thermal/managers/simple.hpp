@@ -1,6 +1,6 @@
 #pragma once
 
-#import "thermal/thermal.hpp"
+#include "thermal/thermal.hpp"
 
 namespace Tuna::Thermal::Manager
 {

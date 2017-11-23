@@ -23,18 +23,18 @@
 #ifndef MARLIN_CONFIG_H
 #define MARLIN_CONFIG_H
 
-#import "fastio.h"
-#import "macros.h"
-#import "Version.h"
-#import "Configuration.h"
-#import "Conditionals_LCD.h"
-#import "Configuration_adv.h"
-#import "pins.h"
+#include "fastio.h"
+#include "macros.h"
+#include "Version.h"
+#include "Configuration.h"
+#include "Conditionals_LCD.h"
+#include "Configuration_adv.h"
+#include "pins.h"
 #if !(defined(USBCON) || defined(ARDUINO_SERIAL))
   #define HardwareSerial_h // trick to disable the standard HWserial
 #endif
-#import "Arduino.h"
-#import "Conditionals_post.h"
-#import "SanityCheck.h"
+#include "Arduino.h"
+#include "Conditionals_post.h"
+#include "SanityCheck.h"
 
 #endif // MARLIN_CONFIG_H

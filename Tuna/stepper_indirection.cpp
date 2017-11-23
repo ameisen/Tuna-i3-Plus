@@ -31,17 +31,17 @@
  * Copyright (c) 2015 Dominik Wenger
  */
 
-#import "stepper_indirection.h"
+#include "stepper_indirection.h"
 
-#import "MarlinConfig.h"
+#include "MarlinConfig.h"
 
 //
 // TMC26X Driver objects and inits
 //
 #if ENABLED(HAVE_TMCDRIVER)
 
-  #import <SPI.h>
-  #import <TMC26XStepper.h>
+  #include <SPI.h>
+  #include <TMC26XStepper.h>
 
   #define _TMC_DEFINE(ST) TMC26XStepper stepper##ST(200, ST##_ENABLE_PIN, ST##_STEP_PIN, ST##_DIR_PIN, ST##_MAX_CURRENT, ST##_SENSE_RESISTOR)
 
@@ -127,9 +127,9 @@
 //
 #if ENABLED(HAVE_TMC2130)
 
-  #import <SPI.h>
-  #import <TMC2130Stepper.h>
-  #import "enum.h"
+  #include <SPI.h>
+  #include <TMC2130Stepper.h>
+  #include "enum.h"
 
   #define _TMC2130_DEFINE(ST) TMC2130Stepper stepper##ST(ST##_ENABLE_PIN, ST##_DIR_PIN, ST##_STEP_PIN, ST##_CS_PIN)
 
@@ -250,8 +250,8 @@
 //
 #if ENABLED(HAVE_L6470DRIVER)
 
-  #import <SPI.h>
-  #import <L6470.h>
+  #include <SPI.h>
+  #include <L6470.h>
 
   #define _L6470_DEFINE(ST) L6470 stepper##ST(ST##_ENABLE_PIN)
 

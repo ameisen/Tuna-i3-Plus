@@ -241,27 +241,27 @@
    *
    */
 
-#import <tuna.h>
+#include <tuna.h>
 
-#import "bi3_plus_lcd.h"
-#import "planner.h"
-#import "stepper.h"
-#import "endstops.h"
-#import "thermal/thermal.hpp"
-#import "cardreader.h"
-#import "configuration_store.h"
-#import "language.h"
-#import "pins_arduino.h"
-#import "math.h"
-#import "duration_t.h"
-#import "types.h"
-#import "bi3_plus_lcd.h"
-#import "gcode.h"
+#include "bi3_plus_lcd.h"
+#include "planner.h"
+#include "stepper.h"
+#include "endstops.h"
+#include "thermal/thermal.hpp"
+#include "cardreader.h"
+#include "configuration_store.h"
+#include "language.h"
+#include "pins_arduino.h"
+#include "math.h"
+#include "duration_t.h"
+#include "types.h"
+#include "bi3_plus_lcd.h"
+#include "gcode.h"
 
-#import "planner_bezier.h"
-#import "watchdog.h"
+#include "planner_bezier.h"
+#include "watchdog.h"
 
-#import "Tuna_VM.hpp"
+#include "Tuna_VM.hpp"
 
 CardReader card;
 
@@ -332,6 +332,7 @@ static const float homing_feedrate_mm_s[] PROGMEM = { HOMING_FEEDRATE_X, HOMING_
 FORCE_INLINE float homing_feedrate(const AxisEnum a) { return pgm_read_float(&homing_feedrate_mm_s[a]); }
 
 float feedrate_mm_s = MMM_TO_MMS(1500.0);
+float last_param_feedrate_mm_s = MMM_TO_MMS(1500.0);
 static float saved_feedrate_mm_s;
 int16_t feedrate_percentage = 100, saved_feedrate_percentage,
 flow_percentage[EXTRUDERS] = { 100 };
@@ -450,7 +451,7 @@ inline void sync_plan_position_e() { planner.set_e_position_mm(current_position[
 
 #define SYNC_PLAN_POSITION_KINEMATIC() sync_plan_position()
 
-#import "SdFatUtil.h"
+#include "SdFatUtil.h"
 int freeMemory() { return SdFatUtil::FreeRam(); }
 
 /**
@@ -915,13 +916,13 @@ void do_blocking_move_to(const float &lx, const float &ly, const float &lz, cons
 
 	feedrate_mm_s = old_feedrate_mm_s;
 }
-void do_blocking_move_to_x(const float &lx, const float &fr_mm_s/*=0.0*/) {
+void do_blocking_move_to_x(arg_type<float> lx, arg_type<float> fr_mm_s/*=0.0*/) {
 	do_blocking_move_to(lx, current_position[Y_AXIS], current_position[Z_AXIS], fr_mm_s);
 }
-void do_blocking_move_to_z(const float &lz, const float &fr_mm_s/*=0.0*/) {
+void do_blocking_move_to_z(arg_type<float> lz, arg_type<float> fr_mm_s/*=0.0*/) {
 	do_blocking_move_to(current_position[X_AXIS], current_position[Y_AXIS], lz, fr_mm_s);
 }
-void do_blocking_move_to_xy(const float &lx, const float &ly, const float &fr_mm_s/*=0.0*/) {
+void do_blocking_move_to_xy(arg_type<float> lx, arg_type<float> ly, arg_type<float> fr_mm_s/*=0.0*/) {
 	do_blocking_move_to(lx, ly, current_position[Z_AXIS], fr_mm_s);
 }
 
@@ -950,7 +951,7 @@ static void clean_up_after_endstop_or_probe_move() {
 /**
  * Home an individual linear axis
  */
-static void do_homing_move(const AxisEnum axis, const float distance, const float fr_mm_s = 0.0) {
+static void do_homing_move(const AxisEnum axis, arg_type<float> distance, arg_type<float> fr_mm_s = 0.0) {
 
 	// Tell the planner we're at Z=0
 	current_position[axis] = 0;
@@ -1043,28 +1044,61 @@ static void quick_home_xy() {
   *  - Set to current for missing axis codes
   *  - Set the feedrate, if included
   */
-template <bool param_feed = true>
+template <MovementMode move_mode = MovementMode::Normal, MovementType move_type = MovementType::Linear>
 void gcode_get_destination() {
-  float max_feedrate = 0.0f;
+  float max_feedrate = type_trait<float>::max;
+
+  constexpr const bool param_feed = (move_type == MovementType::Linear);
+
 	LOOP_XYZE(i) {
     if (parser.seen(axis_codes[i]))
     {
-      destination[i] = parser.value_axis_units((AxisEnum)i) + (axis_relative_modes[i] || relative_mode ? current_position[i] : 0);
+      const auto axis_move = parser.value_axis_units(AxisEnum(i));
+      if constexpr (move_mode == MovementMode::Normal)
+      {
+        destination[i] = axis_move + (axis_relative_modes[i] || relative_mode ? current_position[i] : 0);
+      }
+      else
+      {
+        if (AxisEnum(i) == E_AXIS)
+        {
+          destination[i] = axis_move + (axis_relative_modes[i] || relative_mode ? current_position[i] : 0);
+        }
+        else
+        {
+          if constexpr (move_mode == MovementMode::Absolute)
+          {
+            destination[i] = axis_move;
+          }
+          else // relative
+          {
+            destination[i] = axis_move + current_position[i];
+          }
+        }
+      }
       if constexpr (!param_feed)
       {
-        max_feedrate = max(max_feedrate, planner.max_feedrate_mm_s[i]);
+        max_feedrate = min(max_feedrate, planner.max_feedrate_mm_s[i]);
       }
     }
+    // TODO validate that this isn't actually needed.
+    // As far as I can tell, 'destination' is never cleared, and should _always_, at the start
+    // of instruction decoding, be equal to current_position.
     else
     {
       destination[i] = current_position[i];
     }
 	}
 
+  // G0 still has an F parameter that's used by Cura, unfortunately.
+  if (parser.linearval('F') > 0.0)
+  {
+    last_param_feedrate_mm_s = MMM_TO_MMS(parser.value_feedrate());
+  }
+
   if constexpr (param_feed)
   {
-    if (parser.linearval('F') > 0.0)
-      feedrate_mm_s = MMM_TO_MMS(parser.value_feedrate());
+    feedrate_mm_s = last_param_feedrate_mm_s;
   }
   else
   {
@@ -1090,7 +1124,10 @@ bool gcode_get_destination_e_absolute()
   destination[E_AXIS] = parser.value_axis_units(E_AXIS);
 
   if (parser.linearval('F') > 0.0)
-    feedrate_mm_s = MMM_TO_MMS(parser.value_feedrate());
+  {
+    last_param_feedrate_mm_s = MMM_TO_MMS(parser.value_feedrate());
+  }
+  feedrate_mm_s = last_param_feedrate_mm_s;
 
   if (!DEBUGGING(DRYRUN))
     print_job_timer.incFilamentUsed(destination[E_AXIS] - current_position[E_AXIS]);
@@ -1134,7 +1171,7 @@ void host_keepalive() {
   * G0, G1: Coordinated movement of X Y Z E axes
   */
 
-template <Speed speed>
+template <MovementType move_type, MovementMode move_mode = MovementMode::Normal>
 inline void linear_move()
 {
   if (!IsRunning())
@@ -1142,9 +1179,7 @@ inline void linear_move()
     return;
   }
 
-  constexpr const bool feed_param = (speed != Speed::Fastest);
-
-  gcode_get_destination<feed_param>(); // For X Y Z E F
+  gcode_get_destination<move_mode, move_type>(); // For X Y Z E F
 
   prepare_move_to_destination();
 }
@@ -1249,7 +1284,7 @@ inline void gcode_G4() {
 inline void gcode_G5() {
 	if (IsRunning()) {
 
-		gcode_get_destination<true>();
+		gcode_get_destination<MovementMode::Normal, MovementType::Linear>();
 
 		const float offset[] = {
 		  parser.linearval('I'),
@@ -2668,10 +2703,10 @@ void process_next_command() {
 
 		// G0, G1
 	case 0:
-    linear_move<Speed::Fastest>();
+    linear_move<MovementType::Rapid>();
     break;
 	case 1:
-		linear_move<Speed::F_Value>();
+		linear_move<MovementType::Linear>();
 		break;
 
 		// G2, G3
@@ -2689,6 +2724,22 @@ void process_next_command() {
 	case 5: // G5  - Cubic B_spline
 		gcode_G5();
 		break;
+
+    // TUNA Extensions
+  case 6: // G6 - Absolute Rapid Move
+    linear_move<MovementType::Rapid, MovementMode::Absolute>();
+    break;
+  case 7: // G7 - Absolute Linear Move
+    linear_move<MovementType::Linear, MovementMode::Absolute>();
+    break;
+  case 8: // G8 - Relative Rapid Move
+    linear_move<MovementType::Rapid, MovementMode::Relative>();
+    break;
+  case 9: // G9 - Relative Linear Move
+    linear_move<MovementType::Linear, MovementMode::Relative>();
+    break;
+
+    // ~TUNA Extensions
 
 	case 28: // G28: Home all axes, one at a time
 		gcode_G28(false);

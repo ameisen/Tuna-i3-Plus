@@ -1,12 +1,12 @@
-#import <tuna.h>
+#include <tuna.h>
 
-#import "simple.hpp"
+#include "simple.hpp"
 
-#import "bi3_plus_lcd.h"
+#include "bi3_plus_lcd.h"
 
-#import <math.h>
+#include <math.h>
 
-#import "configuration_store.h"
+#include "configuration_store.h"
 
 // TODO FIXME remove floats after initial testing. They're here to establish sane ranges to help with
 // the fixed-point math for exponents.

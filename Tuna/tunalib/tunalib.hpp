@@ -3,7 +3,7 @@
 #define __pure __attribute__((pure))
 #define __const __attribute__((const))
 
-#import "tunalib/utils.hpp"
-#import "tunalib/chrono.hpp"
-#import "tunalib/fixed.hpp"
-#import "tunalib/math.hpp"
+#include "tunalib/utils.hpp"
+#include "tunalib/chrono.hpp"
+#include "tunalib/fixed.hpp"
+#include "tunalib/math.hpp"

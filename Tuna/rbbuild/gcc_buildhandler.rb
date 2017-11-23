@@ -64,7 +64,7 @@ $gpp_buildhandler = Class.new do
 			is_c(source) ? "" : "-fno-threadsafe-statics",	# disable magic static code, as we don't have real threads.
 			is_c(source) ? "" : "-fno-enforce-eh-specs",
 			is_c(source) ? "" : "-fno-use-cxa-get-exception-ptr",
-			"-Wno-deprecated",								# I like #import, damn it!
+			"-Wno-deprecated",								# I like #include, damn it!
 			"-g0",											# Disable debugging information.
 			"-mmcu=atmega2560",								# ATmega 2560
 			$TINY_CODE ? "-Os" : "-O3",						# Choose optimization level.

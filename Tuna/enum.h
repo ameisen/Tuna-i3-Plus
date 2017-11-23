@@ -23,7 +23,7 @@
 #ifndef __ENUM_H__
 #define __ENUM_H__
 
-#import "MarlinConfig.h"
+#include "MarlinConfig.h"
 
 /**
  * Axis indices as enumerated constants

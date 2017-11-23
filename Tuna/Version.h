@@ -28,7 +28,7 @@
 
 #if ENABLED(USE_AUTOMATIC_VERSIONING)
 
-  #import "_Version.h"
+  #include "_Version.h"
 
 #else
 

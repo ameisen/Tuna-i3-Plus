@@ -26,10 +26,10 @@
  *
  * This file is part of the Arduino Sd2Card Library
  */
-#import <tuna.h>
+#include <tuna.h>
 #if ENABLED(SDSUPPORT)
 
-#import "SdVolume.h"
+#include "SdVolume.h"
 //------------------------------------------------------------------------------
 #if !USE_MULTIPLE_CARDS
   // raw block cache

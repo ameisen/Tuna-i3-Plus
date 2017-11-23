@@ -20,11 +20,11 @@
  *
  */
 
-#import <tuna.h>
+#include <tuna.h>
 
 #if ENABLED(USE_WATCHDOG)
 
-#import "watchdog.h"
+#include "watchdog.h"
 
 // Initialize watchdog with a 4 sec interrupt time
 void watchdog_init() {

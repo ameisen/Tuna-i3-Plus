@@ -27,11 +27,11 @@
  * This file is part of the Arduino Sd2Card Library
  */
 
-#import <tuna.h>
+#include <tuna.h>
 
 #if ENABLED(SDSUPPORT)
 
-#import "SdBaseFile.h"
+#include "SdBaseFile.h"
 //------------------------------------------------------------------------------
 // pointer to cwd directory
 SdBaseFile* SdBaseFile::cwd_ = 0;

@@ -22,7 +22,7 @@
 
  // OVERSAMPLENR PROGMEM
 
-#import "ThermistorUtils.hpp"
+#include "ThermistorUtils.hpp"
 
 namespace Tuna::Thermistor
 {

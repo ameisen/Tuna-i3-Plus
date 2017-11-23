@@ -20,9 +20,9 @@
  *
  */
 
-#import <tuna.h>
+#include <tuna.h>
 
-#import "stopwatch.h"
+#include "stopwatch.h"
 
 Stopwatch::Stopwatch() {
   this->reset();

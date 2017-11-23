@@ -23,10 +23,10 @@
 #ifndef PRINTCOUNTER_H
 #define PRINTCOUNTER_H
 
-#import "macros.h"
-#import "language.h"
-#import "stopwatch.h"
-#import <avr/eeprom.h>
+#include "macros.h"
+#include "language.h"
+#include "stopwatch.h"
+#include <avr/eeprom.h>
 
 
 // Print debug messages with M111 S2
@@ -51,7 +51,7 @@ class PrintCounter final : public Stopwatch {
      * @brief EEPROM address
      * @details Defines the start offset address where the data is stored.
      */
-    const uint16_t address = 0x32;
+    static constexpr const uint16_t address = 0x32;
 
     /**
      * @brief Interval in seconds between counter updates
@@ -61,7 +61,7 @@ class PrintCounter final : public Stopwatch {
      * @note The max value for this option is 60(s), otherwise integer
      * overflow will happen.
      */
-    const uint16_t updateInterval = 10;
+    static constexpr const uint16_t updateInterval = 10;
 
     /**
      * @brief Interval in seconds between EEPROM saves
@@ -69,7 +69,7 @@ class PrintCounter final : public Stopwatch {
      * EEPROM save cycle, the development team recommends to set this value
      * no lower than 3600 secs (1 hour).
      */
-    const uint16_t saveInterval = 3600;
+    static constexpr const uint16_t saveInterval = 3600;
 
     /**
      * @brief Timestamp of the last call to deltaDuration()

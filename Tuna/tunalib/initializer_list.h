@@ -34,7 +34,7 @@
 
 #pragma GCC visibility push(default)
 
-// #import <bits/c++config.h>
+// #include <bits/c++config.h>
 
 namespace Tuna
 {

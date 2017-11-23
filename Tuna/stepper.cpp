@@ -44,19 +44,19 @@
 /* The timer calculations of this module informed by the 'RepRap cartesian firmware' by Zack Smith
    and Philipp Tiefenbacher. */
 
-#import <tuna.h>
+#include <tuna.h>
 
-#import "stepper.h"
-#import "endstops.h"
-#import "planner.h"
-#import "thermal/thermal.hpp"
-#import "bi3_plus_lcd.h"
-#import "language.h"
-#import "cardreader.h"
-#import "speed_lookuptable.h"
+#include "stepper.h"
+#include "endstops.h"
+#include "planner.h"
+#include "thermal/thermal.hpp"
+#include "bi3_plus_lcd.h"
+#include "language.h"
+#include "cardreader.h"
+#include "speed_lookuptable.h"
 
 #if HAS_DIGIPOTSS
-  #import <SPI.h>
+  #include <SPI.h>
 #endif
 
 Stepper stepper; // Singleton
@@ -711,7 +711,7 @@ void Stepper::isr() {
   #endif
 
   // Calculate new timer value
-  if (step_events_completed <= (uint32_t)current_block->accelerate_until) {
+  if (step_events_completed <= (uint24)current_block->accelerate_until) {
 
     MultiU24X32toH16(acc_step_rate, acceleration_time, current_block->acceleration_rate);
     acc_step_rate += current_block->initial_rate;
@@ -764,7 +764,7 @@ void Stepper::isr() {
       eISR_Rate = adv_rate(e_steps[TOOL_E_INDEX], timer, step_loops);
     #endif
   }
-  else if (step_events_completed > (uint32_t)current_block->decelerate_after) {
+  else if (step_events_completed > (uint24)current_block->decelerate_after) {
     uint16_t step_rate;
     MultiU24X32toH16(step_rate, deceleration_time, current_block->acceleration_rate);
 

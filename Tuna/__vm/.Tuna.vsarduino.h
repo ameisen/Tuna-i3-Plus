@@ -51,8 +51,8 @@ using __builtin_va_list = void *;
 
 
 
-//#import <arduino.h>
-//#import <pins_arduino.h> 
+//#include <arduino.h>
+//#include <pins_arduino.h> 
 #undef F
 #define F(string_literal) ((const char *)(string_literal))
 #undef PSTR
@@ -83,5 +83,5 @@ inline signed short __builtin_avr_fmulsu(signed char value0, unsigned char value
 inline void __builtin_avr_delay_cycles(unsigned long ticks) {}
 inline unsigned char __builtin_avr_insert_bits(unsigned long map, unsigned char bits, unsigned char value) {}
 
-//#import "Marlin.ino"
+//#include "Marlin.ino"
 #endif

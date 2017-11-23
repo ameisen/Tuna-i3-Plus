@@ -35,8 +35,8 @@
  * \file
  * \brief SdBaseFile class
  */
-#import "SdFatConfig.h"
-#import "SdVolume.h"
+#include "SdFatConfig.h"
+#include "SdVolume.h"
 //------------------------------------------------------------------------------
 /**
  * \struct filepos_t

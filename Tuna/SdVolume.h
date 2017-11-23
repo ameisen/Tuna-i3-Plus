@@ -33,9 +33,9 @@
  * \file
  * \brief SdVolume class
  */
-#import "SdFatConfig.h"
-#import "Sd2Card.h"
-#import "SdFatStructs.h"
+#include "SdFatConfig.h"
+#include "Sd2Card.h"
+#include "SdFatStructs.h"
 
 //==============================================================================
 // SdVolume class

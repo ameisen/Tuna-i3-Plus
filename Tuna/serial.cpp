@@ -20,7 +20,7 @@
  *
  */
 
-#import "serial.h"
+#include "serial.h"
 
 const char errormagic[] PROGMEM = "Error:";
 const char echomagic[] PROGMEM = "echo:";

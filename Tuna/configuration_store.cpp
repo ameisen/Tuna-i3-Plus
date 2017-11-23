@@ -173,9 +173,9 @@
  *
  */
 
-#import <tuna.h>
+#include <tuna.h>
 
-#import "configuration_store.h"
+#include "configuration_store.h"
 
 // FIXME TODO TEMPORARY HACK
 static const float z_float = 0.0f;
@@ -183,24 +183,24 @@ static const float z_float = 0.0f;
 
 MarlinSettings settings;
 
-#import "language.h"
-#import "endstops.h"
-#import "planner.h"
-#import "thermal/thermal.hpp"
-#import "bi3_plus_lcd.h"
-#import "stepper.h"
-#import "thermal/managers/simple.hpp"
+#include "language.h"
+#include "endstops.h"
+#include "planner.h"
+#include "thermal/thermal.hpp"
+#include "bi3_plus_lcd.h"
+#include "stepper.h"
+#include "thermal/managers/simple.hpp"
 
 #if ENABLED(INCH_MODE_SUPPORT) || (ENABLED(ULTIPANEL) && ENABLED(TEMPERATURE_UNITS_SUPPORT))
-  #import "gcode.h"
+  #include "gcode.h"
 #endif
 
 #if ENABLED(MESH_BED_LEVELING)
-  #import "mesh_bed_leveling.h"
+  #include "mesh_bed_leveling.h"
 #endif
 
 #if ENABLED(HAVE_TMC2130)
-  #import "stepper_indirection.h"
+  #include "stepper_indirection.h"
 #endif
 
 #if ENABLED(AUTO_BED_LEVELING_BILINEAR)
@@ -643,12 +643,11 @@ void MarlinSettings::postprocess() {
     //
     // I3++
     //
-    EEPROM_WRITE(planner.preheat_preset1_hotend);
-    EEPROM_WRITE(planner.preheat_preset1_bed);
-    EEPROM_WRITE(planner.preheat_preset2_hotend);
-    EEPROM_WRITE(planner.preheat_preset2_bed);
-    EEPROM_WRITE(planner.preheat_preset3_hotend);
-    EEPROM_WRITE(planner.preheat_preset3_bed);
+    for (uint8 q = 0; q < 3; ++q)
+    {
+      EEPROM_WRITE(Planner::preheat_presets[q].hotend);
+      EEPROM_WRITE(Planner::preheat_presets[q].bed);
+    }
 
     
     #if HAS_MOTOR_CURRENT_PWM
@@ -1027,12 +1026,11 @@ void MarlinSettings::postprocess() {
       // i3++
       //
       //Read preheat presets
-      EEPROM_READ(planner.preheat_preset1_hotend);
-      EEPROM_READ(planner.preheat_preset1_bed);
-      EEPROM_READ(planner.preheat_preset2_hotend);
-      EEPROM_READ(planner.preheat_preset2_bed);
-      EEPROM_READ(planner.preheat_preset3_hotend);
-      EEPROM_READ(planner.preheat_preset3_bed);
+      for (uint8 q = 0; q < 3; ++q)
+      {
+        EEPROM_READ(Planner::preheat_presets[q].hotend);
+        EEPROM_READ(Planner::preheat_presets[q].bed);
+      }
 
       #if HAS_MOTOR_CURRENT_PWM
         for (uint8_t q = 3; q--;) EEPROM_READ(stepper.motor_current_setting[q]);
@@ -1239,12 +1237,11 @@ void MarlinSettings::reset() {
   // i3++
   //
   //Preheat Presets reset
-  planner.preheat_preset1_hotend = DEFAULT_PREHEAT_PRESET1_HOTEND;
-  planner.preheat_preset1_bed = DEFAULT_PREHEAT_PRESET1_BED;
-  planner.preheat_preset2_hotend = DEFAULT_PREHEAT_PRESET2_HOTEND;
-  planner.preheat_preset2_bed = DEFAULT_PREHEAT_PRESET2_BED;
-  planner.preheat_preset3_hotend = DEFAULT_PREHEAT_PRESET3_HOTEND;
-  planner.preheat_preset3_bed = DEFAULT_PREHEAT_PRESET3_BED;
+  for (uint8 q = 0; q < 3; ++q)
+  {
+    Planner::preheat_presets[q].hotend = DEFAULT_PREHEAT_PRESETS[q][0];
+    Planner::preheat_presets[q].bed = DEFAULT_PREHEAT_PRESETS[q][1];
+  }
   
   #if ENABLED(ENABLE_LEVELING_FADE_HEIGHT)
     planner.z_fade_height = 0.0;

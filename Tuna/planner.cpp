@@ -58,17 +58,17 @@
  *
  */
 
-#import <tuna.h>
+#include <tuna.h>
 
-#import "planner.h"
-#import "bi3_plus_lcd.h"
-#import "stepper.h"
-#import "thermal/thermal.hpp"
-#import "language.h"
-#import "gcode.h"
+#include "planner.h"
+#include "bi3_plus_lcd.h"
+#include "stepper.h"
+#include "thermal/thermal.hpp"
+#include "language.h"
+#include "gcode.h"
 
 #if ENABLED(MESH_BED_LEVELING)
-  #import "mesh_bed_leveling.h"
+  #include "mesh_bed_leveling.h"
 #endif
 
 Planner planner;
@@ -89,13 +89,7 @@ float Planner::max_feedrate_mm_s[XYZE_N], // Max speeds in mm per second
 //
 // i3++
 //
-int16_t preheat_preset1_hotend;
-int16_t preheat_preset2_hotend;
-int16_t preheat_preset3_hotend;
-
-int8_t preheat_preset1_bed;
-int8_t preheat_preset2_bed;
-int8_t preheat_preset3_bed;
+Planner::temperature_preset Planner::preheat_presets[3];
 
 
 #if ENABLED(DISTINCT_E_FACTORS)

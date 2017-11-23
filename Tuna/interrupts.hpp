@@ -1,6 +1,6 @@
 #pragma once
 
-#import <tuna.h>
+#include <tuna.h>
 
 namespace Tuna::interrupts
 {

@@ -26,7 +26,7 @@
 
 #pragma once
 
-#import "MarlinConfig.h"
+#include "MarlinConfig.h"
 
 namespace Tuna
 {
@@ -47,7 +47,7 @@ namespace Tuna
   }
 }
 
-#import "thermistors/thermistortables.h"
+#include "thermistors/thermistortables.h"
 
 namespace Tuna
 {

@@ -550,12 +550,11 @@
 *
 * Will be the default values in the preheat menu
 **/
-#define DEFAULT_PREHEAT_PRESET1_HOTEND  180    // Preheat Presets
-#define DEFAULT_PREHEAT_PRESET1_BED  50
-#define DEFAULT_PREHEAT_PRESET2_HOTEND  220
-#define DEFAULT_PREHEAT_PRESET2_BED  60
-#define DEFAULT_PREHEAT_PRESET3_HOTEND  200
-#define DEFAULT_PREHEAT_PRESET3_BED  60
+constexpr const uint8_t DEFAULT_PREHEAT_PRESETS[3][2] = { // TODO fixme
+  {180, 50},
+  {220, 60},
+  {200, 60}
+};
 
 //===========================================================================
 //============================= Z Probe Options =============================

@@ -20,10 +20,10 @@
  *
  */
 
-#import <tuna.h>
+#include <tuna.h>
 
-#import "utility.h"
-#import "thermal/thermal.hpp"
+#include "utility.h"
+#include "thermal/thermal.hpp"
 
 void safe_delay(millis_t ms) {
   while (ms > 50) {

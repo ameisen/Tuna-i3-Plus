@@ -8,10 +8,10 @@ namespace Tuna::VM
 
   extern void await_queue();
 
-  template <Speed speed, MovementMode move_mode>
+  template <MovementType speed, MovementMode move_mode>
   void linear_move(arg_type<float> X, arg_type<float> Y, arg_type<float> Z, arg_type<float> E = NONE<float>, arg_type<float> FeedRate = NONE<float>);
 
-  template <Speed speed, MovementMode move_mode>
+  template <MovementType speed, MovementMode move_mode>
   void extrude(arg_type<float> E, arg_type<float> FeedRate = NONE<float>);
 }
 
@@ -19,7 +19,7 @@ inline void Tuna::VM::await_queue()
 {
 }
 
-template <Speed speed, MovementMode move_mode>
+template <MovementType speed, MovementMode move_mode>
 inline void Tuna::VM::linear_move(arg_type<float> X, arg_type<float> Y, arg_type<float> Z, arg_type<float> E, arg_type<float> FeedRate)
 {
   if (!IsRunning())
@@ -28,7 +28,7 @@ inline void Tuna::VM::linear_move(arg_type<float> X, arg_type<float> Y, arg_type
   }
 
   constexpr const auto none = NONE<float>;
-  constexpr const bool feed_param = (speed != Speed::Fastest);
+  constexpr const bool feed_param = (speed != MovementType::Rapid);
 
   float max_feedrate = 0.0f;
 
@@ -124,7 +124,7 @@ inline void Tuna::VM::linear_move(arg_type<float> X, arg_type<float> Y, arg_type
   set_current_to_destination();
 }
 
-template <Speed speed, MovementMode move_mode>
+template <MovementType speed, MovementMode move_mode>
 inline void Tuna::VM::extrude(arg_type<float> E, arg_type<float> FeedRate)
 {
   if (!IsRunning())
@@ -133,7 +133,7 @@ inline void Tuna::VM::extrude(arg_type<float> E, arg_type<float> FeedRate)
   }
 
   constexpr const auto none = NONE<float>;
-  constexpr const bool feed_param = (speed != Speed::Fastest);
+  constexpr const bool feed_param = (speed != MovementType::Rapid);
 
   float max_feedrate;
 

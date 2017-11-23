@@ -24,12 +24,12 @@
   * temperature.cpp - temperature control
   */
 
-#import <tuna.h>
-#import "thermal/thermal.hpp"
-#import "bi3_plus_lcd.h"
-#import "planner.h"
-#import "configuration_store.h"
-#import "watchdog.h"
+#include <tuna.h>
+#include "thermal/thermal.hpp"
+#include "bi3_plus_lcd.h"
+#include "planner.h"
+#include "configuration_store.h"
+#include "watchdog.h"
 
 #define ENABLE_ERROR_1 0
 #define ENABLE_ERROR_2 0
@@ -37,7 +37,7 @@
 #define ENABLE_ERROR_4 1
 #define ENABLE_ERROR_5 1
 
-#import "managers/simple.hpp"
+#include "managers/simple.hpp"
 
 using HeaterManager = Tuna::Thermal::Manager::Simple;
 

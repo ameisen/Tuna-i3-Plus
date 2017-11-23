@@ -27,7 +27,7 @@
 #ifndef ENDSTOPS_H
 #define ENDSTOPS_H
 
-#import "enum.h"
+#include "enum.h"
 
 class Endstops final {
 

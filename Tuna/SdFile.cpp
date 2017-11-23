@@ -26,10 +26,10 @@
  *
  * This file is part of the Arduino Sd2Card Library
  */
-#import <tuna.h>
+#include <tuna.h>
 
 #if ENABLED(SDSUPPORT)
-#import "SdFile.h"
+#include "SdFile.h"
 /**  Create a file object and open it in the current working directory.
  *
  * \param[in] path A path with a valid 8.3 DOS name for a file to be opened.

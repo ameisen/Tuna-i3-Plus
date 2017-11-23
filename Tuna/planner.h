@@ -32,11 +32,11 @@
 #ifndef PLANNER_H
 #define PLANNER_H
 
-#import "types.h"
-#import "enum.h"
+#include "types.h"
+#include "enum.h"
 
 #if HAS_ABL
-  #import "vector_3.h"
+  #include "vector_3.h"
 #endif
 
 enum BlockFlagBit : uint8_t {
@@ -152,13 +152,11 @@ class Planner final {
     //
     // i3++
     //
-    int16_t preheat_preset1_hotend;
-    int16_t preheat_preset2_hotend;
-    int16_t preheat_preset3_hotend;
-
-    int8_t preheat_preset1_bed;
-    int8_t preheat_preset2_bed;
-    int8_t preheat_preset3_bed;
+    struct temperature_preset final
+    {
+      uint16 hotend;
+      uint8 bed;
+    } static preheat_presets[3];
     
     static uint32 max_acceleration_steps_per_s2[XYZE_N],
                     max_acceleration_mm_per_s2[XYZE_N]; // Use M201 to override by software

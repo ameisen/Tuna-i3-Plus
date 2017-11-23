@@ -22,28 +22,28 @@
 #ifndef MARLIN_H
 #define MARLIN_H
 
-#import <math.h>
-#import <stdio.h>
-#import <stdlib.h>
-#import <string.h>
-#import <inttypes.h>
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <inttypes.h>
 
-#import <util/delay.h>
-#import <avr/pgmspace.h>
-#import <avr/eeprom.h>
-#import <avr/interrupt.h>
+#include <util/delay.h>
+#include <avr/pgmspace.h>
+#include <avr/eeprom.h>
+#include <avr/interrupt.h>
 
-#import "MarlinConfig.h"
+#include "MarlinConfig.h"
 
 #ifdef DEBUG_GCODE_PARSER
-#import "gcode.h"
+#include "gcode.h"
 #endif
 
-#import "enum.h"
-#import "types.h"
-#import "fastio.h"
-#import "utility.h"
-#import "serial.h"
+#include "enum.h"
+#include "types.h"
+#include "fastio.h"
+#include "utility.h"
+#include "serial.h"
 
 #if ENABLED(PRINTCOUNTER)
 # import "printcounter.h"
@@ -59,10 +59,10 @@ void idle(
 
 void manage_inactivity(bool ignore_stepper_queue = false);
 
-enum class Speed : uint8
+enum class MovementType : uint8
 {
-  Fastest,
-  F_Value
+  Rapid,
+  Linear
 };
 
 enum class MovementMode : uint8

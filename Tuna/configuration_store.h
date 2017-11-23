@@ -23,7 +23,7 @@
 #ifndef CONFIGURATION_STORE_H
 #define CONFIGURATION_STORE_H
 
-#import "MarlinConfig.h"
+#include "MarlinConfig.h"
 
 class MarlinSettings final {
   public:

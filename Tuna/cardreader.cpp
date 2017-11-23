@@ -20,13 +20,13 @@
  *
  */
 
-#import <tuna.h>
+#include <tuna.h>
 
-#import "cardreader.h"
+#include "cardreader.h"
 
-#import "bi3_plus_lcd.h"
-#import "stepper.h"
-#import "language.h"
+#include "bi3_plus_lcd.h"
+#include "stepper.h"
+#include "language.h"
 
 #if ENABLED(SDSUPPORT)
 

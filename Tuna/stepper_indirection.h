@@ -44,24 +44,24 @@
 #ifndef STEPPER_INDIRECTION_H
 #define STEPPER_INDIRECTION_H
 
-#import "MarlinConfig.h"
+#include "MarlinConfig.h"
 
 // TMC26X drivers have STEP/DIR on normal pins, but ENABLE via SPI
 #if ENABLED(HAVE_TMCDRIVER)
-  #import <SPI.h>
-  #import <TMC26XStepper.h>
+  #include <SPI.h>
+  #include <TMC26XStepper.h>
   void tmc_init();
 #endif
 
 #if ENABLED(HAVE_TMC2130)
-  #import <TMC2130Stepper.h>
+  #include <TMC2130Stepper.h>
   void tmc2130_init();
 #endif
 
 // L6470 has STEP on normal pins, but DIR/ENABLE via SPI
 #if ENABLED(HAVE_L6470DRIVER)
-  #import <SPI.h>
-  #import <L6470.h>
+  #include <SPI.h>
+  #include <L6470.h>
   void L6470_init();
 #endif
 
