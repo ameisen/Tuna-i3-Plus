@@ -195,6 +195,9 @@
       <Filter>tunalib</Filter>
     </ClInclude>
     <ClInclude Include="Tuna_VM.hpp" />
+    <ClInclude Include="tunalib\macros.hpp">
+      <Filter>tunalib</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tunalib">

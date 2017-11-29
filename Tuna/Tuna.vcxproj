@@ -152,6 +152,7 @@
     <ClInclude Include="tunalib\chrono.hpp" />
     <ClInclude Include="tunalib\fixed.hpp" />
     <ClInclude Include="tunalib\initializer_list.h" />
+    <ClInclude Include="tunalib\macros.hpp" />
     <ClInclude Include="tunalib\math.hpp" />
     <ClInclude Include="tunalib\utils.hpp" />
     <ClInclude Include="Tuna_VM.hpp" />

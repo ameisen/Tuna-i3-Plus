@@ -744,7 +744,7 @@ namespace Tuna::utils
 
 		constexpr inline static signed_type as_signed(arg_type<type> val) { return { val }; }
 
-		constexpr static type max = { 3.402823e+38f };
+		constexpr static type max = { __builtin_huge_valf() };
 		constexpr static type min = { 1.175494e-38f };
     constexpr static type epsilon = { 1.192093e-07f };
 	};
