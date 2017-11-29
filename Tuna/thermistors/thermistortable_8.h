@@ -21,7 +21,7 @@
  */
 
 // 100k 0603 SMD Vishay NTCS0603E3104FXT (4.7k pullup)
-const short temptable_8[][2] PROGMEM = {
+const short temptable_8[][2] __flashmem = {
   {    1 * OVERSAMPLENR, 704 },
   {   54 * OVERSAMPLENR, 216 },
   {  107 * OVERSAMPLENR, 175 },

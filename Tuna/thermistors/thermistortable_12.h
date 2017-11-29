@@ -21,7 +21,7 @@
  */
 
 // 100k 0603 SMD Vishay NTCS0603E3104FXT (4.7k pullup) (calibrated for Makibox hot bed)
-const short temptable_12[][2] PROGMEM = {
+const short temptable_12[][2] __flashmem = {
   {   35 * OVERSAMPLENR, 180 }, // top rating 180C
   {  211 * OVERSAMPLENR, 140 },
   {  233 * OVERSAMPLENR, 135 },

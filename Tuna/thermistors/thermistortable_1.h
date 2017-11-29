@@ -20,7 +20,7 @@
  *
  */
 
- // OVERSAMPLENR PROGMEM
+ // OVERSAMPLENR __flashmem
 
 #include "ThermistorUtils.hpp"
 
@@ -28,7 +28,7 @@ namespace Tuna::Thermistor
 {
   using TablePair = _ThermistorUtils::TablePairBase<uint16>;
 
-  constexpr const PROGMEM TablePair temp_table[]{
+  constexpr const __flashmem TablePair temp_table[]{
     { 23, 300 },
     { 24, 295 },
     { 26, 290 },

@@ -419,7 +419,7 @@ namespace Tuna
 	};
 
 	template <uint64 value, uint8 minimum_frac, typename T>
-	class _fixedsz final : ce_only
+	class _fixedsz final : trait::ce_only
 	{
 		static_assert(minimum_frac >= 1, "You must have greater than 0 fractional bits in a fixed-precision type");
 

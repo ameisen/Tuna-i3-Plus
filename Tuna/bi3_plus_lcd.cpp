@@ -17,7 +17,7 @@
 
 #include "Tuna_VM.hpp"
 
-using namespace Tuna::utils;
+using namespace Tuna;
 
 namespace Tuna::lcd
 {

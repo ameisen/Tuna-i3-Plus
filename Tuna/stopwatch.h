@@ -25,7 +25,7 @@
 
 #include "macros.h"
 
-// Print debug messages with M111 S2 (Uses 156 bytes of PROGMEM)
+// Print debug messages with M111 S2 (Uses 156 bytes of __flashmem)
 //#define DEBUG_STOPWATCH
 
 /**

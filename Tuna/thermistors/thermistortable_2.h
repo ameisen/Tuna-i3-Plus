@@ -25,7 +25,7 @@
 // Verified by linagee. Source: http://shop.arcol.hu/static/datasheets/thermistors.pdf
 // Calculated using 4.7kohm pullup, voltage divider math, and manufacturer provided temp/resistance
 //
-const short temptable_2[][2] PROGMEM = {
+const short temptable_2[][2] __flashmem = {
   {    1 * OVERSAMPLENR, 848 },
   {   30 * OVERSAMPLENR, 300 }, // top rating 300C
   {   34 * OVERSAMPLENR, 290 },

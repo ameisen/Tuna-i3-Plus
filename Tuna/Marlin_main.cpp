@@ -328,7 +328,7 @@ static Tuna::flash_string injected_commands_P = nullptr;
  * Feed rates are often configured with mm/m
  * but the planner and stepper like mm/s units.
  */
-static const float homing_feedrate_mm_s[] PROGMEM = { HOMING_FEEDRATE_X, HOMING_FEEDRATE_Y, HOMING_FEEDRATE_Z, 0 };
+static const float homing_feedrate_mm_s[] __flashmem = { HOMING_FEEDRATE_X, HOMING_FEEDRATE_Y, HOMING_FEEDRATE_Z, 0 };
 FORCE_INLINE float homing_feedrate(const AxisEnum a) { return pgm_read_float(&homing_feedrate_mm_s[a]); }
 
 float feedrate_mm_s = MMM_TO_MMS(1500.0);
@@ -404,7 +404,7 @@ FORCE_INLINE float pgm_read_any(const float *p) { return pgm_read_float_near(p);
 FORCE_INLINE signed char pgm_read_any(const signed char *p) { return pgm_read_byte_near(p); }
 
 #define XYZ_CONSTS_FROM_CONFIG(type, array, CONFIG) \
-  static const PROGMEM type array##_P[XYZ] = { X_##CONFIG, Y_##CONFIG, Z_##CONFIG }; \
+  static const __flashmem type array##_P[XYZ] = { X_##CONFIG, Y_##CONFIG, Z_##CONFIG }; \
   static inline type array(AxisEnum axis) { return pgm_read_any(&array##_P[axis]); } \
   typedef void __void_##CONFIG##__
 
@@ -854,7 +854,7 @@ static void set_axis_is_at_home(const AxisEnum axis) {
  * Some planner shorthand inline functions
  */
 inline float get_homing_bump_feedrate(const AxisEnum axis) {
-	static const uint8_t homing_bump_divisor[] PROGMEM = HOMING_BUMP_DIVISOR;
+	static const uint8_t homing_bump_divisor[] __flashmem = HOMING_BUMP_DIVISOR;
 	uint8_t hbd = pgm_read_byte(&homing_bump_divisor[axis]);
 	if (hbd < 1) {
 		hbd = 10;
@@ -1601,7 +1601,7 @@ inline void gcode_M928() {
  * Sensitive pin test for M42, M226
  */
 static bool pin_is_protected(const int8_t pin) {
-	static const int8_t sensitive_pins[] PROGMEM = SENSITIVE_PINS;
+	static const int8_t sensitive_pins[] __flashmem = SENSITIVE_PINS;
 	for (uint8_t i = 0; i < COUNT(sensitive_pins); i++)
 		if (pin == (int8_t)pgm_read_byte(&sensitive_pins[i])) return true;
 	return false;
@@ -1996,13 +1996,13 @@ inline void gcode_M110() {
 inline void gcode_M111() {
 	marlin_debug_flags = parser.byteval('S', (uint8_t)DEBUG_NONE);
 
-	const static char str_debug_1[] PROGMEM = MSG_DEBUG_ECHO;
-	const static char str_debug_2[] PROGMEM = MSG_DEBUG_INFO;
-	const static char str_debug_4[] PROGMEM = MSG_DEBUG_ERRORS;
-	const static char str_debug_8[] PROGMEM = MSG_DEBUG_DRYRUN;
-	const static char str_debug_16[] PROGMEM = MSG_DEBUG_COMMUNICATION;
+	const static char str_debug_1[] __flashmem = MSG_DEBUG_ECHO;
+	const static char str_debug_2[] __flashmem = MSG_DEBUG_INFO;
+	const static char str_debug_4[] __flashmem = MSG_DEBUG_ERRORS;
+	const static char str_debug_8[] __flashmem = MSG_DEBUG_DRYRUN;
+	const static char str_debug_16[] __flashmem = MSG_DEBUG_COMMUNICATION;
 
-	const static char* const debug_strings[] PROGMEM = {
+	const static char* const debug_strings[] __flashmem = {
 	  str_debug_1, str_debug_2, str_debug_4, str_debug_8, str_debug_16
 	};
 
@@ -3406,14 +3406,14 @@ void kill(const char* lcd_msg) {
 	UNUSED(lcd_msg);
 
 	_delay_ms(600); // Wait a short time (allows messages to get out before shutting down.
-	Tuna::cli(); // Stop interrupts
+	Tuna::intrinsic::cli(); // Stop interrupts
 
 	_delay_ms(250); //Wait to ensure all interrupts routines stopped
   Temperature::disable_all_heaters(); //turn off heaters again
 
 	suicide();
 	while (1) {
-		Tuna::wdr();
+		Tuna::intrinsic::wdr();
 	} // Wait for reset
 }
 

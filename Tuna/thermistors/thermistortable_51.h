@@ -24,7 +24,7 @@
 // Verified by linagee.
 // Calculated using 1kohm pullup, voltage divider math, and manufacturer provided temp/resistance
 // Advantage: Twice the resolution and better linearity from 150C to 200C
-const short temptable_51[][2] PROGMEM = {
+const short temptable_51[][2] __flashmem = {
   {    1 * OVERSAMPLENR, 350 },
   {  190 * OVERSAMPLENR, 250 }, // top rating 250C
   {  203 * OVERSAMPLENR, 245 },

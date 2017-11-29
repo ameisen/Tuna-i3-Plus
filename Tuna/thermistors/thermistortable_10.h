@@ -21,7 +21,7 @@
  */
 
 // 100k RS thermistor 198-961 (4.7k pullup)
-const short temptable_10[][2] PROGMEM = {
+const short temptable_10[][2] __flashmem = {
   {    1 * OVERSAMPLENR, 929 },
   {   36 * OVERSAMPLENR, 299 },
   {   71 * OVERSAMPLENR, 246 },

@@ -198,6 +198,42 @@
     <ClInclude Include="tunalib\macros.hpp">
       <Filter>tunalib</Filter>
     </ClInclude>
+    <ClInclude Include="tunalib\types.hpp">
+      <Filter>tunalib</Filter>
+    </ClInclude>
+    <ClInclude Include="tunalib\type_traits.hpp">
+      <Filter>tunalib</Filter>
+    </ClInclude>
+    <ClInclude Include="tunalib\intrinsics.hpp">
+      <Filter>tunalib</Filter>
+    </ClInclude>
+    <ClInclude Include="tunalib\arch\avr.hpp">
+      <Filter>tunalib\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="tunalib\traits.hpp">
+      <Filter>tunalib</Filter>
+    </ClInclude>
+    <ClInclude Include="tunalib\meta_types.hpp">
+      <Filter>tunalib</Filter>
+    </ClInclude>
+    <ClInclude Include="tunalib\algorithms.hpp">
+      <Filter>tunalib</Filter>
+    </ClInclude>
+    <ClInclude Include="tunalib\async.hpp">
+      <Filter>tunalib</Filter>
+    </ClInclude>
+    <ClInclude Include="tunalib\arg_type.hpp">
+      <Filter>tunalib</Filter>
+    </ClInclude>
+    <ClInclude Include="tunalib\flash.hpp">
+      <Filter>tunalib</Filter>
+    </ClInclude>
+    <ClInclude Include="tunalib\algorithm_impl.hpp">
+      <Filter>tunalib</Filter>
+    </ClInclude>
+    <ClInclude Include="tunalib\serial.hpp">
+      <Filter>tunalib</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tunalib">
@@ -226,6 +262,9 @@
     </Filter>
     <Filter Include="thermal\managers">
       <UniqueIdentifier>{9e6df1d2-882d-418a-82c8-4e8a3845e462}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tunalib\arch">
+      <UniqueIdentifier>{5d858d9c-7647-49ba-8fe7-a7ed6a17d54f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

@@ -24,6 +24,4 @@ namespace Tuna
 		return roundf(x);
 #endif
 	}
-
-#define M_PI_C 3.14159265358979323846_C
 }

@@ -51,10 +51,10 @@
 #endif
 
 // Returns the name of the function. When used as a default argument, returns the name of the caller function. Stored in program memory.
-#define __function __pgm_string(__builtin_FUNCTION())
+#define __function_name __pgm_string(__builtin_FUNCTION())
 
 // Returns the name of the source file. When used as a default argument, returns the name of the caller function's file. Stored in program memory.
-#define __file __pgm_string(__builtin_FILE())
+#define __file_name __pgm_string(__builtin_FILE())
 
 // Allocates memory on the stack. Call only in block scope, and the data will remain valid within scope. It is generally avoided due to issues
 // with stack overflow and with memory going out of scope (particularly with inlining).
@@ -101,54 +101,14 @@
 // Marks the function as emitting a warning when its return value is unused.
 #define __warn_unused __attribute__((warn_unused_result))
 
-// Flush the CPU's instruction cache. If the architecture does not support this, this has no effect.
-#define __flush_icache(ptr_begin, ptr_end) __builtin___clear_cache(ptr_begin, ptr_end)
-
-namespace Tuna
-{
-  enum class access : uint8
-  {
-    none,
-    read,
-    write,
-    read_write
-    // TODO implement execute?
-  };
-  enum class locality : uint8
-  {
-    none = 0,
-    low = 1,
-    moderate = 2,
-    high = 3
-  };
-
-  // Prefetch data. If the architecture does not support this, this has no effect.
-  // Not really a macro, obviously, but is best kept in here because of similarity to other functions.
-  template <typename T, access _access = access::read, locality _locality = locality::high>
-  inline constexpr __forceinline __flatten void prefetch (const T * __restrict addr)
-  {
-    static_assert(_access != access::none, "prefetch access level cannot be 'none'");
-    // I am unsure if static_assert also implies __assume, so I am going to be explicit.
-    __assume(_access != access::none);
-    if constexpr (_access == access::read)
-    {
-      __builtin_prefetch(addr, 0, uint8(_locality));
-    }
-    else if constexpr (_access == access::write)
-    {
-      __builtin_prefetch(addr, 1, uint8(_locality));
-    }
-    else if constexpr (_access == access::read_write)
-    {
-      __builtin_prefetch(addr, 0, uint8(_locality));
-      __builtin_prefetch(addr, 1, uint8(_locality));
-    }
-    else
-    {
-      __unreachable;
-    }
-  }
-}
+// Macro wrapper for static_assert, which _only_ exists when not building for Intellisense.
+// Also adds a slightly easier-to-use macro for compile-only.
+#if !__INTELLISENSE__
+# define __compiling 1
+# define c_static_assert(...) static_assert(__VA_ARGS__)
+#else
+# define __compiling 0
+# define c_static_assert(...)
+#endif
 
 // TODO leaf, maybe
-

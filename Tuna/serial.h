@@ -37,8 +37,8 @@
   #define MYSERIAL customizedSerial
 #endif
 
-extern const char echomagic[] PROGMEM;
-extern const char errormagic[] PROGMEM;
+extern const char echomagic[] __flashmem;
+extern const char errormagic[] __flashmem;
 
 #define SERIAL_CHAR(x) ((void)MYSERIAL.write(x))
 #define SERIAL_EOL() SERIAL_CHAR('\n')
@@ -92,7 +92,7 @@ void serial_spaces(uint8_t count);
 #define SERIAL_PROTOCOL_SP(C) serial_spaces(C)
 
 //
-// Functions for serial printing from PROGMEM. (Saves loads of SRAM.)
+// Functions for serial printing from __flashmem. (Saves loads of SRAM.)
 //
 FORCE_INLINE void serialprintPGM(const char* str) {
   while (char ch = pgm_read_byte(str++)) MYSERIAL.write(ch);

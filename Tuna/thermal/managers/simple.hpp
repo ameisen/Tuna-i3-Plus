@@ -5,7 +5,7 @@
 namespace Tuna::Thermal::Manager
 {
   // This is a struct and not a namespace only as classes are easier to inject into templates.
-  struct Simple final : ce_only
+  struct Simple final : trait::ce_only
   {
     static bool calibrate(arg_type<temp_t> target);
     static __pure bool calibrating();

@@ -21,7 +21,7 @@
  */
 
 // DyzeDesign 500°C Thermistor
-const short temptable_66[][2] PROGMEM = {
+const short temptable_66[][2] __flashmem = {
   {   17.5 * OVERSAMPLENR, 850 },
   {   17.9 * OVERSAMPLENR, 500 },
   {   21.7 * OVERSAMPLENR, 480 },

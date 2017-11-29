@@ -21,7 +21,7 @@
  */
 
 // Hisens thermistor B25/50 =3950 +/-1%
-const short temptable_13[][2] PROGMEM = {
+const short temptable_13[][2] __flashmem = {
   {  20.04 * OVERSAMPLENR, 300 },
   {  23.19 * OVERSAMPLENR, 290 },
   {  26.71 * OVERSAMPLENR, 280 },

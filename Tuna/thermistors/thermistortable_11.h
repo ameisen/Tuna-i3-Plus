@@ -21,7 +21,7 @@
  */
 
 // QU-BD silicone bed QWG-104F-3950 thermistor
-const short temptable_11[][2] PROGMEM = {
+const short temptable_11[][2] __flashmem = {
   {    1 * OVERSAMPLENR, 938 },
   {   31 * OVERSAMPLENR, 314 },
   {   41 * OVERSAMPLENR, 290 },

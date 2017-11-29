@@ -29,7 +29,7 @@
 // beta: 3950
 // min adc: 1 at 0.0048828125 V
 // max adc: 1023 at 4.9951171875 V
-const short temptable_60[][2] PROGMEM = {
+const short temptable_60[][2] __flashmem = {
   {   51 * OVERSAMPLENR, 272 },
   {   61 * OVERSAMPLENR, 258 },
   {   71 * OVERSAMPLENR, 247 },

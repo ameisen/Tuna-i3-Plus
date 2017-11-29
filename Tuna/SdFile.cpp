@@ -81,16 +81,16 @@ void SdFile::write(const char* str) {
   SdBaseFile::write(str, strlen(str));
 }
 //------------------------------------------------------------------------------
-/** Write a PROGMEM string to a file.
- * \param[in] str Pointer to the PROGMEM string.
+/** Write a __flashmem string to a file.
+ * \param[in] str Pointer to the __flashmem string.
  * Use writeError to check for errors.
  */
 void SdFile::write_P(PGM_P str) {
   for (uint8_t c; (c = pgm_read_byte(str)); str++) write(c);
 }
 //------------------------------------------------------------------------------
-/** Write a PROGMEM string followed by CR/LF to a file.
- * \param[in] str Pointer to the PROGMEM string.
+/** Write a __flashmem string followed by CR/LF to a file.
+ * \param[in] str Pointer to the __flashmem string.
  * Use writeError to check for errors.
  */
 void SdFile::writeln_P(PGM_P str) {

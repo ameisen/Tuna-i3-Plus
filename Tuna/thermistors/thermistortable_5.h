@@ -24,7 +24,7 @@
 // ATC Semitec 104GT-2 (Used in ParCan)
 // Verified by linagee. Source: http://shop.arcol.hu/static/datasheets/thermistors.pdf
 // Calculated using 4.7kohm pullup, voltage divider math, and manufacturer provided temp/resistance
-const short temptable_5[][2] PROGMEM = {
+const short temptable_5[][2] __flashmem = {
   {    1 * OVERSAMPLENR, 713 },
   {   17 * OVERSAMPLENR, 300 }, // top rating 300C
   {   20 * OVERSAMPLENR, 290 },

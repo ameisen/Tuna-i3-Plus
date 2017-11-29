@@ -305,7 +305,7 @@ bool Sd2Card::init(uint8_t sckRateID, uint8_t chipSelectPin) {
 
   // If init takes more than 4s it could trigger
   // watchdog leading to a reboot loop.
-  Tuna::wdr();
+  Tuna::intrinsic::wdr();
 
   // set pin modes
   pinMode(chipSelectPin_, OUTPUT);
@@ -434,7 +434,7 @@ bool Sd2Card::readData(uint8_t* dst) {
 }
 
 #if ENABLED(SD_CHECK_AND_RETRY)
-static const uint16_t crctab[] PROGMEM = {
+static const uint16_t crctab[] __flashmem = {
   0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50A5, 0x60C6, 0x70E7,
   0x8108, 0x9129, 0xA14A, 0xB16B, 0xC18C, 0xD1AD, 0xE1CE, 0xF1EF,
   0x1231, 0x0210, 0x3273, 0x2252, 0x52B5, 0x4294, 0x72F7, 0x62D6,

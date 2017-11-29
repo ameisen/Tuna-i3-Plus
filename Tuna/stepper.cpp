@@ -360,7 +360,7 @@ ISR(TIMER1_COMPA_vect) {
   #endif
 }
 
-#define _ENABLE_ISRs() do { Tuna::cli(); if (Temperature::in_temp_isr) CBI(TIMSK0, OCIE0B); else SBI(TIMSK0, OCIE0B); ENABLE_STEPPER_DRIVER_INTERRUPT(); } while(0)
+#define _ENABLE_ISRs() do { Tuna::intrinsic::cli(); if (Temperature::in_temp_isr) CBI(TIMSK0, OCIE0B); else SBI(TIMSK0, OCIE0B); ENABLE_STEPPER_DRIVER_INTERRUPT(); } while(0)
 
 void Stepper::isr() {
 
@@ -950,7 +950,7 @@ void Stepper::isr() {
     // Disable Timer0 ISRs and enable global ISR again to capture UART events (incoming chars)
     CBI(TIMSK0, OCIE0B); // Temperature ISR
     DISABLE_STEPPER_DRIVER_INTERRUPT();
-	Tuna::sei();
+	Tuna::intrinsic::sei();
 
     // Run main stepping ISR if flagged
     if (!nextMainISR) isr();
@@ -1175,7 +1175,7 @@ void Stepper::init() {
   #endif // ADVANCE || LIN_ADVANCE
 
   endstops.enable(true); // Start with endstops active. After homing they can be disabled
-  Tuna::sei();
+  Tuna::intrinsic::sei();
 
   set_directions(); // Init directions to last_direction_bits = 0
 }

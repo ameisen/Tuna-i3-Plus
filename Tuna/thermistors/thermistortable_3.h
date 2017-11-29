@@ -21,7 +21,7 @@
  */
 
 // mendel-parts
-const short temptable_3[][2] PROGMEM = {
+const short temptable_3[][2] __flashmem = {
   {    1 * OVERSAMPLENR, 864 },
   {   21 * OVERSAMPLENR, 300 },
   {   25 * OVERSAMPLENR, 290 },

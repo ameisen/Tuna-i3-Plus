@@ -26,7 +26,7 @@
   #define DUMMY_THERMISTOR_998_VALUE 25
 #endif
 
-const short temptable_998[][2] PROGMEM = {
+const short temptable_998[][2] __flashmem = {
   {    1 * OVERSAMPLENR, DUMMY_THERMISTOR_998_VALUE },
   { 1023 * OVERSAMPLENR, DUMMY_THERMISTOR_998_VALUE }
 };

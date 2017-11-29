@@ -21,7 +21,7 @@
  */
 
 // 100k Honeywell 135-104LAG-J01
-const short temptable_7[][2] PROGMEM = {
+const short temptable_7[][2] __flashmem = {
   {    1 * OVERSAMPLENR, 941 },
   {   19 * OVERSAMPLENR, 362 },
   {   37 * OVERSAMPLENR, 299 }, // top rating 300C

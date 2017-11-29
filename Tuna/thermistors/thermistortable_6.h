@@ -21,7 +21,7 @@
  */
 
 // 100k Epcos thermistor
-const short temptable_6[][2] PROGMEM = {
+const short temptable_6[][2] __flashmem = {
   {    1 * OVERSAMPLENR, 350 },
   {   28 * OVERSAMPLENR, 250 }, // top rating 250C
   {   31 * OVERSAMPLENR, 245 },

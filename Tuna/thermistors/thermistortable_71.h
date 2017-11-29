@@ -26,7 +26,7 @@
 // Beta = 3974
 // R1 = 0 Ohm
 // R2 = 4700 Ohm
-const short temptable_71[][2] PROGMEM = {
+const short temptable_71[][2] __flashmem = {
   {   35 * OVERSAMPLENR, 300 },
   {   51 * OVERSAMPLENR, 270 },
   {   54 * OVERSAMPLENR, 265 },

@@ -1214,8 +1214,8 @@ void MarlinSettings::postprocess() {
  * M502 - Reset Configuration
  */
 void MarlinSettings::reset() {
-  static const float tmp1[] PROGMEM = DEFAULT_AXIS_STEPS_PER_UNIT, tmp2[] PROGMEM = DEFAULT_MAX_FEEDRATE;
-  static const uint32_t tmp3[] PROGMEM = DEFAULT_MAX_ACCELERATION;
+  static const float tmp1[] __flashmem = DEFAULT_AXIS_STEPS_PER_UNIT, tmp2[] __flashmem = DEFAULT_MAX_FEEDRATE;
+  static const uint32_t tmp3[] __flashmem = DEFAULT_MAX_ACCELERATION;
   LOOP_XYZE_N(i) {
     planner.axis_steps_per_mm[i]          = pgm_read_float(&tmp1[i < COUNT(tmp1) ? i : COUNT(tmp1) - 1]);
     planner.max_feedrate_mm_s[i]          = pgm_read_float(&tmp2[i < COUNT(tmp2) ? i : COUNT(tmp2) - 1]);

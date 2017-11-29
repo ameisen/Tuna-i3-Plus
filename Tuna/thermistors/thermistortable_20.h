@@ -47,7 +47,7 @@
   #define HEATER_BED_RAW_HI_TEMP 16383
   #define HEATER_BED_RAW_LO_TEMP 0
 #endif
-const short temptable_20[][2] PROGMEM = {
+const short temptable_20[][2] __flashmem = {
   {   0 * OVERSAMPLENR,    0 },
   { 227 * OVERSAMPLENR,    1 },
   { 236 * OVERSAMPLENR,   10 },

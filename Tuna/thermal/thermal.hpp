@@ -51,7 +51,7 @@ namespace Tuna
 
 namespace Tuna
 {
-  class Temperature final : ce_only
+  class Temperature final : trait::ce_only
   {
   public:
     // Minimum number of Temperature::ISR loops between sensor readings.
@@ -71,13 +71,13 @@ namespace Tuna
     static temp_t min_extrude_temp;
 
 	  template <uint16 Celcius>
-	  struct TemperatureValueConverter final : ce_only
+	  struct TemperatureValueConverter final : trait::ce_only
 	  {
       static constexpr const temp_t Temperature = temp_t{Celcius};
 		  static constexpr const auto Adc = make_uintsz<Thermistor::ce_convert_temp_to_adc<Temperature.raw()>()>;
 	  };
 
-	  struct Hotend final : ce_only
+	  struct Hotend final : trait::ce_only
 	  {
 		  using max_temperature = TemperatureValueConverter<HEATER_0_MAXTEMP>;
 		  using min_temperature = TemperatureValueConverter<HEATER_0_MINTEMP>;
@@ -85,7 +85,7 @@ namespace Tuna
       static_assert(max_temperature::Temperature != min_temperature::Temperature, "these values should never be equal.");
 	  };
 
-    struct Bed final : ce_only
+    struct Bed final : trait::ce_only
 	  {
 		  using max_temperature = TemperatureValueConverter<BED_MAXTEMP>;
 		  using min_temperature = TemperatureValueConverter<BED_MINTEMP>;

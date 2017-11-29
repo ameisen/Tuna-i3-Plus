@@ -21,7 +21,7 @@
  */
 
 // 10k thermistor
-const short temptable_4[][2] PROGMEM = {
+const short temptable_4[][2] __flashmem = {
   {    1 * OVERSAMPLENR, 430 },
   {   54 * OVERSAMPLENR, 137 },
   {  107 * OVERSAMPLENR, 107 },

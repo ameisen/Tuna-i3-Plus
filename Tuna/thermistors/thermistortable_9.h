@@ -21,7 +21,7 @@
  */
 
 // 100k GE Sensing AL03006-58.2K-97-G1 (4.7k pullup)
-const short temptable_9[][2] PROGMEM = {
+const short temptable_9[][2] __flashmem = {
   {    1 * OVERSAMPLENR, 936 },
   {   36 * OVERSAMPLENR, 300 },
   {   71 * OVERSAMPLENR, 246 },

@@ -21,7 +21,7 @@
  */
 
 // Pt100 with 1k0 pullup
-const short temptable_110[][2] PROGMEM = {
+const short temptable_110[][2] __flashmem = {
   // only a few values are needed as the curve is very flat
   PtLine(  0, 100, 1000)
   PtLine( 50, 100, 1000)

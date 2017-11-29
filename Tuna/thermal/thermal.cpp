@@ -344,7 +344,7 @@ bool Temperature::updateTemperaturesFromRawValues() {
 		uint16 temperature_raw;
 		uint16 temperature_bed_raw;
 		{
-			Tuna::utils::critical_section_not_isr _critsec;
+			Tuna::critical_section_not_isr _critsec;
 			temperature_raw = current_temperature_raw;
 			temperature_bed_raw = current_temperature_bed_raw;
 			temp_meas_ready = false;
@@ -401,7 +401,7 @@ bool Temperature::updateTemperaturesFromRawValues() {
     }
 
 		// Reset the watchdog after we know we have a temperature measurement.
-		Tuna::wdr();
+		Tuna::intrinsic::wdr();
 		return true;
 	}
 	return false;
@@ -542,7 +542,7 @@ void Temperature::disable_all_heaters() {
  */
 void Temperature::set_current_temp_raw()
 {
-	Tuna::utils::critical_section _critsec;
+	Tuna::critical_section _critsec;
 	current_temperature_raw = raw_temp_value;
 	current_temperature_bed_raw = raw_temp_bed_value;
 	temp_meas_ready = true;
@@ -594,7 +594,7 @@ void Temperature::isr() {
 
 	// Allow UART and stepper ISRs
 	CBI(TIMSK0, OCIE0B); //Disable Temperature ISR
-	Tuna::sei();
+	Tuna::intrinsic::sei();
 
 	static int8 oversample_count = 0;
 	static ADCSensorState adc_sensor_state = StartupDelay;
@@ -691,7 +691,7 @@ void Temperature::isr() {
 	// Go to the next state, up to SensorsReady
 	adc_sensor_state = (ADCSensorState)(uint8(uint8(adc_sensor_state) + 1) % uint8(StartupDelay));
 
-	Tuna::cli();
+	Tuna::intrinsic::cli();
 	in_temp_isr = false;
 	SBI(TIMSK0, OCIE0B); //re-enable Temperature ISR
 }

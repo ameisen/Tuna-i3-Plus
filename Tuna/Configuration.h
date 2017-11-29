@@ -831,7 +831,7 @@ constexpr const uint8_t DEFAULT_PREHEAT_PRESETS[3][2] = { // TODO fixme
 /**
  * Enable detailed logging of G28, G29, M48, etc.
  * Turn on with the command 'M111 S32'.
- * NOTE: Requires a lot of PROGMEM!
+ * NOTE: Requires a lot of __flashmem!
  */
 //#define DEBUG_LEVELING_FEATURE
 
@@ -989,8 +989,8 @@ constexpr const uint8_t DEFAULT_PREHEAT_PRESETS[3][2] = { // TODO fixme
 // M502 - reverts to the default "factory settings".  You still need to store them in EEPROM afterwards if you want to.
 //
 #define EEPROM_SETTINGS // Enable for M500 and M501 commands
-//#define DISABLE_M503    // Saves ~2700 bytes of PROGMEM. Disable for release!
-#define EEPROM_CHITCHAT   // Give feedback on EEPROM commands. Disable to save PROGMEM.
+//#define DISABLE_M503    // Saves ~2700 bytes of __flashmem. Disable for release!
+#define EEPROM_CHITCHAT   // Give feedback on EEPROM commands. Disable to save __flashmem.
 
 //
 // Host Keepalive

@@ -21,7 +21,7 @@
  */
 
 // bqh2 stock thermistor
-const short temptable_70[][2] PROGMEM = {
+const short temptable_70[][2] __flashmem = {
   {   22 * OVERSAMPLENR, 300 },
   {   24 * OVERSAMPLENR, 295 },
   {   25 * OVERSAMPLENR, 290 },
