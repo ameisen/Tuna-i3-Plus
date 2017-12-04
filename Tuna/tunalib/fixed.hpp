@@ -441,7 +441,7 @@ namespace Tuna
 		static constexpr const uint8 bits_T = type_trait<TP>::bits;
 		static constexpr const uint64 max_sz = type_trait<TP>::max >> 1; // fixed requires at least 1 bit of fractional precision
 		static_assert(value <= max_sz, "Cannot fit the given value into a fixed-point type with the provided underlying type");
-		static constexpr const uint8 integer_bits = ce_log2<value>;
+		static constexpr const uint8 integer_bits = constant::log2<value>;
 		static constexpr const uint8 fractional_bits = bits_T - integer_bits;
 		static_assert(fractional_bits >= minimum_frac, "Cannot fit the requested value into a fixed-precision type with the provided underlying type and requested minimum fractional bits");
 

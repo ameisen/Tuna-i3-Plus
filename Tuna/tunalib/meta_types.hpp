@@ -51,22 +51,6 @@ namespace Tuna
   };
   template <typename T, typename U> using smaller_type = typename _smaller_type<T, U>::type;
 
-  template <uint64 v, uint8 r = 0, bool pow2 = true>
-  constexpr uint8 _ce_log2()
-  {
-    if constexpr (v != 0)
-    {
-      constexpr uint64 new_v = v >> 1;
-      return _ce_log2<new_v, r + 1, (new_v != 0 && (v & 1) != 0) ? false : pow2>();
-    }
-    else
-    {
-      return r - (pow2 ? 1 : 0);
-    }
-  }
-
-  template <uint64 v> constexpr uint8 ce_log2 = _ce_log2<v>();
-
   template <uint64 value>
   class _uintsz final : trait::ce_only
   {

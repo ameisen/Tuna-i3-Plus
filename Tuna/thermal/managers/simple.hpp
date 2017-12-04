@@ -8,11 +8,10 @@ namespace Tuna::Thermal::Manager
   struct Simple final : trait::ce_only
   {
     static bool calibrate(arg_type<temp_t> target);
-    static __pure bool calibrating();
     static uint8 get_power(arg_type<temp_t> current, arg_type<temp_t> target);
     static __pure void debug_dump();
 
-    static __pure pair<float, float> GetCalibration();
-    static void SetCalibration(arg_type<pair<float, float>> val);
+    static __pure float GetCalibration();
+    static void SetCalibration(arg_type<float> val);
   };
 }

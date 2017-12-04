@@ -13,6 +13,7 @@
 
 using namespace Tuna::Thermal::Manager;
 
+// TODO Establish a global logging system like this.
 namespace Tuna::Log
 {
   template <uint8 tabs = 0, typename ...Args>
@@ -34,17 +35,19 @@ namespace Tuna::Log
 namespace
 {
   constexpr const auto Tag = "SimpleManager"_p;
-  constexpr const auto TagGraph = "SimpleManager[GRAPH]"_p;
 
   constexpr const bool shortcut_results = false;
   constexpr const uint8 integer_swing = 16; // must be POW2. TODO add pow2 check.
-  constexpr const uint8 integer_swing_bits = ce_log2<integer_swing>;
+  constexpr const uint8 integer_swing_bits = constant::log2<integer_swing>;
   constexpr const uint8 relevant_fraction_bits = min(temp_t::fractional_bits, 4);
   constexpr const uint8 relevant_total_bits = (relevant_fraction_bits + integer_swing_bits);
   constexpr const auto numTableEntries = make_uintsz<1 << relevant_total_bits>;
   using tableidx_t = uintsz<1 << relevant_total_bits>;
 
-  bool calibrating = false;
+  // Validations
+  static_assert(constant::is_pow2<integer_swing>, "integer_swing must be power-of-two.");
+
+  // SRAM
   uint8 pwm_table[numTableEntries] = {};
   float pwm_exponent = -1.0f;
 
@@ -63,26 +66,26 @@ namespace
   }
 }
 
-pair<float, float> Simple::GetCalibration()
+float Simple::GetCalibration()
 {
-  return { pwm_exponent, 0.0f };
+  return pwm_exponent;
 }
 
-void Simple::SetCalibration(arg_type<pair<float, float>> exponent)
+void Simple::SetCalibration(arg_type<float> exponent)
 {
-  Log::d<>(Tag, "SetCalibration: %.6f"_p, exponent.first);
+  Log::d(Tag, "SetCalibration: %.6f"_p, exponent);
 
-  pwm_exponent = exponent.first;
+  pwm_exponent = exponent;
 
   for (tableidx_t i = 0; i < numTableEntries; ++i)
   {
-    pwm_table[i] = uint8(roundf(powf(float(i) / float(numTableEntries), exponent.first) * 255.5f));
+    pwm_table[i] = uint8(roundf(powf(float(i) / float(numTableEntries), exponent) * 255.5f));
   }
 }
 
 bool Simple::calibrate(arg_type<temp_t> target)
 {
-  Log::d<>(Tag, "Starting Calibration"_p);
+  Log::d(Tag, "Starting Calibration"_p);
 
   constexpr const uint8 test_cycles = 25; // how many full cycles to wait for while testing exponents.
   constexpr const auto test_max_time = 120000_ms24; // Otherwise, test goes this long.
@@ -155,7 +158,7 @@ bool Simple::calibrate(arg_type<temp_t> target)
         average_append(tempAvg, current_temperature.raw(), TempAvgSampleCount);
 
         const auto temp_trend = Temperature::get_temperature_trend();
-        //Log::d<>(TagGraph, "%.6f, %.6f, %S%.6f"_p, float(current_temperature), float(temp_t::from(extract_average(tempAvg, TempAvgSampleCount))), temp_trend.second ? "+"_p : "-"_p, float(temp_trend.first));
+        //Log::d(TagGraph, "%.6f, %.6f, %S%.6f"_p, float(current_temperature), float(temp_t::from(extract_average(tempAvg, TempAvgSampleCount))), temp_trend.second ? "+"_p : "-"_p, float(temp_trend.first));
 
         lcd::update_graph();
 
@@ -185,7 +188,7 @@ bool Simple::calibrate(arg_type<temp_t> target)
   constexpr const temp_t double_swing = temp_t{ integer_swing * 2 };
   const temp_t low_target = target - double_swing;
 
-  Log::d<>(Tag, "Calibration Parameters:"_p);
+  Log::d(Tag, "Calibration Parameters:"_p);
   Log::d<1>(Tag, "target: %.6f"_p, float(target));
   Log::d<1>(Tag, "test_cycles: %u"_p, test_cycles);
   Log::d<1>(Tag, "test_max_time: %u"_p, test_max_time.raw());
@@ -205,12 +208,12 @@ bool Simple::calibrate(arg_type<temp_t> target)
     // Reset the PWM table to 0xFF for low-target setting.
     populate_pwm_table_const(0xFF);
     // Reset the target temperature to the lower target.
-    Log::d<>(Tag, "Reaching Low Target"_p);
+    Log::d(Tag, "Reaching Low Target"_p);
     set_temp_target(low_target, true);
-    Log::d<>(Tag, "Low Target Reached, beginning test"_p);
+    Log::d(Tag, "Low Target Reached, beginning test"_p);
 
     // Populate the PWM table.
-    SetCalibration({ exponent, 0.0f });
+    SetCalibration(exponent);
 
     // Set target temperature.
     set_temp_target(target, false);
@@ -252,7 +255,7 @@ bool Simple::calibrate(arg_type<temp_t> target)
         average_append(tempAvg, current_temperature.raw(), TempAvgSampleCount);
 
         const auto temp_trend = Temperature::get_temperature_trend();
-        //Log::d<>(TagGraph, "%.6f, %.6f, %S%.6f"_p, float(current_temperature), float(temp_t::from(extract_average(tempAvg, TempAvgSampleCount))), temp_trend.second ? "+"_p : "-"_p, float(temp_trend.first));
+        //Log::d(TagGraph, "%.6f, %.6f, %S%.6f"_p, float(current_temperature), float(temp_t::from(extract_average(tempAvg, TempAvgSampleCount))), temp_trend.second ? "+"_p : "-"_p, float(temp_trend.first));
 
         lcd::update_graph();
 
@@ -333,7 +336,7 @@ bool Simple::calibrate(arg_type<temp_t> target)
       return tempMean - targetTemp;
     }();
 
-    return (uint32(highMean.raw()) * 3) + (uint32(lowMean.raw()) * 2);
+    return (uint32(highMean.raw()) * 5) + (uint32(lowMean.raw()) * 2);
   };
 
   uint32 bestError = type_trait<uint32>::max;
@@ -346,10 +349,10 @@ bool Simple::calibrate(arg_type<temp_t> target)
     const auto & __restrict exponent = test_exponents[i];
     oscillation error;
 
-    Log::d<>(Tag, "Executing Test: %u / %u *****************"_p, i, total_tests);
+    Log::d(Tag, "Executing Test: %u / %u *****************"_p, i, total_tests);
     execute_test(exponent, error);
 
-    Log::d<>(Tag, "Test Complete: %u / %u"_p, i, total_tests);
+    Log::d(Tag, "Test Complete: %u / %u"_p, i, total_tests);
     Log::d<1>(Tag, "valid: %u"_p, error.valid ? 1 : 0);
 
     if (error.valid)
@@ -391,13 +394,13 @@ bool Simple::calibrate(arg_type<temp_t> target)
   Temperature::disable_all_heaters();
 
   // For now, choose the best high.
-  Log::d<>(Tag, "Best Index: %u"_p, bestIndex);
+  Log::d(Tag, "Best Index: %u"_p, bestIndex);
 
   const float & __restrict best_exp = test_exponents[bestIndex];
 
   Log::d<1>(Tag, "Exponent: %.6f"_p, float(best_exp));
 
-  SetCalibration({ best_exp, 0.0f });
+  SetCalibration(best_exp);
 
   lcd::show_page(lcd::Page::PID_Finished);
   enqueue_and_echo_command("M106 S0");
@@ -406,11 +409,6 @@ bool Simple::calibrate(arg_type<temp_t> target)
   settings.save();
 
   return true;
-}
-
-bool Simple::calibrating()
-{
-  return calibrating;
 }
 
 uint8 Simple::get_power(arg_type<temp_t> current, arg_type<temp_t> target) 
@@ -422,7 +420,7 @@ uint8 Simple::get_power(arg_type<temp_t> current, arg_type<temp_t> target)
 
   if (current > high_target)
   {
-    if constexpr (tempLog) Log::d<>(Tag, "%.6f, %u"_p, float(current), 0);
+    if constexpr (tempLog) Log::d(Tag, "%.6f, %u"_p, float(current), 0);
     return 0;
   }
 
@@ -430,7 +428,7 @@ uint8 Simple::get_power(arg_type<temp_t> current, arg_type<temp_t> target)
 
   if (!diff_idx)
   {
-    if constexpr (tempLog) Log::d<>(Tag, "%.6f, %u"_p, float(current), 0xFF);
+    if constexpr (tempLog) Log::d(Tag, "%.6f, %u"_p, float(current), 0xFF);
     return 0xFF;
   }
 
@@ -439,7 +437,7 @@ uint8 Simple::get_power(arg_type<temp_t> current, arg_type<temp_t> target)
   {
     if (!Temperature::get_temperature_trend().second)
     {
-      if constexpr (tempLog) Log::d<>(Tag, "%.6f, %u"_p, float(current), pwm_table[diff_idx.second]);
+      if constexpr (tempLog) Log::d(Tag, "%.6f, %u"_p, float(current), pwm_table[diff_idx.second]);
 
       // We want to intensify this value a bit, in order to prevent undershooting too much.
       constexpr const uint8 multiplier = 3_u8;
@@ -447,20 +445,20 @@ uint8 Simple::get_power(arg_type<temp_t> current, arg_type<temp_t> target)
     }
     else
     {
-      if constexpr (tempLog)Log::d<>(Tag, "%.6f, %u"_p, float(current), pwm_table[diff_idx.second]);
+      if constexpr (tempLog)Log::d(Tag, "%.6f, %u"_p, float(current), pwm_table[diff_idx.second]);
 
       return 0x00;
     }
   }
   else if (Temperature::get_temperature_trend().second)
   {
-    if constexpr (tempLog) Log::d<>(Tag, "%.6f, %u"_p, float(current), pwm_table[diff_idx.second]);
+    if constexpr (tempLog) Log::d(Tag, "%.6f, %u"_p, float(current), pwm_table[diff_idx.second]);
     return pwm_table[diff_idx.second];
   }
   else
   {
     //return pwm_table_down[diff_idx.second];
-    if constexpr (tempLog) Log::d<>(Tag, "%.6f, %u"_p, float(current), 0xFF);
+    if constexpr (tempLog) Log::d(Tag, "%.6f, %u"_p, float(current), 0xFF);
     return 0xFF;
   }
 }

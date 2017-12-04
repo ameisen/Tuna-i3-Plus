@@ -101,6 +101,11 @@
 // Marks the function as emitting a warning when its return value is unused.
 #define __warn_unused __attribute__((warn_unused_result))
 
+// A macro which wraps a constexpr test. Has to be a macro because there's not a good way to do this otherwise.
+// Intellisense has a different variant due to differences in behavior between gcc and msvc.
+#define constexpr_test(name, ...) \
+  static_assert(name(__VA_ARGS__) || true, "Function is not constexpr: " #name);
+
 // Macro wrapper for static_assert, which _only_ exists when not building for Intellisense.
 // Also adds a slightly easier-to-use macro for compile-only.
 #if !__INTELLISENSE__

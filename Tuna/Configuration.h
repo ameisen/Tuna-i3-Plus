@@ -757,7 +757,7 @@ constexpr const uint8_t DEFAULT_PREHEAT_PRESETS[3][2] = { // TODO fixme
 #define Z_MIN_POS 0
 #define X_MAX_POS 200
 #define Y_MAX_POS 200
-#define Z_MAX_POS 180
+#define Z_MAX_POS 170
 
 // If enabled, axes won't move below MIN_POS in response to movement commands.
 #define MIN_SOFTWARE_ENDSTOPS

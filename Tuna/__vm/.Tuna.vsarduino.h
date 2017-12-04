@@ -31,9 +31,9 @@ using PGM_VOID_P = void *;
 
 
 #undef __builtin_constant_p
-#define __builtin_constant_p
+#define __builtin_constant_p(e) true
 #undef __builtin_strlen
-#define __builtin_strlen
+#define __builtin_strlen(e) strlen(e)
 
 #undef NEW_H
 #define NEW_H

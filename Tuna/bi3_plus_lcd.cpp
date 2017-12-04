@@ -567,22 +567,22 @@ namespace Tuna::lcd
 				} break;
 				case 1: { //fl
 					enqueue_and_echo_commands("G6 Z10"_p);
-					enqueue_and_echo_commands("G6 X30 Y30"_p);
+					enqueue_and_echo_commands("G6 X35 Y35"_p);
 					enqueue_and_echo_commands("G6 Z0"_p);
 				} break;
 				case 2: { //rr
 					enqueue_and_echo_commands("G6 Z10"_p);
-					enqueue_and_echo_commands("G6 X170 Y170"_p);
+					enqueue_and_echo_commands("G6 X165 Y170"_p);
 					enqueue_and_echo_commands("G6 Z0"_p);
 				} break;
 				case 3: { //fr
 					enqueue_and_echo_commands("G6 Z10"_p);
-					enqueue_and_echo_commands("G6 X170 Y30"_p);
+					enqueue_and_echo_commands("G6 X165 Y35"_p);
 					enqueue_and_echo_commands("G6 Z0"_p);
 				} break;
 				case 4: { //rl
 					enqueue_and_echo_commands("G6 Z10"_p);
-					enqueue_and_echo_commands("G6 X30 Y170"_p);
+					enqueue_and_echo_commands("G6 X35 Y165"_p);
 					enqueue_and_echo_commands("G6 Z0"_p);
 				} break;
 				case 5: { //c

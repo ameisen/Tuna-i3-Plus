@@ -24,7 +24,7 @@ namespace Tuna::intrinsic
   // Prefetch data. If the architecture does not support this, this has no effect.
   // Not really a macro, obviously, but is best kept in here because of similarity to other functions.
   template <typename T, access _access = access::read, locality _locality = locality::high>
-  inline constexpr __forceinline __flatten void prefetch(const T * __restrict addr)
+  constexpr inline __forceinline __flatten void prefetch(const T * __restrict addr)
   {
     static_assert(_access != access::none, "prefetch access level cannot be 'none'");
     // I am unsure if static_assert also implies __assume, so I am going to be explicit.
@@ -50,7 +50,7 @@ namespace Tuna::intrinsic
 
   // Flush the CPU's instruction cache. If the architecture does not support this, this has no effect.
   template <typename T>
-  inline constexpr __forceinline __flatten void flush_icache(const T * const begin, const T * const end)
+  constexpr inline __forceinline __flatten void flush_icache(const T * const begin, const T * const end)
   {
     __builtin___clear_cache(begin, end);
   }
