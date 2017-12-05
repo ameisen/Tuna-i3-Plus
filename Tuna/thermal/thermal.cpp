@@ -699,8 +699,8 @@ void Temperature::isr()
 
     // TODO : better heater state tracking.
 
-    const bool new_extruder_state = (pwm_counter <= extruder_pwm && __likely(extruder_pwm >= 0));
-    const bool new_bed_state = (pwm_counter <= bed_pwm && __likely(bed_pwm >= 0));
+    const bool new_extruder_state = (pwm_counter <= extruder_pwm && __likely(extruder_pwm > 0));
+    const bool new_bed_state = (pwm_counter <= bed_pwm && __likely(bed_pwm > 0));
 
     ++pwm_counter;
 

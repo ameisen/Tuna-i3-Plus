@@ -87,13 +87,17 @@ bool Simple::calibrate(arg_type<temp_t> target)
 {
   Log::d(Tag, "Starting Calibration"_p);
 
-  constexpr const auto test_max_time = 60000_ms16; // Otherwise, test goes this long.
+  constexpr const auto test_max_time = 100000_ms24; // Otherwise, test goes this long.
 
-  constexpr const float exponent_epsilon = 0.00625f;
-  constexpr const float exponent_base = 0.60000f;
+  constexpr const float exponent_epsilon = 0.05f;
+  constexpr const float exponent_base = 0.5f;
 
   constexpr const float test_exponents[] =
   {
+    exponent_base + (exponent_epsilon * -8),
+    exponent_base + (exponent_epsilon * -7),
+    exponent_base + (exponent_epsilon * -6),
+    exponent_base + (exponent_epsilon * -5),
     exponent_base + (exponent_epsilon * -4),
     exponent_base + (exponent_epsilon * -3),
     exponent_base + (exponent_epsilon * -2),
@@ -103,14 +107,18 @@ bool Simple::calibrate(arg_type<temp_t> target)
     exponent_base + (exponent_epsilon * +2),
     exponent_base + (exponent_epsilon * +3),
     exponent_base + (exponent_epsilon * +4),
+    exponent_base + (exponent_epsilon * +5),
+    exponent_base + (exponent_epsilon * +6),
+    exponent_base + (exponent_epsilon * +7),
+    exponent_base + (exponent_epsilon * +8),
   };
 
   constexpr const uint8 test_scalars[] =
   {
-    1_u8,
+    //1_u8,
     2_u8,
     3_u8,
-    //4_u8,
+    4_u8,
     //5_u8
   };
 
@@ -312,8 +320,8 @@ bool Simple::calibrate(arg_type<temp_t> target)
 
   for (uint8 i = 0; i < num_tests; ++i)
   {
-    const uint8 exponent_idx = i / num_exponents;
-    const uint8 scalar_idx = i % num_exponents;
+    const uint8 exponent_idx = i / num_scalars;
+    const uint8 scalar_idx = i % num_scalars;
 
     const auto & __restrict exponent = test_exponents[exponent_idx];
     const uint8 scalar = test_scalars[scalar_idx];
@@ -362,8 +370,8 @@ bool Simple::calibrate(arg_type<temp_t> target)
   Log::d(Tag, "Best Index: %u"_p, bestIndex);
 
   {
-    const uint8 exponent_idx = bestIndex / num_exponents;
-    const uint8 scalar_idx = bestIndex % num_exponents;
+    const uint8 exponent_idx = bestIndex / num_scalars;
+    const uint8 scalar_idx = bestIndex % num_scalars;
 
     const auto & __restrict exponent = test_exponents[exponent_idx];
     const uint8 scalar = test_scalars[scalar_idx];
