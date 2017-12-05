@@ -757,7 +757,7 @@ void Planner::_buffer_line(const float & __restrict a, const float & __restrict 
 
   #if ENABLED(PREVENT_COLD_EXTRUSION)
     if (de) {
-      if (Temperature::tooColdToExtrude()) {
+      if (Temperature::is_coldextrude()) {
         position[E_AXIS] = target[E_AXIS]; // Behave as if the move really took place, but ignore E part
         de = 0; // no difference
         #if ENABLED(LIN_ADVANCE)

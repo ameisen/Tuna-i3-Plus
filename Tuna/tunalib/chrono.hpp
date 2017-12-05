@@ -10,6 +10,9 @@ namespace Tuna::chrono
   template <typename T>
   class time_ms final
   {
+    template <typename U>
+    friend class time_ms;
+
     static_assert(!is_same<T, uint64>, "time_ms type cannot be uint64");
 
     T m_Value = {};
@@ -19,18 +22,18 @@ namespace Tuna::chrono
     constexpr time_ms(arg_type<T> value) : m_Value(value) {}
     constexpr time_ms(arg_type<time_ms> value) : m_Value(value.m_Value) {}
 
-    constexpr time_ms & operator = (arg_type<time_ms> value) __restrict
+    constexpr inline time_ms & __forceinline __flatten operator = (arg_type<time_ms> value) __restrict
     {
       m_Value = value.m_Value;
       return *this;
     }
 
-    T raw() const __restrict
+    inline T __forceinline __flatten raw() const __restrict
     {
       return m_Value;
     }
 
-    static time_ms get()
+    static inline time_ms __forceinline __flatten get()
     {
       if constexpr (is_same<T, uint8>)
       {
@@ -50,37 +53,37 @@ namespace Tuna::chrono
       }
     }
 
-    constexpr time_ms operator - (arg_type<time_ms> other) const __restrict
+    constexpr inline time_ms __forceinline __flatten operator - (arg_type<time_ms> other) const __restrict
     {
       return T(m_Value) - T(other.m_Value);
     }
 
-    constexpr bool operator == (arg_type<time_ms> other) const __restrict
+    constexpr inline bool __forceinline __flatten operator == (arg_type<time_ms> other) const __restrict
     {
       return m_Value == other.m_Value;
     }
 
-    constexpr bool operator != (arg_type<time_ms> other) const __restrict
+    constexpr inline bool __forceinline __flatten operator != (arg_type<time_ms> other) const __restrict
     {
       return m_Value != other.m_Value;
     }
 
-    constexpr bool operator > (arg_type<time_ms> other) const __restrict
+    constexpr inline bool __forceinline __flatten operator > (arg_type<time_ms> other) const __restrict
     {
       return m_Value > other.m_Value;
     }
 
-    constexpr bool operator >= (arg_type<time_ms> other) const __restrict
+    constexpr inline bool __forceinline __flatten operator >= (arg_type<time_ms> other) const __restrict
     {
       return m_Value >= other.m_Value;
     }
 
-    constexpr bool operator < (arg_type<time_ms> other) const __restrict
+    constexpr inline bool __forceinline __flatten operator < (arg_type<time_ms> other) const __restrict
     {
       return m_Value < other.m_Value;
     }
 
-    constexpr bool operator <= (arg_type<time_ms> other) const __restrict
+    constexpr inline bool __forceinline __flatten operator <= (arg_type<time_ms> other) const __restrict
     {
       return m_Value <= other.m_Value;
     }
@@ -113,13 +116,13 @@ namespace Tuna::chrono
     }
 
     template <typename U>
-    bool elapsed(arg_type<duration_ms<U>> time) const __restrict
+    inline bool __forceinline __flatten elapsed(arg_type<duration_ms<U>> time) const __restrict
     {
       return elapsed<U>(get(), time);
     }
 
     template <typename U>
-    pair<bool, duration_ms<larger_type<T, U>>> elapsed_over(arg_type<duration_ms<U>> time) const __restrict
+    inline pair<bool, duration_ms<larger_type<T, U>>> __forceinline __flatten elapsed_over(arg_type<duration_ms<U>> time) const __restrict
     {
       return elapsed_over<U>(get(), time);
     }

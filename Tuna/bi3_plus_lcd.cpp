@@ -108,7 +108,7 @@ namespace Tuna::lcd
 			const uint16 target_bed_temperature = Temperature::target_temperature_bed.rounded_to<uint16>();
 			const uint16 bed_temperature = Temperature::degBed().rounded_to<uint16>();
 
-			const uint8 fan_speed = (fanSpeeds[0] * 100) / 256;
+			const uint8 fan_speed = uint16(fanSpeeds[0] * 100_u16) / 255_u8;
 
 			const auto card_progress = card.percentDone();
 
@@ -691,20 +691,16 @@ namespace Tuna::lcd
 				break;
 			}
 			case 0x06: {
-				if (Temperature::degHotend() >= 180_C) {
+				if (!Temperature::is_coldextrude()) {
 					clear_command_queue();
-					enqueue_and_echo_commands("G91"_p);
-					enqueue_and_echo_commands("G1 E1 F120"_p);
-					enqueue_and_echo_commands("G90"_p);
+					enqueue_and_echo_commands("G14 E1 F120"_p);
 				}
 				break;
 			}
 			case 0x07: {
-				if (Temperature::degHotend() >= 180_C) {
+				if (!Temperature::is_coldextrude()) {
 					clear_command_queue();
-					enqueue_and_echo_commands("G91"_p);
-					enqueue_and_echo_commands("G1 E-1 F120"_p);
-					enqueue_and_echo_commands("G90"_p);
+					enqueue_and_echo_commands("G14 E-1 F120"_p);
 				}
 				break;
 			}
@@ -780,7 +776,7 @@ namespace Tuna::lcd
 					//Serial.println(hotendTemp);
 					char command[30];
 					sprintf_P(command, "M303 S%d E0 C8 U1"_p.c_str(), hotendTemp); //build auto pid command (extruder)
-					enqueue_and_echo_commands("M106 S255"_p); //Turn on fan
+					enqueue_and_echo_commands("M106"_p); //Turn on fan
 					enqueue_and_echo_command(command); //enque pid command
 					tempGraphUpdate = 2;
 				}

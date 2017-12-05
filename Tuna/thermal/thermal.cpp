@@ -45,9 +45,7 @@ temp_t Temperature::min_extrude_temp = (typename temp_t::type)EXTRUDE_MINTEMP;
 
 temp_t Temperature::current_temperature = 0_C,
 Temperature::current_temperature_bed = 0;
-volatile uint16_t Temperature::current_temperature_raw = 0_u16;
 temp_t Temperature::target_temperature = 0_C;
-volatile uint16_t Temperature::current_temperature_bed_raw = 0_u16;
 temp_t Temperature::target_temperature_bed = 0_C;
 
 temp_t Temperature::watch_target_temp = 0_C;
@@ -58,7 +56,9 @@ millis_t Temperature::watch_bed_next_ms = 0;
 
 bool Temperature::allow_cold_extrude = false;
 
-volatile bool Temperature::temp_meas_ready = false;
+uint16 Temperature::current_temperature_raw = 0_u16;
+uint16 Temperature::current_temperature_bed_raw = 0_u16;
+bool Temperature::temp_meas_ready = false;
 
 millis_t Temperature::next_bed_check_ms;
 
@@ -117,57 +117,9 @@ namespace
   temp_trend temperatureTrendCalculator;
 }
 
-namespace Thermal
+Temperature::Trend Temperature::get_temperature_trend()
 {
-	namespace
-	{
-		namespace adc
-		{
-			constexpr const uint8 delay_period = 10_u8;
-
-			enum class sensor : uint8
-			{
-				Extruder = 0,
-				Bed,
-				MAX,
-				FINAL = MAX - 1
-			};
-
-			sensor & __restrict operator ++ (sensor &enumerator)
-			{
-				uint8 value = (uint8 & __restrict)enumerator;
-				value = (value + 1_u8) % uint8(sensor::MAX);
-				(uint8 &)enumerator = value;
-				return enumerator;
-			}
-
-			enum class state : uint8
-			{
-				Charging = 0,
-				Delay,
-				Delay_End = Delay + (delay_period - 1_u8),
-				MAX,
-				FINAL = MAX - 1
-			};
-
-			state & __restrict operator ++ (state &enumerator)
-			{
-				uint8 value = (uint8 & __restrict)enumerator;
-				value = (value + 1_u8) % uint8(state::MAX);
-				(uint8 &)enumerator = value;
-				return enumerator;
-			}
-
-			sensor current_sensor = sensor::Extruder;
-			state current_state = state::Delay;
-			uint16 raw_temperatures[uint8(sensor::MAX)] {};
-		}
-	}
-}
-
-pair<temp_t, bool> Temperature::get_temperature_trend()
-{
-  return { temperatureTrendCalculator.getMean(), temperatureTrendCalculator.is_positive() };
+  return temperatureTrendCalculator.is_positive() ? Trend::Up : Trend::Down;
 }
 
 void Temperature::PID_autotune(arg_type<temp_t> temp, arg_type<int> ncycles, bool set_result/*=false*/) {
@@ -197,7 +149,7 @@ template <Temperature::Manager manager_type>
 void Temperature::_temp_error(const char * __restrict const serial_msg, const char * __restrict const lcd_msg) {
 	static bool killed = false;
 	lcd::show_page(lcd::Page::Thermal_Runaway);
-	if (IsRunning()) {
+	if (__likely(is_running())) {
 		SERIAL_ERROR_START();
 		serialprintPGM(serial_msg);
 		SERIAL_ERRORPGM(MSG_STOPPED_HEATER);
@@ -211,13 +163,16 @@ void Temperature::_temp_error(const char * __restrict const serial_msg, const ch
 		}
 	}
 #if DISABLED(BOGUS_TEMPERATURE_FAILSAFE_OVERRIDE)
-	if (!killed) {
+	if (!killed)
+  {
 		Running = false;
 		killed = true;
 		kill("ohno i broke");
 	}
-	else
-		disable_all_heaters(); // paranoia
+  else
+  {
+    disable_all_heaters(); // paranoia
+  }
 #endif
 }
 
@@ -242,7 +197,7 @@ void Temperature::min_temp_error() {
  */
 bool Temperature::manage_heater() {
 
-  if (!updateTemperaturesFromRawValues())
+  if (__likely(!updateTemperaturesFromRawValues()))
   {
     return false;
   }
@@ -255,7 +210,7 @@ bool Temperature::manage_heater() {
 #endif
 
 	// Make sure temperature is increasing
-	if (watch_heater_next_ms && ELAPSED(ms, watch_heater_next_ms)) { // Time to check this extruder?
+	if (watch_heater_next_ms && __unlikely(ELAPSED(ms, watch_heater_next_ms))) { // Time to check this extruder?
 #if ENABLE_ERROR_1
 		if (degHotend() < watch_target_temp)                             // Failed to increase enough?
 			_temp_error<Manager::Hotend>(PSTR(MSG_T_HEATING_FAILED), PSTR(MSG_HEATING_FAILED_LCD));
@@ -265,7 +220,7 @@ bool Temperature::manage_heater() {
 	}
 
 	// Make sure temperature is increasing
-	if (watch_bed_next_ms && ELAPSED(ms, watch_bed_next_ms)) {        // Time to check the bed?
+	if (watch_bed_next_ms && __unlikely(ELAPSED(ms, watch_bed_next_ms))) {        // Time to check the bed?
 #if ENABLE_ERROR_1
 		if (degBed() < watch_target_bed_temp)                           // Failed to increase enough?
 			_temp_error<Manager::Bed>(PSTR(MSG_T_HEATING_FAILED), PSTR(MSG_HEATING_FAILED_LCD));
@@ -282,12 +237,12 @@ bool Temperature::manage_heater() {
 #endif
 
   // Failsafe to make sure fubar'd PID settings don't force the heater always on.
-  if (target_temperature == 0_C)
+  if (__unlikely(target_temperature == 0_C))
   {
     soft_pwm_amount = 0;
     WRITE_HEATER_0(LOW);
   }
-  else if ((current_temperature <= Hotend::min_temperature::Temperature || is_preheating()) || current_temperature >= Hotend::max_temperature::Temperature)
+  else if (__unlikely((current_temperature <= Hotend::min_temperature::Temperature || is_preheating()) || current_temperature >= Hotend::max_temperature::Temperature))
   {
     soft_pwm_amount = 0;
   }
@@ -297,17 +252,19 @@ bool Temperature::manage_heater() {
   }
 
   // Failsafe to make sure fubar'd PID settings don't force the heater always on.
-  if (target_temperature_bed == 0_C)
+  if (__unlikely(target_temperature_bed == 0_C))
   {
     soft_pwm_amount_bed = 0;
     WRITE_HEATER_BED(LOW);
   }
 
 	// Check if temperature is within the correct range
-	if (WITHIN(current_temperature_bed, temp_t(Bed::min_temperature::Temperature), temp_t(Bed::max_temperature::Temperature))) {
+	if (__likely(WITHIN(current_temperature_bed, temp_t(Bed::min_temperature::Temperature), temp_t(Bed::max_temperature::Temperature))))
+  {
 		soft_pwm_amount_bed = current_temperature_bed < target_temperature_bed ? MAX_BED_POWER >> 1 : 0;
 	}
-	else {
+	else
+  {
 		soft_pwm_amount_bed = 0;
 		WRITE_HEATER_BED(LOW);
 	}
@@ -337,7 +294,7 @@ temp_t Temperature::analog2tempBed(arg_type<uint16> raw)
  */
 bool Temperature::updateTemperaturesFromRawValues() {
 
-	if (temp_meas_ready) // TODO replace with CAS.
+	if (__unlikely(temp_meas_ready))
 	{
     HeaterManager::debug_dump();
 
@@ -347,7 +304,10 @@ bool Temperature::updateTemperaturesFromRawValues() {
 			Tuna::critical_section_not_isr _critsec;
 			temperature_raw = current_temperature_raw;
 			temperature_bed_raw = current_temperature_bed_raw;
-			temp_meas_ready = false;
+      {
+        temp_meas_ready = false;
+        __memorybarrier;
+      }
 		}
 
     //Serial.print("temperature raw    : "); Serial.println(temperature_raw);
@@ -357,26 +317,26 @@ bool Temperature::updateTemperaturesFromRawValues() {
 #if ENABLE_ERROR_3
 		if constexpr (HEATER_0_RAW_LO_TEMP < HEATER_0_RAW_HI_TEMP)
 		{
-			if ((temperature_raw >= Hotend::max_temperature::Adc) & (target_temperature > 0_C)) { max_temp_error<Manager::Hotend>(); }
-			if ((Hotend::min_temperature::Adc >= temperature_raw) & (!is_preheating()) & (target_temperature > 0_C)) { min_temp_error<Manager::Hotend>(); }
+			if (__unlikely((temperature_raw >= Hotend::max_temperature::Adc) & (target_temperature > 0_C))) { max_temp_error<Manager::Hotend>(); }
+			if (__unlikely((Hotend::min_temperature::Adc >= temperature_raw) & (!is_preheating()) & (target_temperature > 0_C))) { min_temp_error<Manager::Hotend>(); }
 		}
 		else
 		{
-			if ((temperature_raw <= Hotend::max_temperature::Adc) & (target_temperature > 0_C)) { max_temp_error<Manager::Hotend>(); }
-			if ((Hotend::min_temperature::Adc <= temperature_raw) & (!is_preheating()) & (target_temperature > 0_C)) { min_temp_error<Manager::Hotend>(); }
+			if (__unlikely((temperature_raw <= Hotend::max_temperature::Adc) & (target_temperature > 0_C))) { max_temp_error<Manager::Hotend>(); }
+			if (__unlikely((Hotend::min_temperature::Adc <= temperature_raw) & (!is_preheating()) & (target_temperature > 0_C))) { min_temp_error<Manager::Hotend>(); }
 		}
 #endif
 
 #if ENABLE_ERROR_5
 		if constexpr (HEATER_BED_RAW_LO_TEMP < HEATER_BED_RAW_HI_TEMP)
 		{
-			if ((temperature_bed_raw >= Bed::max_temperature::Adc) & (target_temperature_bed > 0_C)) { max_temp_error<Manager::Bed>(); }
-			if ((Bed::min_temperature::Adc >= temperature_bed_raw) & (target_temperature_bed > 0_C)) { min_temp_error<Manager::Bed>(); }
+			if (__unlikely((temperature_bed_raw >= Bed::max_temperature::Adc) & (target_temperature_bed > 0_C))) { max_temp_error<Manager::Bed>(); }
+			if (__unlikely((Bed::min_temperature::Adc >= temperature_bed_raw) & (target_temperature_bed > 0_C))) { min_temp_error<Manager::Bed>(); }
 		}
 		else
 		{
-			if ((temperature_bed_raw <= Bed::max_temperature::Adc) & (target_temperature_bed > 0_C)) { max_temp_error<Manager::Bed>(); }
-			if ((Bed::min_temperature::Adc <= temperature_bed_raw) & (target_temperature_bed > 0_C)) { min_temp_error<Manager::Bed>(); }
+			if (__unlikely((temperature_bed_raw <= Bed::max_temperature::Adc) & (target_temperature_bed > 0_C))) { max_temp_error<Manager::Bed>(); }
+			if (__unlikely((Bed::min_temperature::Adc <= temperature_bed_raw) & (target_temperature_bed > 0_C))) { min_temp_error<Manager::Bed>(); }
 		}
 #endif
 
@@ -389,16 +349,8 @@ bool Temperature::updateTemperaturesFromRawValues() {
 		current_temperature = Temperature::analog2temp(temperature_raw);
 		current_temperature_bed = Temperature::analog2tempBed(temperature_bed_raw);
 
-    if (current_temperature >= previous_temperature)
-    {
-      const temp_t temperatureDiff = current_temperature - previous_temperature;
-      temperatureTrendCalculator.appendValue(temperatureDiff, true);
-    }
-    else
-    {
-      const temp_t temperatureDiff = previous_temperature - current_temperature;
-      temperatureTrendCalculator.appendValue(temperatureDiff, false);
-    }
+    const temp_t temperatureDiff = current_temperature - previous_temperature;
+    temperatureTrendCalculator.appendValue(temperatureDiff, (current_temperature >= previous_temperature));
 
 		// Reset the watchdog after we know we have a temperature measurement.
 		Tuna::intrinsic::wdr();
@@ -495,12 +447,17 @@ void Temperature::thermal_runaway_protection(Temperature::TRState & __restrict s
 		state = target > 0_C ? TRFirstHeating : TRInactive;
 	}
 
+  __assume(state == TRInactive || state == TRFirstHeating || state == TRStable || state == TRRunaway);
+
 	switch (state) {
 		// Inactive state waits for a target temperature to be set
 	case TRInactive: break;
 		// When first heating, wait for the temperature to be reached then go to Stable state
 	case TRFirstHeating:
-		if (current < tr_target_temperature<manager_type>) break;
+    if (current < tr_target_temperature<manager_type>)
+    {
+      break;
+    }
 		state = TRStable;
 		// While the temperature is stable watch for a bad temperature
 	case TRStable:
@@ -508,10 +465,17 @@ void Temperature::thermal_runaway_protection(Temperature::TRState & __restrict s
 			timer = millis() + period_seconds * 1000UL;
 			break;
 		}
-		else if (PENDING(millis(), timer)) break;
+    else if (PENDING(millis(), timer))
+    {
+      break;
+    }
 		state = TRRunaway;
 	case TRRunaway:
-		_temp_error<manager_type>(PSTR(MSG_T_THERMAL_RUNAWAY), PSTR(MSG_THERMAL_RUNAWAY));
+    // This branch should get compiled away.
+    if (__unlikely(state == TRRunaway))
+    {
+      _temp_error<manager_type>(PSTR(MSG_T_THERMAL_RUNAWAY), PSTR(MSG_THERMAL_RUNAWAY));
+    }
 	}
 }
 
@@ -543,9 +507,15 @@ void Temperature::disable_all_heaters() {
 void Temperature::set_current_temp_raw()
 {
 	Tuna::critical_section _critsec;
-	current_temperature_raw = raw_temp_value;
-	current_temperature_bed_raw = raw_temp_bed_value;
-	temp_meas_ready = true;
+  {
+    current_temperature_raw = raw_temp_value;
+    current_temperature_bed_raw = raw_temp_bed_value;
+    __memorybarrier;
+  }
+  {
+    temp_meas_ready = true;
+    __memorybarrier;
+  }
 }
 
 /**
@@ -569,44 +539,183 @@ volatile bool Temperature::in_temp_isr = false;
 /**
 * States for ADC reading in the ISR
 */
-enum ADCSensorState : uint8 {
-	PrepareTemp_0 = 0,
-	MeasureTemp_0,
-	PrepareTemp_BED,
-	MeasureTemp_BED,
-	SensorsReady, // Temperatures ready. Delay the next round of readings to let ADC pins settle.
-	StartupDelay  // Startup, delay initial temp reading a tiny bit so the hardware can settle
-};
+namespace
+{
+  enum class sensor_state : uint8
+  {
+    initialize_hotend = 0,
+    read_hotend,
+    initialize_bed,
+    read_bed,
+    ready,
+  };
 
-static_assert(Temperature::ACTUAL_ADC_SAMPLES >= uint(SensorsReady), "bad");
+  inline sensor_state __forceinline __flatten operator ++ (sensor_state & __restrict val, int)
+  {
+    using underlying_t = underlying_type<sensor_state>;
 
-void Temperature::isr() {
-  // TODO : Investigate native AVR PWM pin controls
-  // http://maxembedded.com/2012/01/avr-timers-pwm-mode-part-ii/
-  // analogWrite
-  // It would likely be simpler, though we'd have less control over frequency.
+    const sensor_state ret = val;
+    val = sensor_state(underlying_t(ret) + 1_u8);
+    __assume(underlying_t(val) >= underlying_t(sensor_state::initialize_hotend));
+    __assume(underlying_t(val) <= underlying_t(sensor_state::ready));
+    return ret;
+  }
+}
 
+template <uint8 pin>
+inline void __forceinline __flatten start_adc()
+{
+  if constexpr (pin > 7)
+    ADCSRB = _BV(MUX5);
+  else
+    ADCSRB = 0_u8;
 
+  ADMUX = _BV(REFS0) | (pin & 0x07_u8);
+  SBI(ADCSRA, ADSC);
+}
+
+template <uint8 pin, bool superscalar = false>
+inline void __forceinline __flatten set_pin(bool state)
+{
+  // TODO figure out why their original code uses critical sections when the port address >= 0x100.
+
+  volatile uint8 * __restrict port_ptr;
+  uint8 port_pin_mask;
+
+  switch (pin)
+  {
+  case 4: { // HEATER_0_PIN
+    port_ptr = &DIO4_WPORT;
+    port_pin_mask = 1_u8 << uint8(DIO4_PIN);
+  } break;
+  case 3: { // HEATER_BED_PIN
+    port_ptr = &DIO3_WPORT;
+    port_pin_mask = 1_u8 << uint8(DIO3_PIN);
+  } break;
+  }
+
+  volatile uint8 & __restrict port = *port_ptr;
+
+  // For some reason, the superscalar version generates better code.
+  // https://graphics.stanford.edu/~seander/bithacks.html#ConditionalSetOrClearBitsWithoutBranching
+  // However, it can only be used in contexts where ISRs are disabled,
+  // as it is a load-store, rather than a direct alteration.
+
+  if constexpr(superscalar)
+  {
+    port = (port & ~port_pin_mask) | ((state ? 0xFF_u8 : 0x00_u8) & port_pin_mask);
+  }
+  else
+  {
+    if (state) // high
+    {
+      port |= port_pin_mask;
+    }
+    else // low
+    {
+      port &= ~port_pin_mask;
+    }
+  }
+}
+
+void Temperature::isr()
+{
 	// The stepper ISR can interrupt this ISR. When it does it re-enables this ISR
 	// at the end of its run, potentially causing re-entry. This flag prevents it.
-	if (in_temp_isr) return;
+	if (__unlikely(in_temp_isr)) return;
 	in_temp_isr = true;
 
 	// Allow UART and stepper ISRs
 	CBI(TIMSK0, OCIE0B); //Disable Temperature ISR
 	Tuna::intrinsic::sei();
 
-	static int8 oversample_count = 0;
-	static ADCSensorState adc_sensor_state = StartupDelay;
-  static uint8 pwm_counter = 0;
+	static uint8 oversample_count = 0;
+  static sensor_state adc_sensor_state = sensor_state::initialize_hotend;
+
+  static bool current_extruder_state = false;
+  static bool current_bed_state = false;
 
   const uint8_t extruder_pwm = soft_pwm_amount;
   const uint8_t bed_pwm = soft_pwm_amount_bed;
 
-  // TODO : better heater state tracking.
-  WRITE_HEATER_0((pwm_counter <= extruder_pwm && extruder_pwm) ? HIGH : LOW);
-  WRITE_HEATER_BED((pwm_counter <= bed_pwm && bed_pwm) ? HIGH : LOW);
-  ++pwm_counter;
+  // If 'false', ISR PWM sequences will look like:
+  // 111111111111000000000011111111111100000000
+  // If 'true':
+  // 101010101010101010101010101010101010101010
+  constexpr const bool uniform_distributed_pwm = false;
+
+  if constexpr (uniform_distributed_pwm)
+  {
+    static uint16 pwm_counter = 0;
+
+    static uint16 extruder_intercept = 0;
+    static uint16 bed_intercept = 0;
+
+    static bool extruder_on = false;
+    static bool bed_on = false;
+
+    if (__likely(extruder_pwm > 0))
+    {
+      const bool intercepted = __unlikely(pwm_counter == extruder_intercept);
+      if (__unlikely(!extruder_on) || intercepted)
+      {
+        const uint16 pwm_iter = type_trait<uint16>::max / uint16(uint16(extruder_pwm) << 8);
+        extruder_intercept = pwm_counter + pwm_iter;
+      }
+
+      set_pin<HEATER_0_PIN>(__unlikely(intercepted));
+      extruder_on = true;
+    }
+    else
+    {
+      set_pin<HEATER_0_PIN>(false);
+      extruder_on = false;
+    }
+
+    if (__likely(bed_pwm > 0))
+    {
+      const bool intercepted = __unlikely(pwm_counter == bed_intercept);
+      if (__unlikely(!extruder_on) || intercepted)
+      {
+        const uint16 pwm_iter = type_trait<uint16>::max / uint16(uint16(bed_pwm) << 8);
+        bed_intercept = pwm_counter + pwm_iter;
+      }
+
+      set_pin<HEATER_BED_PIN>(__unlikely(intercepted));
+
+      bed_on = true;
+    }
+    else
+    {
+      set_pin<HEATER_BED_PIN>(false);
+      bed_on = false;
+    }
+
+    ++pwm_counter;
+  }
+  else
+  {
+    static uint8 pwm_counter = 0;
+
+    // TODO : better heater state tracking.
+
+    const bool new_extruder_state = (pwm_counter <= extruder_pwm && __likely(extruder_pwm >= 0));
+    const bool new_bed_state = (pwm_counter <= bed_pwm && __likely(bed_pwm >= 0));
+
+    ++pwm_counter;
+
+    if (__unlikely(current_extruder_state != new_extruder_state))
+    {
+      current_extruder_state = new_extruder_state;
+      set_pin<HEATER_0_PIN>(new_extruder_state);
+    }
+
+    if (__unlikely(current_bed_state != new_bed_state))
+    {
+      current_bed_state = new_bed_state;
+      set_pin<HEATER_BED_PIN>(new_bed_state);
+    }
+  }
 
 	/**
 	 * One sensor is sampled on every other call of the ISR.
@@ -618,78 +727,39 @@ void Temperature::isr() {
 	 * This gives each ADC 0.9765ms to charge up.
 	 */
 
-	const auto set_admux_adcsra = [](uint8 pin)
-	{
-		ADMUX = _BV(REFS0) | (pin & 0x07);
-		SBI(ADCSRA, ADSC);
-	};
+  switch (adc_sensor_state++)
+  {
+  case sensor_state::initialize_hotend:
+  {
+    start_adc<TEMP_0_PIN>();
+  } break;
+  case sensor_state::read_hotend:
+  {
+    raw_temp_value += ADC;
+  } break;
+  case sensor_state::initialize_bed:
+  {
+    start_adc<TEMP_BED_PIN>();
+  } break;
+  case sensor_state::read_bed:
+  {
+    raw_temp_bed_value += ADC;
 
-	const auto start_adc = [&set_admux_adcsra](uint8 pin)
-	{
-		if (pin > 7)
-			ADCSRB = _BV(MUX5);
-		else
-			ADCSRB = 0_u8;
-		set_admux_adcsra(pin);
-	};
+    __assume(oversample_count < OVERSAMPLENR); // impossible to be >=, yet.
+    if (__unlikely(++oversample_count >= OVERSAMPLENR))
+    {
+      oversample_count = 0;
 
-	// oversamples = 16, thus (2^16)/16 is the greatest temperature we can represent without overflowing (4096).
-	// We should set a peak limit below that. 512 seems OK.
-	// 512 is nice as we actually don't have to mask the lower byte, only the upper byte, as the mask is 0x1FF.
-	constexpr const uint16 MaxTemp = 512_u16;
-	constexpr const uint16 MaxTempMask = MaxTemp - 1_u16;
-	constexpr const uint8 MaxTempMaskLower = uint8(MaxTempMask & 0xFF);
-	static_assert(MaxTempMaskLower == 0xFF, "The lower byte of the MaxTempMask must be 0xFF");
+      // Update the raw values.
+      set_current_temp_raw();
 
-	switch (adc_sensor_state) {
+      raw_temp_value = 0;
+      raw_temp_bed_value = 0;
+    }
 
-	case SensorsReady: {
-		// All sensors have been read. Stay in this state for a few
-		// ISRs to save on calls to temp update/checking code below.
-		//constexpr uint8 extra_loops = ACTUAL_ADC_SAMPLES - (uint8)SensorsReady;
-		//static uint8 delay_count = 0;
-		//if (extra_loops > 0) {
-		//	if (delay_count == 0) delay_count = extra_loops;   // Init this delay
-		//	if (--delay_count)                                 // While delaying...
-		//		adc_sensor_state = (ADCSensorState)(uint8(SensorsReady) - 1); // retain this state (else, next state will be 0)
-		//	break;
-		//}
-		//else
-			adc_sensor_state = (ADCSensorState)0; // Fall-through to start first sensor now
-	}
-
-	case PrepareTemp_0:
-		start_adc(TEMP_0_PIN);
-		break;
-	case MeasureTemp_0:
-	{
-		raw_temp_value += ADC;
-	} break;
-
-	case PrepareTemp_BED:
-		start_adc(TEMP_BED_PIN);
-		break;
-	case MeasureTemp_BED:
-		raw_temp_bed_value += ADC;
-		break;
-
-	case StartupDelay: break;
-
-	} // switch(adc_sensor_state)
-
-	if (!adc_sensor_state && ++oversample_count >= OVERSAMPLENR) { // 10 * 16 * 1/(16000000/64/256)  = 164ms.
-		oversample_count = 0;
-
-		// Update the raw values.
-		set_current_temp_raw();
-
-		raw_temp_value = 0;
-		raw_temp_bed_value = 0;
-
-	} // temp_count >= OVERSAMPLENR
-
-	// Go to the next state, up to SensorsReady
-	adc_sensor_state = (ADCSensorState)(uint8(uint8(adc_sensor_state) + 1) % uint8(StartupDelay));
+    adc_sensor_state = sensor_state::initialize_hotend;
+  }
+  }
 
 	Tuna::intrinsic::cli();
 	in_temp_isr = false;

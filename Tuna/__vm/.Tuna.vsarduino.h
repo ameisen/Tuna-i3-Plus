@@ -34,6 +34,10 @@ using PGM_VOID_P = void *;
 #define __builtin_constant_p(e) true
 #undef __builtin_strlen
 #define __builtin_strlen(e) strlen(e)
+#undef __builtin_unreachable
+#define __builtin_unreachable
+#undef __builtin_expect
+#define __builtin_expect(e, v) e
 
 #undef NEW_H
 #define NEW_H

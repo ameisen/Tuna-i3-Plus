@@ -429,6 +429,7 @@ void prepare_move_to_destination();
 
 void get_cartesian_from_steppers();
 void set_current_from_steppers_for_axis(const AxisEnum axis);
+void set_current_from_steppers();
 
 //void plan_arc(float target[XYZE], float* offset, uint8_t clockwise);
 
@@ -620,7 +621,7 @@ inline void get_serial_commands() {
 			}
 
 			// Movement commands alert when stopped
-			if (IsStopped()) {
+			if (__unlikely(!is_running())) {
 				char* gpos = strchr(command, 'G');
 				if (gpos) {
 					const int codenum = strtol(gpos + 1, nullptr, 10);
@@ -1044,36 +1045,35 @@ static void quick_home_xy() {
   *  - Set to current for missing axis codes
   *  - Set the feedrate, if included
   */
-template <MovementMode move_mode = MovementMode::Normal, MovementType move_type = MovementType::Linear>
+template <MovementType dimensional_move_type = MovementType::Linear, MovementMode move_mode = MovementMode::Modal, MovementMode extruder_move_mode = MovementMode::Modal>
 void gcode_get_destination() {
   float max_feedrate = type_trait<float>::max;
 
-  constexpr const bool param_feed = (move_type == MovementType::Linear);
+  constexpr const bool param_feed = (dimensional_move_type == MovementType::Linear);
 
 	LOOP_XYZE(i) {
+    __assume(motion::is_axial(i));
+    const AxisEnum axis = motion::as_axis(i);
+    __assume(axis >= X_AXIS && axis <= E_AXIS);
     if (parser.seen(axis_codes[i]))
     {
-      const auto axis_move = parser.value_axis_units(AxisEnum(i));
-      if constexpr (move_mode == MovementMode::Normal)
+      const auto axis_move = parser.value_axis_units(axis);
+
+      const MovementMode mode = __likely(axis != E_AXIS) ? move_mode : extruder_move_mode;
+
+      if (mode == MovementMode::Modal)
       {
         destination[i] = axis_move + (axis_relative_modes[i] || relative_mode ? current_position[i] : 0);
       }
       else
       {
-        if (AxisEnum(i) == E_AXIS)
+        if (mode == MovementMode::Absolute)
         {
-          destination[i] = axis_move + (axis_relative_modes[i] || relative_mode ? current_position[i] : 0);
+          destination[i] = axis_move;
         }
-        else
+        else // relative
         {
-          if constexpr (move_mode == MovementMode::Absolute)
-          {
-            destination[i] = axis_move;
-          }
-          else // relative
-          {
-            destination[i] = axis_move + current_position[i];
-          }
+          destination[i] = axis_move + current_position[i];
         }
       }
       if constexpr (!param_feed)
@@ -1171,15 +1171,15 @@ void host_keepalive() {
   * G0, G1: Coordinated movement of X Y Z E axes
   */
 
-template <MovementType move_type, MovementMode move_mode = MovementMode::Normal>
+template <MovementType move_type, MovementMode dimensional_move_mode = MovementMode::Modal, MovementMode extruder_move_mode = MovementMode::Modal>
 inline void linear_move()
 {
-  if (!IsRunning())
+  if (__unlikely(!is_running()))
   {
     return;
   }
 
-  gcode_get_destination<move_mode, move_type>(); // For X Y Z E F
+  gcode_get_destination<move_type, dimensional_move_mode, extruder_move_mode>(); // For X Y Z E F
 
   prepare_move_to_destination();
 }
@@ -1213,7 +1213,7 @@ inline void linear_move()
 
 /*
 inline void gcode_G2_G3(bool clockwise) {
-	if (IsRunning()) {
+	if (__likely(is_running())) {
 		gcode_get_destination();
 
 		float arc_offset[2] = { 0.0, 0.0 };
@@ -1282,9 +1282,9 @@ inline void gcode_G4() {
   * G5: Cubic B-spline
   */
 inline void gcode_G5() {
-	if (IsRunning()) {
+	if (__likely(is_running())) {
 
-		gcode_get_destination<MovementMode::Normal, MovementType::Linear>();
+		gcode_get_destination<MovementType::Linear, MovementMode::Modal, MovementMode::Modal>();
 
 		const float offset[] = {
 		  parser.linearval('I'),
@@ -1439,7 +1439,7 @@ public:
 * G93: Reset E position and extrude.
 */
 inline void gcode_G93() {
-  if (IsRunning())
+  if (__likely(is_running()))
   {
     current_position[E_AXIS] = 0.0f;
     sync_plan_position_e();
@@ -2529,7 +2529,7 @@ inline void gcode_M400() { stepper.synchronize(); }
 void quickstop_stepper() {
 	stepper.quick_stop();
 	stepper.synchronize();
-	set_current_from_steppers_for_axis(ALL_AXES);
+  set_current_from_steppers();
 	SYNC_PLAN_POSITION_KINEMATIC();
 }
 
@@ -2737,6 +2737,13 @@ void process_next_command() {
     break;
   case 9: // G9 - Relative Linear Move
     linear_move<MovementType::Linear, MovementMode::Relative>();
+    break;
+
+  case 13: // G13 - Absolute Linear Move, Relative Extrusion
+    linear_move<MovementType::Linear, MovementMode::Absolute, MovementMode::Relative>();
+    break;
+  case 14: // G14 - Relative Linear Move, Relative Extrusion
+    linear_move<MovementType::Linear, MovementMode::Relative, MovementMode::Relative>();
     break;
 
     // ~TUNA Extensions
@@ -3094,12 +3101,21 @@ void get_cartesian_from_steppers() {
  * the stepper positions, removing any leveling that
  * may have been applied.
  */
-void set_current_from_steppers_for_axis(const AxisEnum axis) {
+void set_current_from_steppers_for_axis(const AxisEnum axis)
+{
 	get_cartesian_from_steppers();
-	if (axis == ALL_AXES)
-		COPY(current_position, cartes);
-	else
-		current_position[axis] = cartes[axis];
+	current_position[axis] = cartes[axis];
+}
+
+/**
+* Set the current_position for all axes based on
+* the stepper positions, removing any leveling that
+* may have been applied.
+*/
+void set_current_from_steppers()
+{
+  get_cartesian_from_steppers();
+  COPY(current_position, cartes);
 }
 
 /**
@@ -3132,7 +3148,7 @@ void prepare_move_to_destination() {
 
 	if (!DEBUGGING(DRYRUN)) {
 		if (destination[E_AXIS] != current_position[E_AXIS]) {
-			if (Temperature::tooColdToExtrude()) {
+			if (Temperature::is_coldextrude()) {
 				current_position[E_AXIS] = destination[E_AXIS]; // Behave as if the move really took place, but ignore E part
 				SERIAL_ECHO_START();
 				SERIAL_ECHOLNPGM(MSG_ERR_COLD_EXTRUDE_STOP);
@@ -3424,7 +3440,7 @@ void kill(const char* lcd_msg) {
 void stop() {
 	Temperature::disable_all_heaters(); // 'unpause' taken care of in here
 
-	if (IsRunning()) {
+	if (__likely(is_running())) {
 		Stopped_gcode_LastN = gcode_LastN; // Save last g_code for restart
 		SERIAL_ERROR_START();
 		SERIAL_ERRORLNPGM(MSG_ERR_STOPPED);

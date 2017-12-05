@@ -2,31 +2,59 @@
 
 namespace Tuna
 {
-  template <typename T>
-  struct type_trait : trait::ce_only
+  namespace _internal
   {
-    // Default
-    constexpr static const char name[] = "unknown";
+    template <typename T>
+    struct base_type_trait : trait::ce_only
+    {
+      // Default
+      constexpr static const char name[] = "unknown";
 
-    using type = T;
+      using type = T;
+      using underlying_type = T;
 
-    constexpr static uint8 size = sizeof(T);
-    constexpr static uint8 bits = sizeof(T) * 8;
+      constexpr static uint8 size = sizeof(T);
+      constexpr static uint8 bits = sizeof(T) * 8;
 
-    constexpr static bool is_signed = false;
-    constexpr static bool is_unsigned = false;
-    constexpr static bool is_integral = false;
-    constexpr static bool is_float = false;
-    constexpr static bool is_primitive = false;
-    constexpr static bool is_array = false;
-    constexpr static bool is_pointer = false;
-    constexpr static bool is_reference = false;
-    constexpr static bool is_atomic = false;
-    constexpr static bool is_emulated = false;
+      constexpr static bool is_signed = false;
+      constexpr static bool is_unsigned = false;
+      constexpr static bool is_integral = false;
+      constexpr static bool is_float = false;
+      constexpr static bool is_primitive = false;
+      constexpr static bool is_array = false;
+      constexpr static bool is_pointer = false;
+      constexpr static bool is_reference = false;
+      constexpr static bool is_atomic = false;
+      constexpr static bool is_emulated = false;
+      constexpr static bool is_enuum = false;
+    };
+
+    template <typename T>
+    struct enum_type_trait;
+
+    template <typename T, bool is_enum = __is_enum(T)>
+    struct base_type_trait_selector;
+
+    template <typename T>
+    struct base_type_trait_selector<T, true> final : trait::ce_only
+    {
+      using type = enum_type_trait<T>;
+    };
+
+    template <typename T>
+    struct base_type_trait_selector<T, false> final : trait::ce_only
+    {
+      using type = base_type_trait<T>;
+    };
+  }
+
+  template <typename T>
+  struct type_trait final : _internal::base_type_trait_selector<T>::type
+  {
   };
 
   template <>
-  struct type_trait<void> final : trait::ce_only
+  struct type_trait<void> final : _internal::base_type_trait<void>
   {
     constexpr static const char name[] = "void";
 
@@ -48,7 +76,7 @@ namespace Tuna
   };
 
   template <>
-  struct type_trait<bool> final : trait::ce_only
+  struct type_trait<bool> final : _internal::base_type_trait<bool>
   {
     constexpr static const char name[] = "bool";
 
@@ -84,7 +112,7 @@ namespace Tuna
   };
 
   template <>
-  struct type_trait<uint8> final : trait::ce_only
+  struct type_trait<uint8> final : _internal::base_type_trait<uint8>
   {
     constexpr static const char name[] = "uint8";
 
@@ -93,6 +121,7 @@ namespace Tuna
     using unsigned_type = type;
     using larger_type = uint16;
     using smaller_type = void;
+    using faster_type = type;
 
     constexpr static uint8 size = sizeof(type);
     constexpr static uint8 bits = sizeof(type) * 8;
@@ -119,7 +148,7 @@ namespace Tuna
   };
 
   template <>
-  struct type_trait<int8> final : trait::ce_only
+  struct type_trait<int8> final : _internal::base_type_trait<int8>
   {
     constexpr static const char name[] = "int8";
 
@@ -128,6 +157,7 @@ namespace Tuna
     using unsigned_type = uint8;
     using larger_type = int16;
     using smaller_type = void;
+    using faster_type = type;
 
     constexpr static uint8 size = sizeof(type);
     constexpr static uint8 bits = sizeof(type) * 8;
@@ -154,7 +184,7 @@ namespace Tuna
   };
 
   template <>
-  struct type_trait<uint16> : trait::ce_only
+  struct type_trait<uint16> : _internal::base_type_trait<uint16>
   {
     constexpr static const char name[] = "uint16";
 
@@ -163,6 +193,7 @@ namespace Tuna
     using unsigned_type = type;
     using larger_type = uint24;
     using smaller_type = uint8;
+    using faster_type = type;
 
     constexpr static uint8 size = sizeof(type);
     constexpr static uint8 bits = sizeof(type) * 8;
@@ -193,7 +224,7 @@ namespace Tuna
   struct type_trait<unsigned int> final : type_trait<uint16> {};
 
   template <>
-  struct type_trait<int16> : trait::ce_only
+  struct type_trait<int16> : _internal::base_type_trait<int16>
   {
     constexpr static const char name[] = "int16";
 
@@ -202,6 +233,7 @@ namespace Tuna
     using unsigned_type = uint16;
     using larger_type = int24;
     using smaller_type = int8;
+    using faster_type = type;
 
     constexpr static uint8 size = sizeof(type);
     constexpr static uint8 bits = sizeof(type) * 8;
@@ -233,7 +265,7 @@ namespace Tuna
 
 
   template <>
-  struct type_trait<uint24> final : trait::ce_only
+  struct type_trait<uint24> final : _internal::base_type_trait<uint24>
   {
     constexpr static const char name[] = "uint24";
 
@@ -242,6 +274,7 @@ namespace Tuna
     using unsigned_type = type;
     using larger_type = uint32;
     using smaller_type = uint16;
+    using faster_type = type;
 
     constexpr static uint8 size = sizeof(type);
     constexpr static uint8 bits = sizeof(type) * 8;
@@ -268,7 +301,7 @@ namespace Tuna
   };
 
   template <>
-  struct type_trait<int24> final : trait::ce_only
+  struct type_trait<int24> final : _internal::base_type_trait<int24>
   {
     constexpr static const char name[] = "int24";
 
@@ -277,6 +310,7 @@ namespace Tuna
     using unsigned_type = uint24;
     using larger_type = int32;
     using smaller_type = int16;
+    using faster_type = type;
 
     constexpr static uint8 size = sizeof(type);
     constexpr static uint8 bits = sizeof(type) * 8;
@@ -303,7 +337,7 @@ namespace Tuna
   };
 
   template <>
-  struct type_trait<uint32> final : trait::ce_only
+  struct type_trait<uint32> final : _internal::base_type_trait<uint32>
   {
     constexpr static const char name[] = "uint32";
 
@@ -312,6 +346,7 @@ namespace Tuna
     using unsigned_type = type;
     using larger_type = uint64;
     using smaller_type = uint16;
+    using faster_type = type;
 
     constexpr static uint8 size = sizeof(type);
     constexpr static uint8 bits = sizeof(type) * 8;
@@ -338,7 +373,7 @@ namespace Tuna
   };
 
   template <>
-  struct type_trait<int32> final : trait::ce_only
+  struct type_trait<int32> final : _internal::base_type_trait<int32>
   {
     constexpr static const char name[] = "int32";
 
@@ -347,6 +382,7 @@ namespace Tuna
     using unsigned_type = uint32;
     using larger_type = int64;
     using smaller_type = int16;
+    using faster_type = type;
 
     constexpr static uint8 size = sizeof(type);
     constexpr static uint8 bits = sizeof(type) * 8;
@@ -373,7 +409,7 @@ namespace Tuna
   };
 
   template <>
-  struct type_trait<uint64> final : trait::ce_only
+  struct type_trait<uint64> final : _internal::base_type_trait<uint64>
   {
     constexpr static const char name[] = "uint64";
 
@@ -382,6 +418,7 @@ namespace Tuna
     using unsigned_type = type;
     using larger_type = void;
     using smaller_type = uint32;
+    using faster_type = type;
 
     constexpr static uint8 size = sizeof(type);
     constexpr static uint8 bits = sizeof(type) * 8;
@@ -408,7 +445,7 @@ namespace Tuna
   };
 
   template <>
-  struct type_trait<int64> final : trait::ce_only
+  struct type_trait<int64> final : _internal::base_type_trait<int64>
   {
     constexpr static const char name[] = "int64";
 
@@ -417,6 +454,7 @@ namespace Tuna
     using unsigned_type = uint64;
     using larger_type = void;
     using smaller_type = int32;
+    using faster_type = type;
 
     constexpr static uint8 size = sizeof(type);
     constexpr static uint8 bits = sizeof(type) * 8;
@@ -442,7 +480,7 @@ namespace Tuna
   };
 
   template <>
-  struct type_trait<float> : trait::ce_only
+  struct type_trait<float> : _internal::base_type_trait<float>
   {
     constexpr static const char name[] = "float";
 
@@ -451,6 +489,7 @@ namespace Tuna
     using unsigned_type = void;
     using larger_type = void;
     using smaller_type = void;
+    using faster_type = type;
 
     constexpr static uint8 size = sizeof(type);
     constexpr static uint8 bits = sizeof(type) * 4;
@@ -475,4 +514,36 @@ namespace Tuna
   // On AVR, float == double == long double, though the compiler doesn't always agree due to strict typing.
   template <> struct type_trait<double> final : type_trait<float> {};
   template <> struct type_trait<long double> final : type_trait<float> {};
+
+  namespace _internal
+  {
+    template <typename T>
+    struct enum_type_trait : _internal::base_type_trait<T>
+    {
+      // Default
+      constexpr static const char name[] = "enumerator";
+
+      using type = T;
+      using underlying_type = __underlying_type(T);
+
+      constexpr static uint8 size = sizeof(T);
+      constexpr static uint8 bits = sizeof(T) * 8;
+
+      constexpr static bool is_signed = type_trait<underlying_type>::is_signed;
+      constexpr static bool is_unsigned = type_trait<underlying_type>::is_unsigned;
+      constexpr static bool is_integral = type_trait<underlying_type>::is_integral;
+      constexpr static bool is_float = type_trait<underlying_type>::is_float;
+      constexpr static bool is_primitive = type_trait<underlying_type>::is_primitive;
+      constexpr static bool is_array = type_trait<underlying_type>::is_array;
+      constexpr static bool is_pointer = type_trait<underlying_type>::is_pointer;
+      constexpr static bool is_reference = type_trait<underlying_type>::is_reference;
+      constexpr static bool is_atomic = type_trait<underlying_type>::is_atomic;
+      constexpr static bool is_emulated = type_trait<underlying_type>::is_emulated;
+      constexpr static bool is_enum = true;
+    };
+  }
+
+  // Shortened versions
+  template <typename T>
+  using underlying_type = typename type_trait<T>::underlying_type;
 }

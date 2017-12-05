@@ -132,9 +132,9 @@ volatile uint24 Stepper::step_events_completed = 0; // The number of step events
 
 #endif // ADVANCE || LIN_ADVANCE
 
-long Stepper::acceleration_time, Stepper::deceleration_time;
+int24 Stepper::acceleration_time, Stepper::deceleration_time;
 
-volatile long Stepper::count_position[NUM_AXIS] = { 0 };
+volatile int24 Stepper::count_position[NUM_AXIS] = { 0 };
 volatile signed char Stepper::count_direction[NUM_AXIS] = { 1, 1, 1, 1 };
 
 #if ENABLED(MIXING_EXTRUDER)
@@ -145,7 +145,7 @@ unsigned short Stepper::acc_step_rate; // needed for deceleration start point
 uint8_t Stepper::step_loops, Stepper::step_loops_nominal;
 unsigned short Stepper::OCR1A_nominal;
 
-volatile long Stepper::endstops_trigsteps[XYZ];
+volatile int24 Stepper::endstops_trigsteps[XYZ];
 
 #if ENABLED(X_DUAL_STEPPER_DRIVERS)
   #define X_APPLY_DIR(v,Q) do{ X_DIR_WRITE(v); X2_DIR_WRITE((v) != INVERT_X2_VS_X_DIR); }while(0)
@@ -221,7 +221,7 @@ volatile long Stepper::endstops_trigsteps[XYZ];
 // D2 C2 B2 A2 is longIn2
 //
 #define MultiU24X32toH16(intRes, longIn1, longIn2) \
-  asm volatile ( \
+  asm ( \
                  "clr r26 \n\t" \
                  "mul %A1, %B2 \n\t" \
                  "mov r27, r1 \n\t" \
@@ -380,7 +380,7 @@ void Stepper::isr() {
   #if ENABLED(ENDSTOP_INTERRUPTS_FEATURE)
     #define SPLIT(L) _SPLIT(L)
   #else                 // sample endstops in between step pulses
-    static uint32_t step_remaining = 0;
+    static uint16_t step_remaining = 0;
     #define SPLIT(L) do { \
       _SPLIT(L); \
       if (ENDSTOPS_ENABLED && L > ENDSTOP_NOMINAL_OCR_VAL) { \
@@ -390,7 +390,7 @@ void Stepper::isr() {
       } \
     }while(0)
 
-    if (step_remaining && ENDSTOPS_ENABLED) {   // Just check endstops - not yet time for a step
+    if (__likely(step_remaining != 0) && ENDSTOPS_ENABLED) {   // Just check endstops - not yet time for a step
       endstops.update();
       if (step_remaining > ENDSTOP_NOMINAL_OCR_VAL) {
         step_remaining -= ENDSTOP_NOMINAL_OCR_VAL;
@@ -423,10 +423,10 @@ void Stepper::isr() {
   }
 
   // If there is no current block, attempt to pop one from the buffer
-  if (!current_block) {
+  if (__unlikely(current_block == nullptr)) {
     // Anything in the buffer?
     current_block = planner.get_current_block();
-    if (current_block) {
+    if (__likely(current_block != nullptr)) {
       trapezoid_generator_reset();
 
       // Initialize Bresenham counters to 1/2 the ceiling
@@ -1195,7 +1195,7 @@ void Stepper::synchronize() { while (planner.blocks_queued()) idle(); }
  * This allows get_axis_position_mm to correctly
  * derive the current XYZ position later on.
  */
-void Stepper::set_position(const long &a, const long &b, const long &c, const long &e) {
+void Stepper::set_position(const int24 &a, const int24 &b, const int24 &c, const int24 &e) {
 
   synchronize(); // Bad to set stepper counts in the middle of a move
 
@@ -1228,13 +1228,13 @@ void Stepper::set_position(const long &a, const long &b, const long &c, const lo
   CRITICAL_SECTION_END;
 }
 
-void Stepper::set_position(const AxisEnum &axis, const long &v) {
+void Stepper::set_position(const AxisEnum &axis, const int24 &v) {
   CRITICAL_SECTION_START;
   count_position[axis] = v;
   CRITICAL_SECTION_END;
 }
 
-void Stepper::set_e_position(const long &e) {
+void Stepper::set_e_position(const int24 &e) {
   CRITICAL_SECTION_START;
   count_position[E_AXIS] = e;
   CRITICAL_SECTION_END;
@@ -1243,9 +1243,9 @@ void Stepper::set_e_position(const long &e) {
 /**
  * Get a stepper's position in steps.
  */
-long Stepper::position(AxisEnum axis) {
+int24 Stepper::position(AxisEnum axis) {
   CRITICAL_SECTION_START;
-  const long count_pos = count_position[axis];
+  const int24 count_pos = count_position[axis];
   CRITICAL_SECTION_END;
   return count_pos;
 }

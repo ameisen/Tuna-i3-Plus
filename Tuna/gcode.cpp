@@ -90,7 +90,7 @@ void GCodeParser::parse(char *p) {
   while (*p == ' ') ++p;
 
   // Skip N[-0-9] if included in the command line
-  if (*p == 'N' && NUMERIC_SIGNED(p[1])) {
+  if (__unlikely(*p == 'N') && NUMERIC_SIGNED(p[1])) {
     #if ENABLED(FASTER_GCODE_PARSER)
       //set('N', p + 1);     // (optional) Set the 'N' parameter value
     #endif
@@ -120,7 +120,7 @@ void GCodeParser::parse(char *p) {
   while (*p == ' ') p++;
 
   // Bail if there's no command code number
-  if (!NUMERIC(*p)) return;
+  if (__unlikely(!NUMERIC(*p))) return;
 
   // Save the command letter at this point
   // A '?' signifies an unknown command
@@ -183,7 +183,7 @@ void GCodeParser::parse(char *p) {
       #define PARAM_TEST true
     #endif
 
-    if (PARAM_TEST) {
+    if (__likely(PARAM_TEST)) {
 
       while (*p == ' ') p++;                    // Skip spaces between parameters & values
       const bool has_num = DECIMAL_SIGNED(*p);  // The parameter has a number [-+0-9.]

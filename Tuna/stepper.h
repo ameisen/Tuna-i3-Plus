@@ -130,19 +130,19 @@ class Stepper final {
       #define _NEXT_ISR(T) OCR1A = T
     #endif // ADVANCE or LIN_ADVANCE
 
-    static long acceleration_time, deceleration_time;
+    static int24 acceleration_time, deceleration_time;
     //unsigned long accelerate_until, decelerate_after, acceleration_rate, initial_rate, final_rate, nominal_rate;
     static unsigned short acc_step_rate; // needed for deceleration start point
     static uint8_t step_loops, step_loops_nominal;
     static unsigned short OCR1A_nominal;
 
-    static volatile long endstops_trigsteps[XYZ];
-    static volatile long endstops_stepsTotal, endstops_stepsDone;
+    static volatile int24 endstops_trigsteps[XYZ];
+    static volatile int24 endstops_stepsTotal, endstops_stepsDone;
 
     //
     // Positions of stepper motors, in step units
     //
-    static volatile long count_position[NUM_AXIS];
+    static volatile int24 count_position[NUM_AXIS];
 
     //
     // Current direction of stepper motors (+1 or -1)
@@ -190,9 +190,9 @@ class Stepper final {
     //
     // Set the current position in steps
     //
-    static void set_position(const long &a, const long &b, const long &c, const long &e);
-    static void set_position(const AxisEnum &a, const long &v);
-    static void set_e_position(const long &e);
+    static void set_position(const int24 &a, const int24 &b, const int24 &c, const int24 &e);
+    static void set_position(const AxisEnum &a, const int24 &v);
+    static void set_e_position(const int24 &e);
 
     //
     // Set direction bits for all steppers
@@ -202,7 +202,7 @@ class Stepper final {
     //
     // Get the position of a stepper, in steps
     //
-    static long position(AxisEnum axis);
+    static int24 position(AxisEnum axis);
 
     //
     // Report the positions of the steppers, in steps

@@ -658,9 +658,10 @@ void MarlinSettings::postprocess() {
     #endif
 
       // TUNA
-      const float calib = Tuna::Thermal::Manager::Simple::GetCalibration();
-      EEPROM_WRITE(calib);
-      EEPROM_WRITE(calib);
+      const auto &calib = Tuna::Thermal::Manager::Simple::GetCalibration();
+      EEPROM_WRITE(calib.Exponent_);
+      const uint32 scalar = uint32(calib.Scalar_);
+      EEPROM_WRITE(scalar);
       // ~TUNA
 
     if (!eeprom_error) {
@@ -1040,10 +1041,12 @@ void MarlinSettings::postprocess() {
       #endif
 
         // TUNA
-        float calib;
-        EEPROM_READ(calib);
+        Thermal::Manager::Simple::calibration calib;
+        EEPROM_READ(calib.Exponent_);
+        uint32 scalar;
+        EEPROM_READ(scalar);
+        calib.Scalar_ = uint8(scalar);
         Tuna::Thermal::Manager::Simple::SetCalibration(calib);
-        EEPROM_READ(calib); // old dummy value
         // ~TUNA
 
       if (working_crc == stored_crc) {

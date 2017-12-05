@@ -22,7 +22,7 @@ inline void Tuna::VM::await_queue()
 template <MovementType speed, MovementMode move_mode>
 inline void Tuna::VM::linear_move(arg_type<float> X, arg_type<float> Y, arg_type<float> Z, arg_type<float> E, arg_type<float> FeedRate)
 {
-  if (!IsRunning())
+  if (__unlikely(!is_running()))
   {
     return;
   }
@@ -42,7 +42,7 @@ inline void Tuna::VM::linear_move(arg_type<float> X, arg_type<float> Y, arg_type
     if (value != none)
     {
       MovementMode move_mode_local = move_mode;
-      if (move_mode == MovementMode::Normal)
+      if (move_mode == MovementMode::Modal)
       {
         move_mode_local = (axis_relative_modes[axis] || relative_mode) ? MovementMode::Relative : MovementMode::Absolute;
       }
@@ -104,7 +104,7 @@ inline void Tuna::VM::linear_move(arg_type<float> X, arg_type<float> Y, arg_type
   refresh_cmd_timeout();
 
   if (E != none && !DEBUGGING(DRYRUN)) {
-    if (Temperature::tooColdToExtrude()) {
+    if (Temperature::is_coldextrude()) {
       current_position[E_AXIS] = destination[E_AXIS]; // Behave as if the move really took place, but ignore E part
       SERIAL_ECHO_START();
       SERIAL_ECHOLNPGM(MSG_ERR_COLD_EXTRUDE_STOP);
@@ -127,7 +127,7 @@ inline void Tuna::VM::linear_move(arg_type<float> X, arg_type<float> Y, arg_type
 template <MovementType speed, MovementMode move_mode>
 inline void Tuna::VM::extrude(arg_type<float> E, arg_type<float> FeedRate)
 {
-  if (!IsRunning())
+  if (__unlikely(!is_running()))
   {
     return;
   }
@@ -143,7 +143,7 @@ inline void Tuna::VM::extrude(arg_type<float> E, arg_type<float> FeedRate)
 #endif
 
   MovementMode move_mode_local = move_mode;
-  if (move_mode == MovementMode::Normal)
+  if (move_mode == MovementMode::Modal)
   {
     move_mode_local = (axis_relative_modes[E_AXIS] || relative_mode) ? MovementMode::Relative : MovementMode::Absolute;
   }
@@ -191,7 +191,7 @@ inline void Tuna::VM::extrude(arg_type<float> E, arg_type<float> FeedRate)
   refresh_cmd_timeout();
 
   if (!DEBUGGING(DRYRUN)) {
-    if (Temperature::tooColdToExtrude()) {
+    if (Temperature::is_coldextrude()) {
       current_position[E_AXIS] = destination[E_AXIS]; // Behave as if the move really took place, but ignore E part
       SERIAL_ECHO_START();
       SERIAL_ECHOLNPGM(MSG_ERR_COLD_EXTRUDE_STOP);

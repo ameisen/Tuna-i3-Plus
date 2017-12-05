@@ -28,7 +28,7 @@ namespace Tuna
 
     if constexpr (sizeof(U) == 1)
     {
-      __asm__ __volatile__
+      __asm__
       (
         "lpm %0, Z" "\n\t"
         : "=r" (retValue), "=z" (ptr)
@@ -37,7 +37,7 @@ namespace Tuna
     }
     else if constexpr (sizeof(U) == 2)
     {
-      __asm__ __volatile__
+      __asm__
       (
         "lpm %A0, Z+" "\n\t"
         "lpm %B0, Z" "\n\t"
@@ -47,7 +47,7 @@ namespace Tuna
     }
     else if constexpr (sizeof(U) == 3)
     {
-      __asm__ __volatile__
+      __asm__
       (
         "lpm %A0, Z+" "\n\t"
         "lpm %B0, Z+" "\n\t"
@@ -58,7 +58,7 @@ namespace Tuna
     }
     else if constexpr (sizeof(U) == 4)
     {
-      __asm__ __volatile__
+      __asm__
       (
         "lpm %A0, Z+" "\n\t"
         "lpm %B0, Z+" "\n\t"
@@ -70,7 +70,7 @@ namespace Tuna
     }
     else if constexpr (sizeof(U) == 5)
     {
-      __asm__ __volatile__
+      __asm__
       (
         "lpm %A0, Z+" "\n\t"
         "lpm %B0, Z+" "\n\t"
@@ -83,7 +83,7 @@ namespace Tuna
     }
     else if constexpr (sizeof(U) == 6)
     {
-      __asm__ __volatile__
+      __asm__
       (
         "lpm %A0, Z+" "\n\t"
         "lpm %B0, Z+" "\n\t"
@@ -97,7 +97,7 @@ namespace Tuna
     }
     else if constexpr (sizeof(U) == 7)
     {
-      __asm__ __volatile__
+      __asm__
       (
         "lpm %A0, Z+" "\n\t"
         "lpm %B0, Z+" "\n\t"
@@ -112,7 +112,7 @@ namespace Tuna
     }
     else if constexpr (sizeof(U) == 8)
     {
-      __asm__ __volatile__
+      __asm__
       (
         "lpm %A0, Z+" "\n\t"
         "lpm %B0, Z+" "\n\t"
@@ -137,7 +137,7 @@ namespace Tuna
       for (uint8 i = 0; i < qwords; ++i)
       {
         auto &val = *(uint64 *)retValuePtr;
-        __asm__ __volatile__
+        __asm__
         (
           "lpm %A0, Z+" "\n\t"
           "lpm %B0, Z+" "\n\t"
@@ -156,7 +156,7 @@ namespace Tuna
       if constexpr (type_size & 4)
       {
         auto &val = *(uint32 *)retValuePtr;
-        __asm__ __volatile__
+        __asm__
         (
           "lpm %A0, Z+" "\n\t"
           "lpm %B0, Z+" "\n\t"
@@ -171,7 +171,7 @@ namespace Tuna
       if constexpr (type_size & 2)
       {
         auto &val = *(uint16 *)retValuePtr;
-        __asm__ __volatile__
+        __asm__
         (
           "lpm %A0, Z+" "\n\t"
           "lpm %B0, Z" "\n\t"
@@ -184,7 +184,7 @@ namespace Tuna
       if constexpr (type_size & 1)
       {
         auto &val = *(uint8 *)retValuePtr;
-        __asm__ __volatile__
+        __asm__
         (
           "lpm %A0, Z" "\n\t"
           : "=r" (val), "=z" (ptr)

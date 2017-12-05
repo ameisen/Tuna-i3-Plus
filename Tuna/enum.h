@@ -33,20 +33,45 @@
  *  - X_HEAD and Y_HEAD is used for systems that don't have a 1:1 relationship
  *    between X_AXIS and X Head movement, like CoreXY bots
  */
-enum AxisEnum : uint8_t {
-  NO_AXIS   = 0xFF, // was -1,
-  X_AXIS    = 0,
-  A_AXIS    = 0,
+enum AxisEnum : uint8
+{
+  start     = 0,
+  X_AXIS    = start,
   Y_AXIS    = 1,
-  B_AXIS    = 1,
   Z_AXIS    = 2,
-  C_AXIS    = 2,
   E_AXIS    = 3,
-  X_HEAD    = 4,
-  Y_HEAD    = 5,
-  Z_HEAD    = 6,
-  ALL_AXES  = 100
+  end,
+
+  A_AXIS = X_AXIS,
+  B_AXIS = Y_AXIS,
+  C_AXIS = Z_AXIS,
 };
+
+namespace Tuna::motion
+{
+  constexpr const static auto axis_min = as<underlying_type<AxisEnum>>(AxisEnum::start);
+  constexpr const static auto axis_max = as<underlying_type<AxisEnum>>(AxisEnum::end);
+
+  constexpr inline __forceinline __flatten bool is_axial(const uint8 i)
+  {
+    return (i >= axis_min) && (i <= axis_max);
+  }
+
+  constexpr inline __forceinline __flatten AxisEnum as_axis(const uint8 i)
+  {
+    __assume(is_axial(i));
+    return as<AxisEnum>(i);
+  }
+
+  // TODO perhaps create a dedicated, constrained index type instead of using raw integers.
+  constexpr inline __forceinline __flatten auto as_index(const AxisEnum e)
+  {
+    const auto i = as<underlying_type<AxisEnum>>(e);
+    __assume(is_axial(i));
+    return i;
+  }
+
+}
 
 #define LOOP_S_LE_N(VAR, S, N) for (uint8_t VAR=S; VAR<=N; VAR++)
 #define LOOP_S_L_N(VAR, S, N) for (uint8_t VAR=S; VAR<N; VAR++)

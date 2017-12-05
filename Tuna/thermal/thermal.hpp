@@ -65,6 +65,12 @@ namespace Tuna
 		  Bed = 1
 	  };
 
+    enum class Trend : bool
+    {
+      Up = true,
+      Down = false,
+    };
+
 	  static constexpr uint8 num_hotends = 1;
 	  static constexpr uint8 num_beds = 1;
 
@@ -95,9 +101,7 @@ namespace Tuna
 
 	  static temp_t current_temperature,
 		  current_temperature_bed;
-	  static volatile uint16_t current_temperature_raw;
 	  static temp_t target_temperature;
-	  static volatile uint16_t current_temperature_bed_raw;
 	  static temp_t target_temperature_bed;
 
 	  static volatile bool in_temp_isr;
@@ -112,13 +116,15 @@ namespace Tuna
 	  static millis_t watch_bed_next_ms;
 
 	  static bool allow_cold_extrude;
-	  static bool tooColdToExtrude() {
+	  static __pure bool is_coldextrude() {
 		  return allow_cold_extrude ? false : degHotend() < min_extrude_temp;
 	  }
 
   private:
 
-	  static volatile bool temp_meas_ready;
+    static uint16 current_temperature_raw;
+    static uint16 current_temperature_bed_raw;
+	  static bool temp_meas_ready;
 	  static_assert(sizeof(Temperature::temp_meas_ready) == 1, "atomic boolean must be one byte");
 
 	  static millis_t next_bed_check_ms;
@@ -133,7 +139,7 @@ namespace Tuna
 
 	  static void init();
 
-    static pair<temp_t, bool> get_temperature_trend();
+    static Trend get_temperature_trend();
 
 	  /**
 	   * Static (class) methods

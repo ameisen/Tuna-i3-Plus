@@ -53,8 +53,8 @@ $gpp_buildhandler = Class.new do
 	def self.objcopy_path
 		return quote_wrap($ARDUINO_BIN_PATH + "avr-objcopy.exe")
 	end
-	
-	def self.buildline(source = "dummy.cpp")
+
+	def self.compile_args(source = "dummy.cpp")
 		buildopts = [
 			is_gccp(source) ? "-x c++" : "",				# make sure the compiler is using the right language!
 			is_c(source) ? "-std=gnu11" : "-std=gnu++17",	# set to the most recent spec the compiler can handle.
@@ -69,6 +69,8 @@ $gpp_buildhandler = Class.new do
 			"-mmcu=atmega2560",								# ATmega 2560
 			$TINY_CODE ? "-Os" : "-O3",						# Choose optimization level.
 			$TINY_CODE ? "-fno-tree-ch" : "",				# Disabling ftree-ch makes code smaller. Not convinced that it's _better_. TODO Validate.
+			"-funsigned-char",								# Force 'char' to be unsigned by default. Not pretty since normally types are _signed_ by default.
+			"-funsigned-bitfields",							# Force bitfields to be unsigned by default.
 			"-fno-reorder-functions",						# Disable function reordering. Useless on AVR, and generates bloated code.
 			"-fno-var-tracking-assignments",
 			"-fno-split-wide-types",						# Disables splitting wide types. Should make codegen _better_, but it is mkaing larger code for some reason. TODO Validate.
@@ -146,6 +148,7 @@ $gpp_buildhandler = Class.new do
 			"-fno-unwind-tables",
 			"-fno-asynchronous-unwind-tables",
 			"-fno-strict-volatile-bitfields",
+			#"-fpack-struct",
 
 			"--param max-crossjump-edges=1073741824",
 			"--param min-crossjump-insns=1",
@@ -219,6 +222,13 @@ $gpp_buildhandler = Class.new do
 		# -mint8
 		# -fstrict-enums
 		# -fuse-cxa-atexit
+
+		# -mno-interrupts # use this if this were a non-ISR build. Normally, since the stack pointer is > 8 bits, interrupts are cleared/reset before
+		# the stack pointer is changed as stack pointer alterations are otherwise non-atomic.
+		# Obviously, the code is far faster with this set, but you cannot use interrupts.
+
+		# -mshort-calls
+		# -mcall-prologues
 		
 		return_opts = ""
 		buildopts.each { |opt|
@@ -227,6 +237,37 @@ $gpp_buildhandler = Class.new do
 			end
 		}
 		return return_opts.chomp
+	end
+
+	def self.link_args(library_paths, source = "dummy.cpp")
+		lib_str = ""
+		library_paths.each { |dir|
+			lib_str += "-L#{quote_wrap(dir)} "
+		}
+
+		buildopts = [
+			"-fwhole-program",
+			"-Wl,-u,vfprintf",
+			"-lprintf_flt",
+			"-Wl,--sort-common",
+			"-s",
+			"-Wl,--gc-sections",
+			"-Wl,--relax",
+			"#{lib_str}-lm"
+		]
+
+		# --rodata-writable
+
+		# We also append compiler flags to the link args.
+		compile_opts = compile_args(source)
+
+		return_opts = ""
+		buildopts.each { |opt|
+			if (opt.length)
+				return_opts += opt + " "
+			end
+		}
+		return compile_opts + " " + return_opts.chomp
 	end
 	
 	def self.objcopy(command, print_cmd = true)
@@ -250,7 +291,7 @@ $gpp_buildhandler = Class.new do
 			includes += "-I#{quote_wrap(path)} "
 		}
 		includes.chomp!
-		command = compiler_path(source) + " " + includes + " " + buildline(source) + " -c #{quote_wrap(source)} -o #{quote_wrap(out)}"
+		command = compiler_path(source) + " " + includes + " " + compile_args(source) + " -c #{quote_wrap(source)} -o #{quote_wrap(out)}"
 		if (print_cmd)
 			puts $TAB + command
 			STDOUT.flush
@@ -265,7 +306,7 @@ $gpp_buildhandler = Class.new do
 	end
 	
 	def self.get_dependencies(source, print_cmd = false)
-		command = compiler_path(source) + " " + buildline(source) + " -M -MT \"\" #{quote_wrap(source)}"
+		command = compiler_path(source) + " " + compile_args(source) + " -M -MT \"\" #{quote_wrap(source)}"
 		if (print_cmd)
 			puts $TAB + command
 			STDOUT.flush
@@ -320,13 +361,7 @@ $gpp_buildhandler = Class.new do
 	end
 	
 	def self.link(outfile, archive, library_paths, print_cmd = true)
-	
-		lib_str = ""
-		library_paths.each { |dir|
-			lib_str += "-L#{quote_wrap(dir)} "
-		}
-
-		command = gcc_path() + " " + buildline() +  "-fwhole-program -Wl,-u,vfprintf -lprintf_flt -Wl,--sort-common -s -Wl,--gc-sections,--relax -o \"#{outfile}\" \"#{archive}\" #{lib_str}-lm"
+		command = gcc_path() + " " + link_args(library_paths) +  "-o \"#{outfile}\" \"#{archive}\""
 		if (print_cmd)
 			puts $TAB + command
 			STDOUT.flush

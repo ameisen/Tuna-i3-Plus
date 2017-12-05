@@ -67,9 +67,9 @@ enum class MovementType : uint8
 
 enum class MovementMode : uint8
 {
-  Normal, // whatever the VM configuration is.
-  Relative,
-  Absolute
+  Modal,       // Has axes honor the current modal setting
+  Relative,    // Forces axes to use relative positioning
+  Absolute,    // Forces axes to use absolute positioning
 };
 
 #if ENABLED(DUAL_X_CARRIAGE) || ENABLED(DUAL_NOZZLE_DUPLICATION_MODE)
@@ -206,8 +206,7 @@ extern uint8_t marlin_debug_flags;
 #define DEBUGGING(F) (marlin_debug_flags & (DEBUG_## F))
 
 extern bool Running;
-inline bool IsRunning() { return  Running; }
-inline bool IsStopped() { return !Running; }
+inline bool __forceinline __flatten is_running() { return  Running; }
 
 bool enqueue_and_echo_command(const char* cmd, bool say_ok=false); // Add a single command to the end of the buffer. Return false on failure.
 void enqueue_and_echo_commands(const Tuna::flash_string & __restrict cmd);          // Set one or more commands to be prioritized over the next Serial/SD command.
@@ -264,7 +263,7 @@ extern float current_position[NUM_AXIS];
 
 #if HAS_HOME_OFFSET && HAS_POSITION_SHIFT
   extern float workspace_offset[XYZ];
-  #define WORKSPACE_OFFSET(AXIS) workspace_offset[AXIS]
+  #define WORKSPACE_OFFSET(AXIS) workspace_offset[motion::as_index(AXIS)]
 #elif HAS_HOME_OFFSET
   #define WORKSPACE_OFFSET(AXIS) home_offset[AXIS]
 #elif HAS_POSITION_SHIFT
@@ -279,8 +278,8 @@ extern float current_position[NUM_AXIS];
 #if HAS_POSITION_SHIFT || DISABLED(DELTA)
   #define LOGICAL_X_POSITION(POS)   LOGICAL_POSITION(POS, X_AXIS)
   #define LOGICAL_Y_POSITION(POS)   LOGICAL_POSITION(POS, Y_AXIS)
-  #define RAW_X_POSITION(POS)       RAW_POSITION(POS, X_AXIS)
-  #define RAW_Y_POSITION(POS)       RAW_POSITION(POS, Y_AXIS)
+  #define RAW_X_POSITION(POS)       RAW_POSITION(POS, AxisEnum::X_AXIS)
+  #define RAW_Y_POSITION(POS)       RAW_POSITION(POS, AxisEnum::Y_AXIS)
 #else
   #define LOGICAL_X_POSITION(POS)   (POS)
   #define LOGICAL_Y_POSITION(POS)   (POS)

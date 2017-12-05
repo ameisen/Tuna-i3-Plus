@@ -334,7 +334,7 @@ class Planner final {
         inverse_kinematics(lpos);
         _buffer_line(delta[A_AXIS], delta[B_AXIS], delta[C_AXIS], ltarget[E_AXIS], fr_mm_s, extruder);
       #else
-        _buffer_line(lpos[X_AXIS], lpos[Y_AXIS], lpos[Z_AXIS], lpos[E_AXIS], fr_mm_s, extruder);
+        _buffer_line(lpos[motion::as_index(AxisEnum::X_AXIS)], lpos[motion::as_index(AxisEnum::Y_AXIS)], lpos[motion::as_index(AxisEnum::Z_AXIS)], lpos[motion::as_index(AxisEnum::E_AXIS)], fr_mm_s, extruder);
       #endif
     }
 
@@ -355,8 +355,8 @@ class Planner final {
     }
     static void set_position_mm_kinematic(const float position[NUM_AXIS]);
     static void set_position_mm(const AxisEnum axis, const float & __restrict v);
-    static FORCE_INLINE void set_z_position_mm(const float & __restrict z) { set_position_mm(Z_AXIS, z); }
-    static FORCE_INLINE void set_e_position_mm(const float & __restrict e) { set_position_mm(AxisEnum(E_AXIS), e); }
+    static FORCE_INLINE void set_z_position_mm(const float & __restrict z) { set_position_mm(AxisEnum::Z_AXIS, z); }
+    static FORCE_INLINE void set_e_position_mm(const float & __restrict e) { set_position_mm(AxisEnum::E_AXIS, e); }
 
     /**
      * Sync from the stepper positions. (e.g., after an interrupted move)

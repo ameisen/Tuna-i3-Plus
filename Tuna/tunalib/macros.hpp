@@ -35,6 +35,9 @@
 // Returns 'true' if the provided expression can be resolved at compile-time, otherwise false.
 #define __is_constexpr(x) __builtin_constant_p(x)
 
+// Creates a memory barrier, where all stores to memory must be completed.
+#define __memorybarrier do { asm volatile("":::"memory"); } while (false)
+
 // Specifies that a function does not return.
 #define __noreturn __attribute__((noreturn))
 
@@ -114,6 +117,15 @@
 #else
 # define __compiling 0
 # define c_static_assert(...)
-#endif
+#endif // __INTELLISENSE__
+
+// A few extra helpers for intellisense to limit IDE errors
+#if !__compiling
+# undef __assume
+# define __assume(expression)
+
+# undef __memorybarrier
+# define __memorybarrier 0
+#endif //!__compiling
 
 // TODO leaf, maybe
