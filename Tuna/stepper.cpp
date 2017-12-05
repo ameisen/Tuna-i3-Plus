@@ -122,7 +122,7 @@ volatile uint24 Stepper::step_events_completed = 0; // The number of step events
    * in future the planner should slow down if advance stepping rate would be too high
    */
   FORCE_INLINE uint16_t adv_rate(const int steps, const uint16_t timer, const uint8_t loops) {
-    if (steps) {
+    if (__likely(steps != 0)) {
       const uint16_t rate = (timer * loops) / abs(steps);
       //return constrain(rate, 1, ADV_NEVER - 1)
       return rate ? rate : 1;
@@ -841,7 +841,7 @@ void Stepper::isr() {
   #endif
 
   // If current block is finished, reset pointer
-  if (all_steps_done) {
+  if (__unlikely(all_steps_done)) {
     current_block = nullptr;
     planner.discard_current_block();
   }

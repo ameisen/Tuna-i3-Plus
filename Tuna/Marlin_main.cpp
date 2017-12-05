@@ -267,7 +267,7 @@ CardReader card;
 
 bool Running = true;
 
-uint8_t marlin_debug_flags = DEBUG_NONE;
+//uint8_t marlin_debug_flags = DEBUG_NONE;
 
 /**
  * Cartesian Current Position
@@ -467,7 +467,7 @@ static bool drain_injected_commands_P() {
 		cmd[sizeof(cmd) - 1] = '\0';
 		while ((c = cmd[i]) && c != '\n') i++; // find the end of this gcode command
 		cmd[i] = '\0';
-		if (enqueue_and_echo_command(cmd))     // success?
+		if (__likely(enqueue_and_echo_command(cmd)))     // success?
 			injected_commands_P = c ? injected_commands_P.c_str() + i + 1 : nullptr; // next command or done
 	}
 	return (injected_commands_P);    // return whether any more remain
@@ -496,7 +496,10 @@ void clear_command_queue() {
  */
 inline void _commit_command(bool say_ok) {
 	send_ok[cmd_queue_index_w] = say_ok;
-	if (++cmd_queue_index_w >= BUFSIZE) cmd_queue_index_w = 0;
+  if (__unlikely(++cmd_queue_index_w >= BUFSIZE))
+  {
+    cmd_queue_index_w = 0;
+  }
 	commands_in_queue++;
 }
 
@@ -506,7 +509,10 @@ inline void _commit_command(bool say_ok) {
  * Return false for a full buffer, or if the 'command' is a comment.
  */
 inline bool _enqueuecommand(const char* cmd, bool say_ok = false) {
-	if (*cmd == ';' || commands_in_queue >= BUFSIZE) return false;
+  if (__unlikely(*cmd == ';') || __unlikely(commands_in_queue >= BUFSIZE))
+  {
+    return false;
+  }
 	strcpy(command_queue[cmd_queue_index_w], cmd);
 	_commit_command(say_ok);
 	return true;
@@ -516,7 +522,7 @@ inline bool _enqueuecommand(const char* cmd, bool say_ok = false) {
  * Enqueue with Serial Echo
  */
 bool enqueue_and_echo_command(const char* cmd, bool say_ok/*=false*/) {
-	if (_enqueuecommand(cmd, say_ok)) {
+	if (__likely(_enqueuecommand(cmd, say_ok))) {
 		SERIAL_ECHO_START();
 		SERIAL_ECHOPAIR(MSG_ENQUEUEING, cmd);
 		SERIAL_CHAR('"');
@@ -566,11 +572,11 @@ inline void get_serial_commands() {
 		/**
 		 * If the character ends the line
 		 */
-		if (serial_char == '\n' || serial_char == '\r') {
+		if (__unlikely(serial_char == '\n' || serial_char == '\r')) {
 
 			serial_comment_mode = false; // end of line == end of comment
 
-			if (!serial_count) continue; // skip empty lines
+			if (__unlikely(!serial_count)) continue; // skip empty lines
 
 			serial_line_buffer[serial_count] = 0; // terminate string
 			serial_count = 0; //reset buffer
@@ -578,10 +584,10 @@ inline void get_serial_commands() {
 			char* command = serial_line_buffer;
 
 			while (*command == ' ') command++; // skip any leading spaces
-			char *npos = (*command == 'N') ? command : nullptr, // Require the N parameter to start the line
+			char *npos = __unlikely(*command == 'N') ? command : nullptr, // Require the N parameter to start the line
 				*apos = strchr(command, '*');
 
-			if (npos) {
+			if (__unlikely(npos)) {
 
 				bool M110 = strstr_P(command, PSTR("M110")) != nullptr;
 
@@ -615,7 +621,7 @@ inline void get_serial_commands() {
 				gcode_LastN = gcode_N;
 				// if no errors, continue parsing
 			}
-			else if (apos) { // No '*' without 'N'
+			else if (__unlikely(apos)) { // No '*' without 'N'
 				gcode_line_error(PSTR(MSG_ERR_NO_LINENUMBER_WITH_CHECKSUM), false);
 				return;
 			}
@@ -639,14 +645,14 @@ inline void get_serial_commands() {
 
 #if DISABLED(EMERGENCY_PARSER)
 			// If command was e-stop process now
-			if (strcmp(command, "M108") == 0) {
+			if (__unlikely(strcmp(command, "M108") == 0)) {
 				wait_for_heatup = false;
 #if ENABLED(ULTIPANEL)
 				wait_for_user = false;
 #endif
 			}
-			if (strcmp(command, "M112") == 0) kill(PSTR(MSG_KILLED));
-			if (strcmp(command, "M410") == 0) { quickstop_stepper(); }
+			if (__unlikely(strcmp(command, "M112") == 0)) kill(PSTR(MSG_KILLED));
+			if (__unlikely(strcmp(command, "M410") == 0)) { quickstop_stepper(); }
 #endif
 
 #if defined(NO_TIMEOUTS) && NO_TIMEOUTS > 0
@@ -656,11 +662,11 @@ inline void get_serial_commands() {
 			// Add the command to the queue
 			_enqueuecommand(serial_line_buffer, true);
 		}
-		else if (serial_count >= MAX_CMD_SIZE - 1) {
+		else if (__unlikely(serial_count >= MAX_CMD_SIZE - 1)) {
 			// Keep fetching, but ignore normal characters beyond the max length
 			// The command will be injected when EOL is reached
 		}
-		else if (serial_char == '\\') {  // Handle escapes
+		else if (__unlikely(serial_char == '\\')) {  // Handle escapes
 			if (MYSERIAL.available() > 0) {
 				// if we have one more character, copy it over
 				serial_char = MYSERIAL.read();
@@ -685,7 +691,7 @@ inline void get_sdcard_commands() {
 	static bool stop_buffering = false,
 		sd_comment_mode = false;
 
-	if (!card.sdprinting) return;
+	if (__unlikely(!card.sdprinting)) return;
 
 	/**
 	 * '#' stops reading from SD to the buffer prematurely, so procedural
@@ -694,19 +700,19 @@ inline void get_sdcard_commands() {
 	 * due to checksums, however, no checksums are used in SD printing.
 	 */
 
-	if (commands_in_queue == 0) stop_buffering = false;
+	if (__unlikely(commands_in_queue == 0)) stop_buffering = false;
 
 	uint16_t sd_count = 0;
 	bool card_eof = card.eof();
-	while (commands_in_queue < BUFSIZE && !card_eof && !stop_buffering) {
+	while (commands_in_queue < BUFSIZE && __likely(!card_eof) && __likely(!stop_buffering)) {
 		const int16_t n = card.get();
 		char sd_char = (char)n;
 		card_eof = card.eof();
-		if (card_eof || n == -1
+		if (__unlikely(card_eof) || n == -1
 			|| sd_char == '\n' || sd_char == '\r'
 			|| ((sd_char == '#' || sd_char == ':') && !sd_comment_mode)
 			) {
-			if (card_eof) {
+			if (__unlikely(card_eof)) {
 				SERIAL_PROTOCOLLNPGM(MSG_FILE_PRINTED);
 				card.printingHasFinished();
 #if ENABLED(PRINTER_EVENT_LEDS)
@@ -721,11 +727,11 @@ inline void get_sdcard_commands() {
 #endif
 				card.checkautostart(true);
 			}
-			else if (n == -1) {
+			else if (__unlikely(n == -1)) {
 				SERIAL_ERROR_START();
 				SERIAL_ECHOLNPGM(MSG_SD_ERR_READ);
 			}
-			if (sd_char == '#') stop_buffering = true;
+			if (__unlikely(sd_char == '#')) stop_buffering = true;
 
 			sd_comment_mode = false; // for new command
 
@@ -736,7 +742,7 @@ inline void get_sdcard_commands() {
 
 			_commit_command(false);
 		}
-		else if (sd_count >= MAX_CMD_SIZE - 1) {
+		else if (__unlikely(sd_count >= MAX_CMD_SIZE - 1)) {
 			/**
 			 * Keep fetching, but ignore normal characters beyond the max length
 			 * The command will be injected when EOL is reached
@@ -744,7 +750,7 @@ inline void get_sdcard_commands() {
 		}
 		else {
 			if (sd_char == ';') sd_comment_mode = true;
-			if (!sd_comment_mode) command_queue[cmd_queue_index_w][sd_count++] = sd_char;
+			if (__likely(!sd_comment_mode)) command_queue[cmd_queue_index_w][sd_count++] = sd_char;
 		}
 	}
 }
@@ -758,7 +764,7 @@ inline void get_sdcard_commands() {
 void get_available_commands() {
 
 	// if any immediate commands remain, don't get other commands yet
-	if (drain_injected_commands_P()) return;
+	if (__unlikely(drain_injected_commands_P())) return;
 
 	get_serial_commands();
 
@@ -771,7 +777,7 @@ void get_available_commands() {
  * Returns TRUE if the target is invalid
  */
 bool get_target_extruder_from_command(const uint16_t code) {
-	if (parser.seenval('T')) {
+	if (__unlikely(parser.seenval('T'))) {
 		const int8_t e = parser.value_byte();
 		if (e >= EXTRUDERS) {
 			SERIAL_ECHO_START();
@@ -857,7 +863,7 @@ static void set_axis_is_at_home(const AxisEnum axis) {
 inline float get_homing_bump_feedrate(const AxisEnum axis) {
 	static const uint8_t homing_bump_divisor[] __flashmem = HOMING_BUMP_DIVISOR;
 	uint8_t hbd = pgm_read_byte(&homing_bump_divisor[axis]);
-	if (hbd < 1) {
+	if (__unlikely(hbd < 1)) {
 		hbd = 10;
 		SERIAL_ECHO_START();
 		SERIAL_ECHOLNPGM("Warning: Homing Bump Divisor < 1");
@@ -1091,7 +1097,7 @@ void gcode_get_destination() {
 	}
 
   // G0 still has an F parameter that's used by Cura, unfortunately.
-  if (parser.linearval('F') > 0.0)
+  if (__unlikely(parser.linearval('F') > 0.0))
   {
     last_param_feedrate_mm_s = MMM_TO_MMS(parser.value_feedrate());
   }
@@ -1123,7 +1129,7 @@ bool gcode_get_destination_e_absolute()
   }
   destination[E_AXIS] = parser.value_axis_units(E_AXIS);
 
-  if (parser.linearval('F') > 0.0)
+  if (__unlikely(parser.linearval('F') > 0.0))
   {
     last_param_feedrate_mm_s = MMM_TO_MMS(parser.value_feedrate());
   }
@@ -1393,7 +1399,7 @@ void home_all_axes() { gcode_G28(true); }
  */
 inline void gcode_G92() {
 	bool didXYZ = false,
-		didE = parser.seenval('E');
+		didE = __unlikely(parser.seenval('E'));
 
 	if (!didE) stepper.synchronize();
 
@@ -1665,10 +1671,10 @@ inline void gcode_M78() {
  * M104: Set hot end temperature
  */
 inline void gcode_M104() {
-	if (get_target_extruder_from_command(104)) return;
-	if (DEBUGGING(DRYRUN)) return;
+	if (__unlikely(get_target_extruder_from_command(104))) return;
+	if (__unlikely(DEBUGGING(DRYRUN))) return;
 
-	if (parser.seenval('S')) {
+	if (__likely(parser.seenval('S'))) {
 		const temp_t temp = parser.value_celsius();
     Temperature::setTargetHotend(temp);
 
@@ -1801,8 +1807,8 @@ inline void gcode_M410() { quickstop_stepper(); }
 
 inline void gcode_M109() {
 
-	if (get_target_extruder_from_command(109)) return;
-	if (DEBUGGING(DRYRUN)) return;
+	if (__unlikely(get_target_extruder_from_command(109))) return;
+	if (__unlikely(DEBUGGING(DRYRUN))) return;
 
 	const bool no_wait_for_cooling = parser.seenval('S');
 	if (no_wait_for_cooling || parser.seenval('R')) {
@@ -1904,7 +1910,7 @@ inline void gcode_M109() {
  *       Rxxx Wait for bed current temp to reach target temp. Waits when heating and cooling
  */
 inline void gcode_M190() {
-	if (DEBUGGING(DRYRUN)) return;
+	if (__unlikely(DEBUGGING(DRYRUN))) return;
 
 	LCD_MESSAGEPGM(MSG_BED_HEATING);
 	const bool no_wait_for_cooling = parser.seenval('S');
@@ -1994,6 +2000,7 @@ inline void gcode_M110() {
  * M111: Set the debug level
  */
 inline void gcode_M111() {
+  /*
 	marlin_debug_flags = parser.byteval('S', (uint8_t)DEBUG_NONE);
 
 	const static char str_debug_1[] __flashmem = MSG_DEBUG_ECHO;
@@ -2021,6 +2028,7 @@ inline void gcode_M111() {
 		SERIAL_ECHOPGM(MSG_DEBUG_OFF);
 	}
 	SERIAL_EOL();
+  */
 }
 
 /**
@@ -2043,8 +2051,8 @@ inline void gcode_M113() {
  * M140: Set bed temperature
  */
 inline void gcode_M140() {
-	if (DEBUGGING(DRYRUN)) return;
-	if (parser.seenval('S')) Temperature::setTargetBed(parser.value_celsius());
+	if (__unlikely(DEBUGGING(DRYRUN))) return;
+	if (__likely(parser.seenval('S'))) Temperature::setTargetBed(parser.value_celsius());
 }
 
 /**
@@ -2080,7 +2088,7 @@ inline void gcode_M18_M84() {
 	}
 	else {
 		bool all_axis = !((parser.seen('X')) || (parser.seen('Y')) || (parser.seen('Z')) || (parser.seen('E')));
-		if (all_axis) {
+		if (__likely(all_axis)) {
 			stepper.finish_and_disable();
 		}
 		else {
@@ -2687,7 +2695,7 @@ inline void gcode_T(uint8_t tmp_extruder) {
 void process_next_command() {
 	char * const current_command = command_queue[cmd_queue_index_r];
 
-	if (DEBUGGING(ECHO)) {
+	if (__unlikely(DEBUGGING(ECHO))) {
 		SERIAL_ECHO_START();
 		SERIAL_ECHOLN(current_command);
 	}
@@ -3047,7 +3055,7 @@ void ok_to_send() {
 	SERIAL_PROTOCOLPGM(MSG_OK);
 #if ENABLED(ADVANCED_OK)
 	char* p = command_queue[cmd_queue_index_r];
-	if (*p == 'N') {
+	if (__unlikely(*p == 'N')) {
 		SERIAL_PROTOCOL(' ');
 		SERIAL_ECHO(*p++);
 		while (NUMERIC_SIGNED(*p))
@@ -3072,7 +3080,7 @@ void ok_to_send() {
  //       axis clamps here for delta and just leave the Z clamp.
 
 void clamp_to_software_endstops(float target[XYZ]) {
-	if (!soft_endstops_enabled) return;
+	if (__likely(!soft_endstops_enabled)) return;
 	NOLESS(target[X_AXIS], soft_endstop_min[X_AXIS]);
 	NOLESS(target[Y_AXIS], soft_endstop_min[Y_AXIS]);
 	NOLESS(target[Z_AXIS], soft_endstop_min[Z_AXIS]);
@@ -3127,7 +3135,7 @@ void set_current_from_steppers()
 bool prepare_move_to_destination_cartesian()
 {
 	// Do not use feedrate_percentage for E or Z only moves
-	if (current_position[X_AXIS] == destination[X_AXIS] && current_position[Y_AXIS] == destination[Y_AXIS])
+	if (__unlikely(current_position[X_AXIS] == destination[X_AXIS] && current_position[Y_AXIS] == destination[Y_AXIS]))
 		line_to_destination();
 	else {
 		const float fr_scaled = MMS_SCALED(feedrate_mm_s);
@@ -3541,8 +3549,8 @@ void loop() {
 
 	card.checkautostart(false);
 
-	if (commands_in_queue) {
-		if (card.saving) {
+	if (__likely(commands_in_queue)) {
+		if (__unlikely(card.saving)) {
 			char* command = command_queue[cmd_queue_index_r];
 			if (strstr_P(command, PSTR("M29"))) {
 				// M29 closes the file
@@ -3563,7 +3571,7 @@ void loop() {
 			process_next_command();
 
 		// The queue may be reset by a command handler or by code invoked by idle() within a handler
-		if (commands_in_queue) {
+		if (__likely(commands_in_queue)) {
 			--commands_in_queue;
 			if (++cmd_queue_index_r >= BUFSIZE) cmd_queue_index_r = 0;
 		}

@@ -238,7 +238,7 @@ void Planner::reverse_pass_kernel(block_t * __restrict const current, const bloc
   // If not, block in state of acceleration or deceleration. Reset entry speed to maximum and
   // check for maximum allowable speed reductions to ensure maximum possible planned speed.
   float max_entry_speed = current->max_entry_speed;
-  if (current->entry_speed != max_entry_speed) {
+  if (__unlikely(current->entry_speed != max_entry_speed)) {
     // If nominal length true, max junction speed is guaranteed to be reached. Only compute
     // for max allowable speed if block is decelerating and nominal length is false.
     current->entry_speed = (TEST(current->flag, BLOCK_BIT_NOMINAL_LENGTH) || max_entry_speed <= next->entry_speed)
@@ -380,7 +380,7 @@ void Planner::recalculate() {
   void Planner::getHighESpeed() {
     static float oldt = 0;
 
-    if (!autotemp_enabled) return;
+    if (__likely(!autotemp_enabled)) return;
     if (float(Temperature::degTargetHotend() + 2) < autotemp_min) return; // probably temperature set to zero.
 
     float high = 0.0;
@@ -853,7 +853,7 @@ void Planner::_buffer_line(const float & __restrict a, const float & __restrict 
   block->step_event_count = MAX4(block->steps[X_AXIS], block->steps[Y_AXIS], block->steps[Z_AXIS], esteps);
 
   // Bail if this is a zero-length block
-  if (block->step_event_count < MIN_STEPS_PER_SEGMENT) return;
+  if (__unlikely(block->step_event_count < MIN_STEPS_PER_SEGMENT)) return;
 
   // For a mixing extruder, get a magnified step_event_count for each
   #if ENABLED(MIXING_EXTRUDER)
@@ -1208,7 +1208,7 @@ void Planner::_buffer_line(const float & __restrict a, const float & __restrict 
     #endif
 
     // Limit acceleration per axis
-    if (block->step_event_count <= cutoff_long) {
+    if (__likely(block->step_event_count <= cutoff_long)) {
       LIMIT_ACCEL_LONG(X_AXIS, 0);
       LIMIT_ACCEL_LONG(Y_AXIS, 0);
       LIMIT_ACCEL_LONG(Z_AXIS, 0);

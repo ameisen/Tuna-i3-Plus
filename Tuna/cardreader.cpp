@@ -207,7 +207,7 @@ void CardReader::ls() {
 
       // Open the sub-item as the new dive parent
       SdFile dir;
-      if (!dir.open(diveDir, segment, O_READ)) {
+      if (__unlikely(!dir.open(diveDir, segment, O_READ))) {
         SERIAL_EOL();
         SERIAL_ECHO_START();
         SERIAL_ECHOPGM(MSG_SD_CANT_OPEN_SUBDIR);
@@ -233,7 +233,7 @@ void CardReader::initsd() {
     #define SPI_SPEED SPI_FULL_SPEED
   #endif
 
-  if (!card.init(SPI_SPEED, SDSS)
+  if (__unlikely(!card.init(SPI_SPEED, SDSS))
     #if defined(LCD_SDSS) && (LCD_SDSS != SDSS)
       && !card.init(SPI_SPEED, LCD_SDSS)
     #endif
@@ -242,11 +242,11 @@ void CardReader::initsd() {
     SERIAL_ECHO_START();
     SERIAL_ECHOLNPGM(MSG_SD_INIT_FAIL);
   }
-  else if (!volume.init(&card)) {
+  else if (__unlikely(!volume.init(&card))) {
     SERIAL_ERROR_START();
     SERIAL_ERRORLNPGM(MSG_SD_VOL_INIT_FAIL);
   }
-  else if (!root.openRoot(&volume)) {
+  else if (__unlikely(!root.openRoot(&volume))) {
     SERIAL_ERROR_START();
     SERIAL_ERRORLNPGM(MSG_SD_OPENROOT_FAIL);
   }
@@ -292,7 +292,7 @@ void CardReader::openAndPrintFile(const char *name) {
 }
 
 void CardReader::startFileprint() {
-  if (cardOK) {
+  if (__likely(cardOK)) {
     sdprinting = true;
     #if ENABLED(SDCARD_SORT_ALPHA)
       flush_presort();
@@ -325,7 +325,7 @@ void CardReader::getAbsFilename(char *t) {
 
 void CardReader::openFile(char* name, bool read, bool push_current/*=false*/) {
 
-  if (!cardOK) return;
+  if (__unlikely(!cardOK)) return;
 
   uint8_t doing = 0;
   if (isFileOpen()) { //replacing current file by new file, or subfile call
@@ -439,7 +439,7 @@ void CardReader::openFile(char* name, bool read, bool push_current/*=false*/) {
 }
 
 void CardReader::removeFile(char* name) {
-  if (!cardOK) return;
+  if (__unlikely(!cardOK)) return;
 
   stopSDPrint();
 
@@ -484,7 +484,7 @@ void CardReader::removeFile(char* name) {
     curDir = &workDir;
   }
 
-  if (file.remove(curDir, fname)) {
+  if (__likely(file.remove(curDir, fname))) {
     SERIAL_PROTOCOLPGM("File deleted:");
     SERIAL_PROTOCOLLN(fname);
     sdpos = 0;
@@ -500,7 +500,7 @@ void CardReader::removeFile(char* name) {
 }
 
 void CardReader::getStatus() {
-  if (cardOK) {
+  if (__likely(cardOK)) {
     SERIAL_PROTOCOLPGM(MSG_SD_PRINTING_BYTE);
     SERIAL_PROTOCOL(sdpos);
     SERIAL_PROTOCOLCHAR('/');
@@ -525,7 +525,7 @@ void CardReader::write_command(char *buf) {
   end[2] = '\n';
   end[3] = '\0';
   file.write(begin);
-  if (file.writeError) {
+  if (__unlikely(file.writeError)) {
     SERIAL_ERROR_START();
     SERIAL_ERRORLNPGM(MSG_SD_ERR_WRITE_TO_FILE);
   }

@@ -50,7 +50,7 @@ namespace Tuna::lcd
 
 		void execute_looped_operation(arg_type<chrono::time_ms<uint16>> ms)
 		{
-      if (!opTime.elapsed(ms, opDuration))
+      if (__likely(!opTime.elapsed(ms, opDuration)))
       {
         return;
       }
@@ -94,7 +94,7 @@ namespace Tuna::lcd
 		void status_update(arg_type<chrono::time_ms<uint16>> ms)
 		{
       const auto elapsedPair = lcdUpdateTime.elapsed_over(ms, lcdUpdateDuration);
-      if (!elapsedPair)
+      if (__likely(!elapsedPair))
       {
         return;
       }
@@ -205,14 +205,14 @@ namespace Tuna::lcd
 					if (lcdData == 0)
 					{
 						card.initsd();
-						if (card.cardOK)
+						if (__likely(card.cardOK))
 						{
 							fileCnt = card.getnrfilenames();
 							fileIndex = max(fileCnt, 1_u16) - 1;
 						}
 					}
 
-					if (card.cardOK)
+					if (__likely(card.cardOK))
 					{
 						fileCnt = fileCnt ? fileCnt : card.getnrfilenames();
 						card.getWorkDirName();//??

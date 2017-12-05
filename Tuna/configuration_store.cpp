@@ -271,7 +271,7 @@ void MarlinSettings::postprocess() {
   #endif
 
   void MarlinSettings::write_data(int &pos, const uint8_t *value, uint16_t size, uint16_t *crc) {
-    if (eeprom_error) return;
+    if (__unlikely(eeprom_error)) return;
     while (size--) {
       uint8_t * const p = (uint8_t * const)pos;
       uint8_t v = *value;
@@ -279,7 +279,7 @@ void MarlinSettings::postprocess() {
       // so only write bytes that have changed!
       if (v != eeprom_read_byte(p)) {
         eeprom_write_byte(p, v);
-        if (eeprom_read_byte(p) != v) {
+        if (__unlikely(eeprom_read_byte(p) != v)) {
           SERIAL_ECHO_START();
           SERIAL_ECHOLNPGM(MSG_ERR_EEPROM_WRITE);
           eeprom_error = true;
@@ -293,7 +293,7 @@ void MarlinSettings::postprocess() {
   }
 
   void MarlinSettings::read_data(int &pos, uint8_t* value, uint16_t size, uint16_t *crc) {
-    if (eeprom_error) return;
+    if (__unlikely(eeprom_error)) return;
     do {
       uint8_t c = eeprom_read_byte((unsigned char*)pos);
       *value = c;
@@ -664,7 +664,7 @@ void MarlinSettings::postprocess() {
       EEPROM_WRITE(scalar);
       // ~TUNA
 
-    if (!eeprom_error) {
+    if (__likely(!eeprom_error)) {
       const int eeprom_size = eeprom_index;
 
       const uint16_t final_crc = working_crc;
@@ -689,7 +689,7 @@ void MarlinSettings::postprocess() {
         store_mesh(ubl.state.storage_slot);
     #endif
 
-    return !eeprom_error;
+    return __likely(!eeprom_error);
   }
 
   /**
@@ -707,7 +707,7 @@ void MarlinSettings::postprocess() {
     EEPROM_READ(stored_crc);
 
     // Version has to match or defaults are used
-    if (strncmp(version, stored_ver, 3) != 0) {
+    if (__unlikely(strncmp(version, stored_ver, 3) != 0)) {
       if (stored_ver[0] != 'V') {
         stored_ver[0] = '?';
         stored_ver[1] = '\0';
@@ -1113,7 +1113,7 @@ void MarlinSettings::postprocess() {
       report();
     #endif
 
-    return !eeprom_error;
+    return __likely(!eeprom_error);
   }
 
   #if ENABLED(AUTO_BED_LEVELING_UBL)

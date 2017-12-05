@@ -343,7 +343,7 @@ bool Sd2Card::init(uint8_t sckRateID, uint8_t chipSelectPin) {
   else {
     // only need last byte of r7 response
     for (uint8_t i = 0; i < 4; i++) status_ = spiRec();
-    if (status_ != 0XAA) {
+    if (__unlikely(status_ != 0XAA)) {
       error(SD_CARD_ERROR_CMD8);
       goto fail;
     }
@@ -354,14 +354,14 @@ bool Sd2Card::init(uint8_t sckRateID, uint8_t chipSelectPin) {
 
   while ((status_ = cardAcmd(ACMD41, arg)) != R1_READY_STATE) {
     // check for timeout
-    if (((uint16_t)millis() - t0) > SD_INIT_TIMEOUT) {
+    if (__unlikely(((uint16_t)millis() - t0) > SD_INIT_TIMEOUT)) {
       error(SD_CARD_ERROR_ACMD41);
       goto fail;
     }
   }
   // if SD2 read OCR register to check for SDHC card
   if (type() == SD_CARD_TYPE_SD2) {
-    if (cardCommand(CMD58, 0)) {
+    if (__unlikely(cardCommand(CMD58, 0))) {
       error(SD_CARD_ERROR_CMD58);
       goto fail;
     }
@@ -411,7 +411,7 @@ bool Sd2Card::readBlock(uint32_t blockNumber, uint8_t* dst) {
       errorCode_ = 0;
     } while (true);
   #else
-    if (cardCommand(CMD17, blockNumber))
+    if (__unlikely(cardCommand(CMD17, blockNumber)))
       error(SD_CARD_ERROR_CMD17);
     else
       return readData(dst, 512);
@@ -482,12 +482,12 @@ bool Sd2Card::readData(uint8_t* dst, uint16_t count) {
   // wait for start block token
   uint16_t t0 = millis();
   while ((status_ = spiRec()) == 0XFF) {
-    if (((uint16_t)millis() - t0) > SD_READ_TIMEOUT) {
+    if (__unlikely(((uint16_t)millis() - t0) > SD_READ_TIMEOUT)) {
       error(SD_CARD_ERROR_READ_TIMEOUT);
       goto fail;
     }
   }
-  if (status_ != DATA_START_BLOCK) {
+  if (__unlikely(status_ != DATA_START_BLOCK)) {
     error(SD_CARD_ERROR_READ);
     goto fail;
   }
@@ -523,7 +523,7 @@ fail:
 /** read CID or CSR register */
 bool Sd2Card::readRegister(uint8_t cmd, void* buf) {
   uint8_t* dst = reinterpret_cast<uint8_t*>(buf);
-  if (cardCommand(cmd, 0)) {
+  if (__unlikely(cardCommand(cmd, 0))) {
     error(SD_CARD_ERROR_READ_REG);
     goto fail;
   }
@@ -545,7 +545,7 @@ fail:
  */
 bool Sd2Card::readStart(uint32_t blockNumber) {
   if (type() != SD_CARD_TYPE_SDHC) blockNumber <<= 9;
-  if (cardCommand(CMD18, blockNumber)) {
+  if (__unlikely(cardCommand(CMD18, blockNumber))) {
     error(SD_CARD_ERROR_CMD18);
     goto fail;
   }
@@ -563,7 +563,7 @@ fail:
  */
 bool Sd2Card::readStop() {
   chipSelectLow();
-  if (cardCommand(CMD12, 0)) {
+  if (__unlikely(cardCommand(CMD12, 0))) {
     error(SD_CARD_ERROR_CMD12);
     goto fail;
   }
@@ -587,7 +587,7 @@ fail:
  * false, is returned for an invalid value of \a sckRateID.
  */
 bool Sd2Card::setSckRate(uint8_t sckRateID) {
-  if (sckRateID > 6) {
+  if (__unlikely(sckRateID > 6)) {
     error(SD_CARD_ERROR_SCK_RATE);
     return false;
   }
@@ -599,7 +599,7 @@ bool Sd2Card::setSckRate(uint8_t sckRateID) {
 bool Sd2Card::waitNotBusy(uint16_t timeoutMillis) {
   uint16_t t0 = millis();
   while (spiRec() != 0XFF) {
-    if (((uint16_t)millis() - t0) >= timeoutMillis) goto fail;
+    if (__unlikely(((uint16_t)millis() - t0) >= timeoutMillis)) goto fail;
   }
   return true;
 fail:
@@ -617,19 +617,19 @@ fail:
 bool Sd2Card::writeBlock(uint32_t blockNumber, const uint8_t* src) {
   // use address if not SDHC card
   if (type() != SD_CARD_TYPE_SDHC) blockNumber <<= 9;
-  if (cardCommand(CMD24, blockNumber)) {
+  if (__unlikely(cardCommand(CMD24, blockNumber))) {
     error(SD_CARD_ERROR_CMD24);
     goto fail;
   }
-  if (!writeData(DATA_START_BLOCK, src)) goto fail;
+  if (__unlikely(!writeData(DATA_START_BLOCK, src))) goto fail;
 
   // wait for flash programming to complete
-  if (!waitNotBusy(SD_WRITE_TIMEOUT)) {
+  if (__unlikely(!waitNotBusy(SD_WRITE_TIMEOUT))) {
     error(SD_CARD_ERROR_WRITE_TIMEOUT);
     goto fail;
   }
   // response is r2 so get and check two bytes for nonzero
-  if (cardCommand(CMD13, 0) || spiRec()) {
+  if (__unlikely(cardCommand(CMD13, 0) || spiRec())) {
     error(SD_CARD_ERROR_WRITE_PROGRAMMING);
     goto fail;
   }
@@ -648,8 +648,8 @@ fail:
 bool Sd2Card::writeData(const uint8_t* src) {
   chipSelectLow();
   // wait for previous write to finish
-  if (!waitNotBusy(SD_WRITE_TIMEOUT)) goto fail;
-  if (!writeData(WRITE_MULTIPLE_TOKEN, src)) goto fail;
+  if (__unlikely(!waitNotBusy(SD_WRITE_TIMEOUT))) goto fail;
+  if (__unlikely(!writeData(WRITE_MULTIPLE_TOKEN, src))) goto fail;
   chipSelectHigh();
   return true;
 fail:
@@ -666,7 +666,7 @@ bool Sd2Card::writeData(uint8_t token, const uint8_t* src) {
   spiSend(0xFF);  // dummy crc
 
   status_ = spiRec();
-  if ((status_ & DATA_RES_MASK) != DATA_RES_ACCEPTED) {
+  if (__unlikely((status_ & DATA_RES_MASK) != DATA_RES_ACCEPTED)) {
     error(SD_CARD_ERROR_WRITE);
     goto fail;
   }
@@ -689,13 +689,13 @@ fail:
  */
 bool Sd2Card::writeStart(uint32_t blockNumber, uint32_t eraseCount) {
   // send pre-erase count
-  if (cardAcmd(ACMD23, eraseCount)) {
+  if (__unlikely(cardAcmd(ACMD23, eraseCount))) {
     error(SD_CARD_ERROR_ACMD23);
     goto fail;
   }
   // use address if not SDHC card
   if (type() != SD_CARD_TYPE_SDHC) blockNumber <<= 9;
-  if (cardCommand(CMD25, blockNumber)) {
+  if (__unlikely(cardCommand(CMD25, blockNumber))) {
     error(SD_CARD_ERROR_CMD25);
     goto fail;
   }
@@ -713,9 +713,9 @@ fail:
  */
 bool Sd2Card::writeStop() {
   chipSelectLow();
-  if (!waitNotBusy(SD_WRITE_TIMEOUT)) goto fail;
+  if (__unlikely(!waitNotBusy(SD_WRITE_TIMEOUT))) goto fail;
   spiSend(STOP_TRAN_TOKEN);
-  if (!waitNotBusy(SD_WRITE_TIMEOUT)) goto fail;
+  if (__unlikely(!waitNotBusy(SD_WRITE_TIMEOUT))) goto fail;
   chipSelectHigh();
   return true;
 fail:
