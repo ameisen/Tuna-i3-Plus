@@ -122,9 +122,9 @@ namespace Tuna
 
   private:
 
-    static uint16 current_temperature_raw;
-    static uint16 current_temperature_bed_raw;
-	  static bool temp_meas_ready;
+    static volatile uint16 current_temperature_raw;
+    static volatile uint16 current_temperature_bed_raw;
+	  static volatile bool temp_meas_ready;
 	  static_assert(sizeof(Temperature::temp_meas_ready) == 1, "atomic boolean must be one byte");
 
 	  static millis_t next_bed_check_ms;

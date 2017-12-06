@@ -56,9 +56,9 @@ millis_t Temperature::watch_bed_next_ms = 0;
 
 bool Temperature::allow_cold_extrude = false;
 
-uint16 Temperature::current_temperature_raw = 0_u16;
-uint16 Temperature::current_temperature_bed_raw = 0_u16;
-bool Temperature::temp_meas_ready = false;
+volatile uint16 Temperature::current_temperature_raw = 0_u16;
+volatile uint16 Temperature::current_temperature_bed_raw = 0_u16;
+volatile bool Temperature::temp_meas_ready = false;
 
 millis_t Temperature::next_bed_check_ms;
 
@@ -304,10 +304,7 @@ bool Temperature::updateTemperaturesFromRawValues() {
 			Tuna::critical_section_not_isr _critsec;
 			temperature_raw = current_temperature_raw;
 			temperature_bed_raw = current_temperature_bed_raw;
-      {
-        temp_meas_ready = false;
-        __memorybarrier;
-      }
+      temp_meas_ready = false;
 		}
 
     //Serial.print("temperature raw    : "); Serial.println(temperature_raw);
@@ -349,8 +346,16 @@ bool Temperature::updateTemperaturesFromRawValues() {
 		current_temperature = Temperature::analog2temp(temperature_raw);
 		current_temperature_bed = Temperature::analog2tempBed(temperature_bed_raw);
 
-    const temp_t temperatureDiff = current_temperature - previous_temperature;
-    temperatureTrendCalculator.appendValue(temperatureDiff, (current_temperature >= previous_temperature));
+    if (current_temperature >= previous_temperature)
+    {
+      const temp_t temperatureDiff = current_temperature - previous_temperature;
+      temperatureTrendCalculator.appendValue(temperatureDiff, true);
+    }
+    else
+    {
+      const temp_t temperatureDiff = previous_temperature - current_temperature;
+      temperatureTrendCalculator.appendValue(temperatureDiff, false);
+    }
 
 		// Reset the watchdog after we know we have a temperature measurement.
 		Tuna::intrinsic::wdr();
@@ -507,15 +512,12 @@ void Temperature::disable_all_heaters() {
 void Temperature::set_current_temp_raw()
 {
 	Tuna::critical_section _critsec;
-  {
-    current_temperature_raw = raw_temp_value;
-    current_temperature_bed_raw = raw_temp_bed_value;
-    __memorybarrier;
-  }
-  {
-    temp_meas_ready = true;
-    __memorybarrier;
-  }
+
+  current_temperature_raw = raw_temp_value;
+  current_temperature_bed_raw = raw_temp_bed_value;
+  //__memorybarrier;
+  temp_meas_ready = true;
+  //__memorybarrier;
 }
 
 /**

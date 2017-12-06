@@ -34,7 +34,28 @@ namespace Tuna::Log
 
 namespace
 {
+  using namespace Tuna;
+  using namespace Tuna::Thermal::Manager;
+
   constexpr const auto Tag = "SimpleManager"_p;
+
+  using scalar_t = Simple::scalar_t;
+  using exponent_t = Simple::exponent_t;
+
+  // user-defined literals for internal types
+  template <char... Chars> constexpr scalar_t operator "" _scalar()
+  {
+    static_assert(type_trait<scalar_t>::is_integral, "scalar_t must be integral");
+
+    constexpr const uint64 value = _internal::expand_string_to_int<Chars...>();
+    static_assert(value <= type_trait<scalar_t>::max, "out of range u8 literal");
+    return scalar_t(value);
+  }
+
+  constexpr exponent_t operator "" _exponent(long double value)
+  {
+    return value;
+  }
 
   using preferred_table_type = uint8;
   constexpr const uint8 integer_swing = 16;
@@ -77,9 +98,44 @@ void Simple::SetCalibration(arg_type<calibration> value)
 
   pwm_calibration = value;
 
+  const exponent_t inv_numTableEntries = 1.0_exponent / exponent_t(numTableEntries);
   for (tableidx_t i = 0; i < numTableEntries; ++i)
   {
-    pwm_table[i] = uint8(roundf(powf(float(i) / float(numTableEntries), value.Exponent_) * 255.5f));
+    const exponent_t fraction = exponent_t(i) * inv_numTableEntries;
+    __assume(fraction >= 0.0_exponent && fraction <= 1.0_exponent);
+    const float exponentiated = pow(fraction, value.Exponent_) * 255.5_exponent;
+    __assume(exponentiated >= 0.0_exponent && exponentiated <= 255.5f);
+    pwm_table[i] = uint8(exponentiated);
+    //Log::d<1>(Tag, "%u"_p, pwm_table[i]);
+  }
+}
+
+namespace
+{
+  // This will return multiplier_t if it's given an exponent_t, and an exponent_t if given a multiplier_t
+  template <typename T>
+  struct _alternate_type;
+
+  template <>
+  struct _alternate_type<scalar_t> final : trait::ce_only
+  {
+    using type = exponent_t;
+  };
+
+  template <>
+  struct _alternate_type<exponent_t> final : trait::ce_only
+  {
+    using type = scalar_t;
+  };
+
+  template <typename T>
+  using alternate_type = typename _alternate_type<T>::type;
+
+
+  template <typename T, uint8 N>
+  void execute_test(const T (& __restrict test_array) [N])
+  {
+    using namespace Tuna::Thermal::Manager;
   }
 }
 
@@ -87,39 +143,27 @@ bool Simple::calibrate(arg_type<temp_t> target)
 {
   Log::d(Tag, "Starting Calibration"_p);
 
-  constexpr const auto test_max_time = 100000_ms24; // Otherwise, test goes this long.
+  constexpr const auto test_max_time = 120000_ms24; // Otherwise, test goes this long.
 
-  constexpr const float exponent_epsilon = 0.05f;
-  constexpr const float exponent_base = 0.5f;
+  constexpr const exponent_t exponent_epsilon = 0.0125_exponent / 2;
+  constexpr const exponent_t exponent_base = 1.2125_exponent;
 
-  constexpr const float test_exponents[] =
+  constexpr const exponent_t test_exponents[] =
   {
-    exponent_base + (exponent_epsilon * -8),
-    exponent_base + (exponent_epsilon * -7),
-    exponent_base + (exponent_epsilon * -6),
-    exponent_base + (exponent_epsilon * -5),
-    exponent_base + (exponent_epsilon * -4),
-    exponent_base + (exponent_epsilon * -3),
     exponent_base + (exponent_epsilon * -2),
     exponent_base + (exponent_epsilon * -1),
     exponent_base + (exponent_epsilon * 0),
     exponent_base + (exponent_epsilon * +1),
     exponent_base + (exponent_epsilon * +2),
-    exponent_base + (exponent_epsilon * +3),
-    exponent_base + (exponent_epsilon * +4),
-    exponent_base + (exponent_epsilon * +5),
-    exponent_base + (exponent_epsilon * +6),
-    exponent_base + (exponent_epsilon * +7),
-    exponent_base + (exponent_epsilon * +8),
   };
 
-  constexpr const uint8 test_scalars[] =
+  constexpr const scalar_t test_scalars[] =
   {
-    //1_u8,
-    2_u8,
-    3_u8,
-    4_u8,
-    //5_u8
+    1_scalar,
+    2_scalar,
+    3_scalar,
+    //4_scalar,
+    //5_scalar
   };
 
   using tempavg_t = type_trait<temp_t::type>::larger_type;
@@ -131,8 +175,6 @@ bool Simple::calibrate(arg_type<temp_t> target)
 
     temp_t high = { 0 }; // how far it oscillates above target
     temp_t low = { 0 }; // how far it oscillates below target
-
-    tempavg_t tempMean;
   };
 
   const auto average_append = [](auto & __restrict sum, const auto & __restrict new_val, const auto & __restrict N)
@@ -154,8 +196,8 @@ bool Simple::calibrate(arg_type<temp_t> target)
     sum *= N;
   };
 
-  tempavg_t tempAvg;
-  init_average(tempAvg, Temperature::degHotend().raw(), TempAvgSampleCount);
+  //tempavg_t tempAvg;
+  //init_average(tempAvg, Temperature::degHotend().raw(), TempAvgSampleCount);
 
   const auto set_temp_target = [&](arg_type<temp_t> temp, bool await)
   {
@@ -172,7 +214,7 @@ bool Simple::calibrate(arg_type<temp_t> target)
       {
         const temp_t current_temperature = Temperature::degHotend();
 
-        average_append(tempAvg, current_temperature.raw(), TempAvgSampleCount);
+        //average_append(tempAvg, current_temperature.raw(), TempAvgSampleCount);
 
         const Temperature::Trend temp_trend = Temperature::get_temperature_trend();
         //Log::d(TagGraph, "%.6f, %.6f, %S%.6f"_p, float(current_temperature), float(temp_t::from(extract_average(tempAvg, TempAvgSampleCount))), temp_trend.second ? "+"_p : "-"_p, float(temp_trend.first));
@@ -215,7 +257,7 @@ bool Simple::calibrate(arg_type<temp_t> target)
   Log::d<1>(Tag, "temp_t integer bits: %u"_p, temp_t::integer_bits);
   Log::d<1>(Tag, "temp_t fraction bits: %u"_p, temp_t::fractional_bits);
 
-  const auto execute_test = [&, target](arg_type<float> exponent, oscillation & __restrict error, uint8 scalar)
+  const auto execute_test = [&, target](arg_type<exponent_t> exponent, oscillation & __restrict error, scalar_t scalar)
   {
     Log::d<1>(Tag, "Exponent: %.6f"_p, exponent);
 
@@ -247,7 +289,7 @@ bool Simple::calibrate(arg_type<temp_t> target)
         // otherwise this will be quite noisy.
 
         const temp_t current_temperature = Temperature::degHotend();
-        average_append(tempAvg, current_temperature.raw(), TempAvgSampleCount);
+        //average_append(tempAvg, current_temperature.raw(), TempAvgSampleCount);
 
         //const Temperature::Trend temp_trend = Temperature::get_temperature_trend();
         //Log::d(TagGraph, "%.6f, %.6f, %S%.6f"_p, float(current_temperature), float(temp_t::from(extract_average(tempAvg, TempAvgSampleCount))), temp_trend.second ? "+"_p : "-"_p, float(temp_trend.first));
@@ -281,11 +323,9 @@ bool Simple::calibrate(arg_type<temp_t> target)
         break;
       }
     }
-
-    error.tempMean = tempAvg;
   };
 
-  constexpr const uint8 num_exponents = array_size(test_exponents);
+  constexpr const uint16 num_exponents = array_size(test_exponents);
   constexpr const uint8 num_scalars = array_size(test_scalars);
   constexpr const uint8 num_tests = num_exponents * num_scalars;
 
@@ -297,18 +337,7 @@ bool Simple::calibrate(arg_type<temp_t> target)
   const auto errorCalculate = [&](arg_type<oscillation> error)->uint32
   {
     const auto highMean = error.high;
-    const auto tempMean = error.tempMean;
     const auto lowMean = error.low;
-
-    const tempavg_t targetTemp = (tempavg_t(target.raw()) * TempAvgSampleCount);
-    const auto tempMeanDifferential = [&]()->tempavg_t
-    {
-      if (targetTemp >= tempMean)
-      {
-        return targetTemp - tempMean;
-      }
-      return tempMean - targetTemp;
-    }();
 
     return (uint32(highMean.raw()) * 5) + (uint32(lowMean.raw()) * 2);
   };
@@ -337,7 +366,6 @@ bool Simple::calibrate(arg_type<temp_t> target)
     {
       Log::d<1>(Tag, "high: %.6f"_p, float(error.high));
       Log::d<1>(Tag, "low: %.6f"_p, float(error.low));
-      Log::d<1>(Tag, "tempMean: %lu"_p, uint32(error.tempMean));
 
       if constexpr (true)
       {
@@ -373,8 +401,8 @@ bool Simple::calibrate(arg_type<temp_t> target)
     const uint8 exponent_idx = bestIndex / num_scalars;
     const uint8 scalar_idx = bestIndex % num_scalars;
 
-    const auto & __restrict exponent = test_exponents[exponent_idx];
-    const uint8 scalar = test_scalars[scalar_idx];
+    const exponent_t & __restrict exponent = test_exponents[exponent_idx];
+    const scalar_t scalar = test_scalars[scalar_idx];
 
     Log::d<1>(Tag, "Exponent: %.6f  Scalar: %u"_p, float(exponent), scalar);
 
@@ -435,7 +463,7 @@ uint8 Simple::get_power(arg_type<temp_t> current, arg_type<temp_t> target)
 
   if constexpr (tempLog)
   {
-    Log::d(Tag, "%.6f, %u"_p, float(current), full);
+    Log::d(Tag, "%u :: %.6f, %u, trend: %s"_p, 0, float(current), out_temp, (Temperature::get_temperature_trend() == Temperature::Trend::Up) ? "up" : "down");
   }
 
   return out_temp;

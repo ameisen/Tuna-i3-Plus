@@ -587,7 +587,7 @@ inline void get_serial_commands() {
 			char *npos = __unlikely(*command == 'N') ? command : nullptr, // Require the N parameter to start the line
 				*apos = strchr(command, '*');
 
-			if (__unlikely(npos)) {
+			if (__unlikely(npos != nullptr)) {
 
 				bool M110 = strstr_P(command, PSTR("M110")) != nullptr;
 
@@ -621,7 +621,7 @@ inline void get_serial_commands() {
 				gcode_LastN = gcode_N;
 				// if no errors, continue parsing
 			}
-			else if (__unlikely(apos)) { // No '*' without 'N'
+			else if (__unlikely(apos != nullptr)) { // No '*' without 'N'
 				gcode_line_error(PSTR(MSG_ERR_NO_LINENUMBER_WITH_CHECKSUM), false);
 				return;
 			}

@@ -7,10 +7,13 @@ namespace Tuna::Thermal::Manager
   // This is a struct and not a namespace only as classes are easier to inject into templates.
   struct Simple final : trait::ce_only
   {
+    using exponent_t = float;
+    using scalar_t = uint8;
+
     struct calibration final
     {
-      float Exponent_ = -1.0f;
-      uint8 Scalar_ = 3_u8;
+      exponent_t Exponent_ = -1.0f;
+      scalar_t Scalar_ = 3_u8;
     };
 
     static bool calibrate(arg_type<temp_t> target);
