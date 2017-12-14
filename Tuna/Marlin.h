@@ -352,10 +352,6 @@ extern float soft_endstop_min[XYZ], soft_endstop_max[XYZ];
   void set_z_fade_height(const float zfh);
 #endif
 
-#if ENABLED(Z_DUAL_ENDSTOPS)
-  extern float z_endstop_adj;
-#endif
-
 #if HAS_BED_PROBE
   extern float zprobe_zoffset;
   void refresh_zprobe_zoffset(const bool no_babystep=false);

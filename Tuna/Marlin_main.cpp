@@ -198,7 +198,6 @@
    * M501 - Restore parameters from EEPROM. (Requires EEPROM_SETTINGS)
    * M502 - Revert to the default "factory settings". ** Does not write them to EEPROM! **
    * M503 - Print the current settings (in memory): "M503 S<verbose>". S0 specifies compact output.
-   * M540 - Enable/disable SD card abort on endstop hit: "M540 S<state>". (Requires ABORT_ON_ENDSTOP_HIT_FEATURE_ENABLED)
    * M600 - Pause for filament change: "M600 X<pos> Y<pos> Z<raise> E<first_retract> L<later_retract>". (Requires ADVANCED_PAUSE_FEATURE)
    * M665 - Set delta configurations: "M665 L<diagonal rod> R<delta radius> S<segments/s> A<rod A trim mm> B<rod B trim mm> C<rod C trim mm> I<tower A trim angle> J<tower B trim angle> K<tower C trim angle>" (Requires DELTA)
    * M666 - Set delta endstop adjustment. (Requires DELTA)

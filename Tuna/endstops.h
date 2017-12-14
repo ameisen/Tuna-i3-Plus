@@ -36,12 +36,8 @@ class Endstops final {
     static bool enabled, enabled_globally;
     static volatile char endstop_hit_bits; // use X_MIN, Y_MIN, Z_MIN and Z_MIN_PROBE as BIT value
 
-    #if ENABLED(Z_DUAL_ENDSTOPS)
-      static uint16_t
-    #else
-      static byte
-    #endif
-        current_endstop_bits, old_endstop_bits;
+    static byte
+      current_endstop_bits, old_endstop_bits;
 
     Endstops() {};
 
@@ -81,12 +77,6 @@ class Endstops final {
     #if HAS_BED_PROBE
       static volatile bool z_probe_enabled;
       static void enable_z_probe(bool onoff=true) { z_probe_enabled = onoff; }
-    #endif
-
-  private:
-
-    #if ENABLED(Z_DUAL_ENDSTOPS)
-      static void test_dual_z_endstops(const EndstopEnum es1, const EndstopEnum es2);
     #endif
 };
 

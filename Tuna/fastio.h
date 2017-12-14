@@ -257,17 +257,7 @@ typedef enum : uint8_t {
   #define PWM_CHK_FAN_A(p) false
 #endif
 
-#if HAS_MOTOR_CURRENT_PWM
-  #if PIN_EXISTS(MOTOR_CURRENT_PWM_XY)
-    #define PWM_CHK_MOTOR_CURRENT(p) (p == MOTOR_CURRENT_PWM_E || p == MOTOR_CURRENT_PWM_Z || p == MOTOR_CURRENT_PWM_XY)
-  #elif PIN_EXISTS(MOTOR_CURRENT_PWM_Z)
-    #define PWM_CHK_MOTOR_CURRENT(p) (p == MOTOR_CURRENT_PWM_E || p == MOTOR_CURRENT_PWM_Z)
-  #else
-    #define PWM_CHK_MOTOR_CURRENT(p) (p == MOTOR_CURRENT_PWM_E)
-  #endif
-#else
-  #define PWM_CHK_MOTOR_CURRENT(p) false
-#endif
+#define PWM_CHK_MOTOR_CURRENT(p) false
 
 #if defined(NUM_SERVOS)
   #if AVR_ATmega2560_FAMILY

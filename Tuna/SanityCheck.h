@@ -764,13 +764,6 @@ static_assert(1 >= 0
 #endif // DISABLE_[XYZ]
 
 /**
- * Advance Extrusion
- */
-#if ENABLED(ADVANCE) && ENABLED(LIN_ADVANCE)
-  #error "You can enable ADVANCE or LIN_ADVANCE, but not both."
-#endif
-
-/**
  * Filament Width Sensor
  */
 #if ENABLED(FILAMENT_WIDTH_SENSOR) && !HAS_FILAMENT_WIDTH_SENSOR

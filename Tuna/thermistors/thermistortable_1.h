@@ -436,7 +436,7 @@ namespace Tuna::Thermistor
 
   inline temp_t __forceinline __flatten binsearch_temp_get(arg_type<uint16_t> adc)
   {
-    static constexpr bool branched_binsearch = true;
+    static constexpr bool branched_binsearch = false;
 
     if constexpr (!branched_binsearch)
     {

@@ -49,11 +49,7 @@ bool  Endstops::enabled = true,
       ;
 volatile char Endstops::endstop_hit_bits; // use X_MIN, Y_MIN, Z_MIN and Z_MIN_PROBE as BIT value
 
-#if ENABLED(Z_DUAL_ENDSTOPS)
-  uint16_t
-#else
   byte
-#endif
     Endstops::current_endstop_bits = 0,
     Endstops::old_endstop_bits = 0;
 
@@ -179,15 +175,6 @@ void Endstops::report_state() {
     #endif
 
     hit_on_purpose();
-
-    #if ENABLED(ABORT_ON_ENDSTOP_HIT_FEATURE_ENABLED) && ENABLED(SDSUPPORT)
-      if (stepper.abort_on_endstop_hit) {
-        card.sdprinting = false;
-        card.closefile();
-        quickstop_stepper();
-        Temperature::disable_all_heaters(); // switch off all heaters.
-      }
-    #endif
   }
 } // Endstops::report_state
 
@@ -234,20 +221,6 @@ void Endstops::M119() {
     SERIAL_PROTOCOLLN(((READ(FIL_RUNOUT_PIN)^FIL_RUNOUT_INVERTING) ? MSG_ENDSTOP_HIT : MSG_ENDSTOP_OPEN));
   #endif
 } // Endstops::M119
-
-#if ENABLED(Z_DUAL_ENDSTOPS)
-
-  // Pass the result of the endstop test
-  void Endstops::test_dual_z_endstops(const EndstopEnum es1, const EndstopEnum es2) {
-    byte z_test = TEST_ENDSTOP(es1) | (TEST_ENDSTOP(es2) << 1); // bit 0 for Z, bit 1 for Z2
-    if (z_test && stepper.current_block->steps[Z_AXIS] > 0) {
-      SBI(endstop_hit_bits, Z_MIN);
-      if (!stepper.performing_homing || (z_test == 0x3))  //if not performing home or if both endstops were trigged during homing...
-        stepper.kill_current_block();
-    }
-  }
-
-#endif
 
 // Check endstops - Called from ISR!
 void Endstops::update() {
@@ -397,26 +370,11 @@ void Endstops::update() {
   if (Z_MOVE_TEST) {
     if (stepper.motor_direction(Z_AXIS_HEAD)) { // Z -direction. Gantry down, bed up.
       #if HAS_Z_MIN
-        #if ENABLED(Z_DUAL_ENDSTOPS)
-
-          UPDATE_ENDSTOP_BIT(Z, MIN);
-          #if HAS_Z2_MIN
-            UPDATE_ENDSTOP_BIT(Z2, MIN);
-          #else
-            COPY_BIT(current_endstop_bits, Z_MIN, Z2_MIN);
-          #endif
-
-          test_dual_z_endstops(Z_MIN, Z2_MIN);
-
-        #else // !Z_DUAL_ENDSTOPS
-
           #if ENABLED(Z_MIN_PROBE_USES_Z_MIN_ENDSTOP_PIN)
             if (z_probe_enabled) UPDATE_ENDSTOP(Z, MIN);
           #else
             UPDATE_ENDSTOP(Z, MIN);
           #endif
-
-        #endif // !Z_DUAL_ENDSTOPS
 
       #endif // HAS_Z_MIN
 
@@ -432,20 +390,7 @@ void Endstops::update() {
       #if HAS_Z_MAX
 
         // Check both Z dual endstops
-        #if ENABLED(Z_DUAL_ENDSTOPS)
-
-          UPDATE_ENDSTOP_BIT(Z, MAX);
-          #if HAS_Z2_MAX
-            UPDATE_ENDSTOP_BIT(Z2, MAX);
-          #else
-            COPY_BIT(current_endstop_bits, Z_MAX, Z2_MAX);
-          #endif
-
-          test_dual_z_endstops(Z_MAX, Z2_MAX);
-
-        // If this pin is not hijacked for the bed probe
-        // then it belongs to the Z endstop
-        #elif DISABLED(Z_MIN_PROBE_ENDSTOP) || Z_MAX_PIN != Z_MIN_PROBE_PIN
+        #if DISABLED(Z_MIN_PROBE_ENDSTOP) || Z_MAX_PIN != Z_MIN_PROBE_PIN
 
           UPDATE_ENDSTOP(Z, MAX);
 

@@ -156,11 +156,6 @@
  *  580  M900 K    extruder_advance_k               (float)
  *  584  M900 WHD  advance_ed_ratio                 (float)
  *
- * HAS_MOTOR_CURRENT_PWM:
- *  588  M907 X    Stepper XY current               (uint32_t)
- *  592  M907 Z    Stepper Z current                (uint32_t)
- *  596  M907 E    Stepper E current                (uint32_t)
- *
  *  600                                Minimum end-point
  * 1921 (600 + 36 + 9 + 288 + 988)     Maximum end-point
  *
@@ -246,10 +241,6 @@ void MarlinSettings::postprocess() {
   #if ENABLED(AUTO_BED_LEVELING_BILINEAR)
     refresh_bed_level();
     //set_bed_leveling_enabled(leveling_is_on);
-  #endif
-
-  #if HAS_MOTOR_CURRENT_PWM
-    stepper.refresh_motor_power();
   #endif
 }
 
@@ -451,23 +442,8 @@ void MarlinSettings::postprocess() {
     #endif // AUTO_BED_LEVELING_UBL
 
     // 9 floats for DELTA / Z_DUAL_ENDSTOPS
-    #if ENABLED(DELTA)
-      EEPROM_WRITE(endstop_adj);               // 3 floats
-      EEPROM_WRITE(delta_radius);              // 1 float
-      EEPROM_WRITE(delta_diagonal_rod);        // 1 float
-      EEPROM_WRITE(delta_segments_per_second); // 1 float
-      EEPROM_WRITE(delta_calibration_radius);  // 1 float
-      EEPROM_WRITE(delta_tower_angle_trim);    // 2 floats
-      dummy = 0.0f;
-      for (uint8_t q = 3; q--;) EEPROM_WRITE(dummy);
-    #elif ENABLED(Z_DUAL_ENDSTOPS)
-      EEPROM_WRITE(z_endstop_adj);             // 1 float
-      dummy = 0.0f;
-      for (uint8_t q = 11; q--;) EEPROM_WRITE(dummy);
-    #else
-      dummy = 0.0f;
-      for (uint8_t q = 12; q--;) EEPROM_WRITE(dummy);
-    #endif
+    dummy = 0.0f;
+    for (uint8_t q = 12; q--;) EEPROM_WRITE(dummy);
 
     #if DISABLED(ULTIPANEL)
       constexpr int lcd_preheat_hotend_temp[2] = { PREHEAT_1_TEMP_HOTEND, PREHEAT_2_TEMP_HOTEND },
@@ -649,13 +625,8 @@ void MarlinSettings::postprocess() {
       EEPROM_WRITE(Planner::preheat_presets[q].bed);
     }
 
-    
-    #if HAS_MOTOR_CURRENT_PWM
-      for (uint8_t q = 3; q--;) EEPROM_WRITE(stepper.motor_current_setting[q]);
-    #else
       const uint32_t dummyui32 = 0;
       for (uint8_t q = 3; q--;) EEPROM_WRITE(dummyui32);
-    #endif
 
       // TUNA
       const auto &calib = Tuna::Thermal::Manager::Simple::GetCalibration();
@@ -858,23 +829,8 @@ void MarlinSettings::postprocess() {
         EEPROM_READ(dummyui8);
       #endif // AUTO_BED_LEVELING_UBL
 
-      #if ENABLED(DELTA)
-        EEPROM_READ(endstop_adj);               // 3 floats
-        EEPROM_READ(delta_radius);              // 1 float
-        EEPROM_READ(delta_diagonal_rod);        // 1 float
-        EEPROM_READ(delta_segments_per_second); // 1 float
-        EEPROM_READ(delta_calibration_radius);  // 1 float
-        EEPROM_READ(delta_tower_angle_trim);    // 2 floats
-        dummy = 0.0f;
-        for (uint8_t q=3; q--;) EEPROM_READ(dummy);
-      #elif ENABLED(Z_DUAL_ENDSTOPS)
-        EEPROM_READ(z_endstop_adj);
-        dummy = 0.0f;
-        for (uint8_t q=11; q--;) EEPROM_READ(dummy);
-      #else
-        dummy = 0.0f;
-        for (uint8_t q=12; q--;) EEPROM_READ(dummy);
-      #endif
+      dummy = 0.0f;
+      for (uint8_t q=12; q--;) EEPROM_READ(dummy);
 
       #if DISABLED(ULTIPANEL)
         int lcd_preheat_hotend_temp[2], lcd_preheat_bed_temp[2], lcd_preheat_fan_speed[2];
@@ -1033,12 +989,8 @@ void MarlinSettings::postprocess() {
         EEPROM_READ(Planner::preheat_presets[q].bed);
       }
 
-      #if HAS_MOTOR_CURRENT_PWM
-        for (uint8_t q = 3; q--;) EEPROM_READ(stepper.motor_current_setting[q]);
-      #else
         uint32_t dummyui32;
         for (uint8_t q = 3; q--;) EEPROM_READ(dummyui32);
-      #endif
 
         // TUNA
         Thermal::Manager::Simple::calibration calib;
@@ -1280,30 +1232,6 @@ void MarlinSettings::reset() {
     zprobe_zoffset = Z_PROBE_OFFSET_FROM_EXTRUDER;
   #endif
 
-  #if ENABLED(DELTA)
-    const float adj[ABC] = DELTA_ENDSTOP_ADJ,
-                dta[ABC] = DELTA_TOWER_ANGLE_TRIM;
-    COPY(endstop_adj, adj);
-    delta_radius = DELTA_RADIUS;
-    delta_diagonal_rod = DELTA_DIAGONAL_ROD;
-    delta_segments_per_second = DELTA_SEGMENTS_PER_SECOND;
-    delta_calibration_radius = DELTA_CALIBRATION_RADIUS;
-    delta_tower_angle_trim[A_AXIS] = dta[A_AXIS] - dta[C_AXIS];
-    delta_tower_angle_trim[B_AXIS] = dta[B_AXIS] - dta[C_AXIS];
-    home_offset[Z_AXIS] = 0;
-
-  #elif ENABLED(Z_DUAL_ENDSTOPS)
-
-    z_endstop_adj =
-      #ifdef Z_DUAL_ENDSTOPS_ADJUSTMENT
-        Z_DUAL_ENDSTOPS_ADJUSTMENT
-      #else
-        0
-      #endif
-    ;
-
-  #endif
-
   #if ENABLED(ULTIPANEL)
     lcd_preheat_hotend_temp[0] = PREHEAT_1_TEMP_HOTEND;
     lcd_preheat_hotend_temp[1] = PREHEAT_2_TEMP_HOTEND;
@@ -1410,12 +1338,6 @@ void MarlinSettings::reset() {
   #if ENABLED(LIN_ADVANCE)
     planner.extruder_advance_k = LIN_ADVANCE_K;
     planner.advance_ed_ratio = LIN_ADVANCE_E_D_RATIO;
-  #endif
-
-  #if HAS_MOTOR_CURRENT_PWM
-    uint32_t tmp_motor_current_setting[3] = PWM_MOTOR_CURRENT;
-    for (uint8_t q = 3; q--;)
-      stepper.digipot_current(q, (stepper.motor_current_setting[q] = tmp_motor_current_setting[q]));
   #endif
 
   #if ENABLED(AUTO_BED_LEVELING_UBL)
@@ -1695,38 +1617,6 @@ void MarlinSettings::reset() {
 
     #endif
 
-    #if ENABLED(DELTA)
-      if (!forReplay) {
-        CONFIG_ECHO_START;
-        SERIAL_ECHOLNPGM("Endstop adjustment:");
-      }
-      CONFIG_ECHO_START;
-      SERIAL_ECHOPAIR("  M666 X", LINEAR_UNIT(endstop_adj[X_AXIS]));
-      SERIAL_ECHOPAIR(" Y", LINEAR_UNIT(endstop_adj[Y_AXIS]));
-      SERIAL_ECHOLNPAIR(" Z", LINEAR_UNIT(endstop_adj[Z_AXIS]));
-      if (!forReplay) {
-        CONFIG_ECHO_START;
-        SERIAL_ECHOLNPGM("Delta settings: L<diagonal_rod> R<radius> H<height> S<segments_per_s> B<calibration radius> XYZ<tower angle corrections>");
-      }
-      CONFIG_ECHO_START;
-      SERIAL_ECHOPAIR("  M665 L", LINEAR_UNIT(delta_diagonal_rod));
-      SERIAL_ECHOPAIR(" R", LINEAR_UNIT(delta_radius));
-      SERIAL_ECHOPAIR(" H", LINEAR_UNIT(DELTA_HEIGHT + home_offset[Z_AXIS]));
-      SERIAL_ECHOPAIR(" S", delta_segments_per_second);
-      SERIAL_ECHOPAIR(" B", LINEAR_UNIT(delta_calibration_radius));
-      SERIAL_ECHOPAIR(" X", LINEAR_UNIT(delta_tower_angle_trim[A_AXIS]));
-      SERIAL_ECHOPAIR(" Y", LINEAR_UNIT(delta_tower_angle_trim[B_AXIS]));
-      SERIAL_ECHOPAIR(" Z", 0.00);
-      SERIAL_EOL();
-    #elif ENABLED(Z_DUAL_ENDSTOPS)
-      if (!forReplay) {
-        CONFIG_ECHO_START;
-        SERIAL_ECHOLNPGM("Z2 Endstop adjustment:");
-      }
-      CONFIG_ECHO_START;
-      SERIAL_ECHOLNPAIR("  M666 Z", LINEAR_UNIT(z_endstop_adj));
-    #endif // DELTA
-
     #if ENABLED(ULTIPANEL)
       if (!forReplay) {
         CONFIG_ECHO_START;
@@ -1899,18 +1789,6 @@ void MarlinSettings::reset() {
       CONFIG_ECHO_START;
       SERIAL_ECHOPAIR("  M900 K", planner.extruder_advance_k);
       SERIAL_ECHOLNPAIR(" R", planner.advance_ed_ratio);
-    #endif
-
-    #if HAS_MOTOR_CURRENT_PWM
-      CONFIG_ECHO_START;
-      if (!forReplay) {
-        SERIAL_ECHOLNPGM("Stepper motor currents:");
-        CONFIG_ECHO_START;
-      }
-      SERIAL_ECHOPAIR("  M907 X", stepper.motor_current_setting[0]);
-      SERIAL_ECHOPAIR(" Z", stepper.motor_current_setting[1]);
-      SERIAL_ECHOPAIR(" E", stepper.motor_current_setting[2]);
-      SERIAL_EOL();
     #endif
   }
 
