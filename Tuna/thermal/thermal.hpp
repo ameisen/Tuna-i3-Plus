@@ -51,6 +51,9 @@ namespace Tuna
 
 namespace Tuna
 {
+  // TODO move this to a better place
+  static constexpr const bool has_bed_thermal_management = false;
+
   class Temperature final : trait::ce_only
   {
   public:
@@ -99,15 +102,17 @@ namespace Tuna
       static_assert(max_temperature::Temperature != min_temperature::Temperature, "these values should never be equal.");
 	  };
 
-	  static temp_t current_temperature,
-		  current_temperature_bed;
+    static temp_t current_temperature;
+		static temp_t current_temperature_bed;
 	  static temp_t target_temperature;
 	  static temp_t target_temperature_bed;
 
 	  static volatile bool in_temp_isr;
 
     static volatile uint8_t soft_pwm_amount;
-		static volatile uint8_t soft_pwm_amount_bed;
+    static volatile_conditional_type<uint8, has_bed_thermal_management> soft_pwm_amount_bed;
+    static volatile_conditional_type<bool, !has_bed_thermal_management> is_bed_heating;
+    static volatile uint8_t soft_bed_pwm_amount;
 
 	  static temp_t watch_target_temp;
 	  static millis_t watch_heater_next_ms;
@@ -121,16 +126,7 @@ namespace Tuna
 	  }
 
   private:
-
-    static volatile uint16 current_temperature_raw;
-    static volatile uint16 current_temperature_bed_raw;
-	  static volatile bool temp_meas_ready;
-	  static_assert(sizeof(Temperature::temp_meas_ready) == 1, "atomic boolean must be one byte");
-
 	  static millis_t next_bed_check_ms;
-
-	  static uint16_t raw_temp_value,
-		  raw_temp_bed_value;
 
   public:
 	  /**
@@ -144,8 +140,7 @@ namespace Tuna
 	  /**
 	   * Static (class) methods
 	   */
-	  static temp_t analog2temp(arg_type<uint16> raw);
-	  static temp_t analog2tempBed(arg_type<uint16> raw);
+	  static temp_t adc_to_temperature(arg_type<uint16> raw);
 
 	  /**
 	   * Called from the Temperature ISR
@@ -219,9 +214,6 @@ namespace Tuna
 	  static void updatePID();
 
   private:
-
-	  static void set_current_temp_raw();
-
 	  static bool updateTemperaturesFromRawValues();
 
 	  static void checkExtruderAutoFans();

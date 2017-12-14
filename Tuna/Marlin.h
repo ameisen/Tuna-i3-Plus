@@ -492,11 +492,11 @@ void do_blocking_move_to_xy(const float &x, const float &y, const float &fr_mm_s
 
 #endif // CARTESIAN
 
-FORCE_INLINE bool position_is_reachable_by_probe_xy(const float &lx, const float &ly) {
+inline bool __forceinline position_is_reachable_by_probe_xy(const float &lx, const float &ly) {
   return position_is_reachable_by_probe_raw_xy(RAW_X_POSITION(lx), RAW_Y_POSITION(ly));
 }
 
-FORCE_INLINE bool position_is_reachable_xy(const float &lx, const float &ly) {
+inline bool __forceinline position_is_reachable_xy(const float &lx, const float &ly) {
   return position_is_reachable_raw_xy(RAW_X_POSITION(lx), RAW_Y_POSITION(ly));
 }
 

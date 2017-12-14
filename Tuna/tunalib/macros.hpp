@@ -36,7 +36,7 @@
 #define __is_constexpr(x) __builtin_constant_p(x)
 
 // Creates a memory barrier, where all stores to memory must be completed.
-#define __memorybarrier do { asm volatile("":::"memory"); } while (false)
+#define __memorybarrier { asm volatile("":::"memory"); } 
 
 // Specifies that a function does not return.
 #define __noreturn __attribute__((noreturn))

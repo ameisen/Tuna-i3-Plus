@@ -307,7 +307,7 @@ class Planner final {
      *  fr_mm_s      - (target) speed of the move (mm/s)
      *  extruder     - target extruder
      */
-    static FORCE_INLINE void buffer_line(ARG_X, ARG_Y, ARG_Z, const float & __restrict e, const float & __restrict fr_mm_s, const uint8_t extruder) {
+    static void __forceinline buffer_line(ARG_X, ARG_Y, ARG_Z, const float & __restrict e, const float & __restrict fr_mm_s, const uint8_t extruder) {
       #if PLANNER_LEVELING && IS_CARTESIAN
         apply_leveling(lx, ly, lz);
       #endif
@@ -323,7 +323,7 @@ class Planner final {
      *  fr_mm_s  - (target) speed of the move (mm/s)
      *  extruder - target extruder
      */
-    static FORCE_INLINE void buffer_line_kinematic(const float ltarget[XYZE], const float & __restrict fr_mm_s, const uint8_t extruder) {
+    static void __forceinline buffer_line_kinematic(const float ltarget[XYZE], const float & __restrict fr_mm_s, const uint8_t extruder) {
       #if PLANNER_LEVELING
         float lpos[XYZ] = { ltarget[X_AXIS], ltarget[Y_AXIS], ltarget[Z_AXIS] };
         apply_leveling(lpos);
@@ -347,7 +347,7 @@ class Planner final {
      *
      * Clears previous speed values.
      */
-    static FORCE_INLINE void set_position_mm(ARG_X, ARG_Y, ARG_Z, const float & __restrict e) {
+    static void __forceinline set_position_mm(ARG_X, ARG_Y, ARG_Z, const float & __restrict e) {
       #if PLANNER_LEVELING && IS_CARTESIAN
         apply_leveling(lx, ly, lz);
       #endif
@@ -355,8 +355,8 @@ class Planner final {
     }
     static void set_position_mm_kinematic(const float position[NUM_AXIS]);
     static void set_position_mm(const AxisEnum axis, const float & __restrict v);
-    static FORCE_INLINE void set_z_position_mm(const float & __restrict z) { set_position_mm(AxisEnum::Z_AXIS, z); }
-    static FORCE_INLINE void set_e_position_mm(const float & __restrict e) { set_position_mm(AxisEnum::E_AXIS, e); }
+    static void __forceinline set_z_position_mm(const float & __restrict z) { set_position_mm(AxisEnum::Z_AXIS, z); }
+    static void __forceinline set_e_position_mm(const float & __restrict e) { set_position_mm(AxisEnum::E_AXIS, e); }
 
     /**
      * Sync from the stepper positions. (e.g., after an interrupted move)

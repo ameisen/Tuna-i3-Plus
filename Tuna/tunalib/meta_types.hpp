@@ -164,4 +164,60 @@ namespace Tuna
   {
     return { first, second };
   }
+
+  template <typename T, bool enabled>
+  struct conditional_type
+  {
+    T value_ = {};
+
+    conditional_type(const T & __restrict value) : value_(value) {}
+    conditional_type & __restrict operator = (const T & __restrict value)
+    {
+      value_ = value;
+      return *this;
+    }
+
+    operator T & __restrict () __restrict { return value_; }
+    operator const T & __restrict () __restrict const { return value_; }
+  };
+
+  template <typename T>
+  struct conditional_type<T, false>
+  {
+    conditional_type(const T &) {}
+    conditional_type & __restrict operator = (const T &) { return *this; }
+
+    operator T () __restrict const
+    {
+      return {};
+    }
+  };
+
+  template <typename T, bool enabled>
+  struct volatile_conditional_type
+  {
+    volatile T value_ = {};
+
+    volatile_conditional_type(const T & __restrict value) : value_(value) {}
+    volatile_conditional_type & __restrict operator = (const T & __restrict value)
+    {
+      value_ = value;
+      return *this;
+    }
+
+    //operator T () __restrict { return value_; }
+    operator const T () __restrict const { return value_; }
+  };
+
+  template <typename T>
+  struct volatile_conditional_type<T, false>
+  {
+    volatile_conditional_type(const T &) {}
+    volatile_conditional_type & __restrict operator = (const T &) { return *this; }
+
+    operator T () __restrict const
+    {
+      return {};
+    }
+  };
 }

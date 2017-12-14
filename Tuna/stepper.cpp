@@ -121,7 +121,7 @@ volatile uint24 Stepper::step_events_completed = 0; // The number of step events
    * This fix isn't perfect and may lose steps - but better than locking up completely
    * in future the planner should slow down if advance stepping rate would be too high
    */
-  FORCE_INLINE uint16_t adv_rate(const int steps, const uint16_t timer, const uint8_t loops) {
+  uint16_t __forceinline adv_rate(const int steps, const uint16_t timer, const uint8_t loops) {
     if (__likely(steps != 0)) {
       const uint16_t rate = (timer * loops) / abs(steps);
       //return constrain(rate, 1, ADV_NEVER - 1)

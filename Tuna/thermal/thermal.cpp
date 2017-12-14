@@ -31,8 +31,10 @@
 #include "configuration_store.h"
 #include "watchdog.h"
 
-#define ENABLE_ERROR_1 0
-#define ENABLE_ERROR_2 0
+#define ENABLE_ERROR_1A 1
+#define ENABLE_ERROR_1B 0
+#define ENABLE_ERROR_2A 0
+#define ENABLE_ERROR_2B 0
 #define ENABLE_ERROR_3 1
 #define ENABLE_ERROR_4 1
 #define ENABLE_ERROR_5 1
@@ -56,17 +58,64 @@ millis_t Temperature::watch_bed_next_ms = 0;
 
 bool Temperature::allow_cold_extrude = false;
 
-volatile uint16 Temperature::current_temperature_raw = 0_u16;
-volatile uint16 Temperature::current_temperature_bed_raw = 0_u16;
-volatile bool Temperature::temp_meas_ready = false;
-
 millis_t Temperature::next_bed_check_ms;
 
-uint16_t Temperature::raw_temp_value = 0_u16,
-Temperature::raw_temp_bed_value = 0;
-
 volatile uint8_t Temperature::soft_pwm_amount = 0;
-volatile uint8_t Temperature::soft_pwm_amount_bed = 0;
+volatile_conditional_type<uint8, has_bed_thermal_management> Temperature::soft_pwm_amount_bed = 0_u8;
+volatile_conditional_type<bool, !has_bed_thermal_management> Temperature::is_bed_heating = false;
+
+namespace
+{
+  struct interrupt final : trait::ce_only
+  {
+    static volatile bool ready_;
+    static volatile uint16 raw_adc_hotend;
+    static volatile uint16 raw_adc_bed;
+
+    static inline void __forceinline __flatten set_adc (arg_type<uint16> hotend, arg_type<uint16> bed)
+    {
+      raw_adc_hotend = hotend;
+      raw_adc_bed = bed;
+      ready_ = true;
+    }
+
+    static inline void __forceinline __flatten set_adc_hotend (arg_type<uint16> adc)
+    {
+      raw_adc_hotend = adc;
+      ready_ = true;
+    }
+
+    static inline void __forceinline __flatten set_adc_bed (arg_type<uint16> adc)
+    {
+      raw_adc_bed = adc;
+      ready_ = true;
+    }
+
+    static inline uint16 __forceinline __flatten __pure get_adc_hotend()
+    {
+      return raw_adc_hotend;
+    }
+
+    static inline uint16 __forceinline __flatten __pure get_adc_bed()
+    {
+      return raw_adc_bed;
+    }
+
+    static inline bool __forceinline __flatten __pure is_ready()
+    {
+      return ready_;
+    }
+
+    static inline void __forceinline __flatten set_ready(bool state)
+    {
+      ready_ = state;
+    }
+  };
+
+  volatile bool interrupt::ready_ = false;
+  volatile uint16 interrupt::raw_adc_hotend = 0_u16;
+  volatile uint16 interrupt::raw_adc_bed = 0_u16;
+}
 
 namespace
 {
@@ -136,7 +185,14 @@ uint8 Temperature::getHeaterPower() {
 	}
 	else
 	{
-		return soft_pwm_amount_bed;
+    if constexpr(has_bed_thermal_management)
+    {
+      return soft_pwm_amount_bed;
+    }
+    else
+    {
+      return is_bed_heating ? 0xFF : 0;
+    }
 	}
 }
 template uint8 Temperature::getHeaterPower<Temperature::Manager::Hotend>();
@@ -205,13 +261,13 @@ bool Temperature::manage_heater() {
 	millis_t ms = millis();
 
 	// Check for thermal runaway
-#if ENABLE_ERROR_2
+#if ENABLE_ERROR_2A
 	thermal_runaway_protection<Manager::Hotend>(thermal_runaway_state_machine, thermal_runaway_timer, current_temperature, target_temperature, THERMAL_PROTECTION_PERIOD, THERMAL_PROTECTION_HYSTERESIS);
 #endif
 
 	// Make sure temperature is increasing
 	if (watch_heater_next_ms && __unlikely(ELAPSED(ms, watch_heater_next_ms))) { // Time to check this extruder?
-#if ENABLE_ERROR_1
+#if ENABLE_ERROR_1A
 		if (degHotend() < watch_target_temp)                             // Failed to increase enough?
 			_temp_error<Manager::Hotend>(PSTR(MSG_T_HEATING_FAILED), PSTR(MSG_HEATING_FAILED_LCD));
 		else                                                                 // Start again if the target is still far off
@@ -221,7 +277,7 @@ bool Temperature::manage_heater() {
 
 	// Make sure temperature is increasing
 	if (watch_bed_next_ms && __unlikely(ELAPSED(ms, watch_bed_next_ms))) {        // Time to check the bed?
-#if ENABLE_ERROR_1
+#if ENABLE_ERROR_1B
 		if (degBed() < watch_target_bed_temp)                           // Failed to increase enough?
 			_temp_error<Manager::Bed>(PSTR(MSG_T_HEATING_FAILED), PSTR(MSG_HEATING_FAILED_LCD));
 		else                                                            // Start again if the target is still far off
@@ -232,7 +288,7 @@ bool Temperature::manage_heater() {
 	//if (PENDING(ms, next_bed_check_ms)) return true;
 	//next_bed_check_ms = ms + BED_CHECK_INTERVAL;
 
-#if ENABLE_ERROR_2
+#if ENABLE_ERROR_2B
 	thermal_runaway_protection<Manager::Bed>(thermal_runaway_bed_state_machine, thermal_runaway_bed_timer, current_temperature_bed, target_temperature_bed, THERMAL_PROTECTION_BED_PERIOD, THERMAL_PROTECTION_BED_HYSTERESIS);
 #endif
 
@@ -254,34 +310,46 @@ bool Temperature::manage_heater() {
   // Failsafe to make sure fubar'd PID settings don't force the heater always on.
   if (__unlikely(target_temperature_bed == 0_C))
   {
-    soft_pwm_amount_bed = 0;
+    if constexpr(has_bed_thermal_management)
+    {
+      soft_pwm_amount_bed = 0;
+    }
+    else
+    {
+      is_bed_heating = false;
+    }
     WRITE_HEATER_BED(LOW);
   }
 
 	// Check if temperature is within the correct range
 	if (__likely(WITHIN(current_temperature_bed, temp_t(Bed::min_temperature::Temperature), temp_t(Bed::max_temperature::Temperature))))
   {
-		soft_pwm_amount_bed = current_temperature_bed < target_temperature_bed ? MAX_BED_POWER >> 1 : 0;
+    if constexpr(has_bed_thermal_management)
+    {
+      soft_pwm_amount_bed = current_temperature_bed < target_temperature_bed ? MAX_BED_POWER >> 1 : 0;
+    }
+    else
+    {
+      is_bed_heating = current_temperature_bed < target_temperature_bed;
+    }
 	}
 	else
   {
-		soft_pwm_amount_bed = 0;
+    if constexpr(has_bed_thermal_management)
+    {
+      soft_pwm_amount_bed = 0;
+    }
+    else
+    {
+      is_bed_heating = false;
+    }
 		WRITE_HEATER_BED(LOW);
 	}
 
   return true;
 }
 
-// Derived from RepRap FiveD extruder::getTemperature()
-// For hot end temperature measurement.
-temp_t Temperature::analog2temp(arg_type<uint16> raw)
-{
-	return Thermistor::adc_to_temperature(raw);
-}
-
-// Derived from RepRap FiveD extruder::getTemperature()
-// For bed temperature measurement.
-temp_t Temperature::analog2tempBed(arg_type<uint16> raw)
+temp_t Temperature::adc_to_temperature(arg_type<uint16> raw)
 {
 	return Thermistor::adc_to_temperature(raw);
 }
@@ -294,7 +362,7 @@ temp_t Temperature::analog2tempBed(arg_type<uint16> raw)
  */
 bool Temperature::updateTemperaturesFromRawValues() {
 
-	if (__unlikely(temp_meas_ready))
+	if (__unlikely(interrupt::is_ready()))
 	{
     HeaterManager::debug_dump();
 
@@ -302,9 +370,9 @@ bool Temperature::updateTemperaturesFromRawValues() {
 		uint16 temperature_bed_raw;
 		{
 			Tuna::critical_section_not_isr _critsec;
-			temperature_raw = current_temperature_raw;
-			temperature_bed_raw = current_temperature_bed_raw;
-      temp_meas_ready = false;
+      temperature_raw = interrupt::get_adc_hotend();
+			temperature_bed_raw = interrupt::get_adc_bed();
+      interrupt::set_ready(false);
 		}
 
     //Serial.print("temperature raw    : "); Serial.println(temperature_raw);
@@ -343,8 +411,8 @@ bool Temperature::updateTemperaturesFromRawValues() {
 
     const auto previous_temperature = current_temperature;
 
-		current_temperature = Temperature::analog2temp(temperature_raw);
-		current_temperature_bed = Temperature::analog2tempBed(temperature_bed_raw);
+		current_temperature = Temperature::adc_to_temperature(temperature_raw);
+		current_temperature_bed = Temperature::adc_to_temperature(temperature_bed_raw);
 
     if (current_temperature >= previous_temperature)
     {
@@ -502,22 +570,15 @@ void Temperature::disable_all_heaters() {
 	WRITE_HEATER_0(LOW);
 
 	target_temperature_bed = 0;
-	soft_pwm_amount_bed = 0;
+  if constexpr(has_bed_thermal_management)
+  {
+    soft_pwm_amount_bed = 0;
+  }
+  else
+  {
+    is_bed_heating = false;
+  }
 	WRITE_HEATER_BED(LOW);
-}
-
-/**
- * Get raw temperatures
- */
-void Temperature::set_current_temp_raw()
-{
-	Tuna::critical_section _critsec;
-
-  current_temperature_raw = raw_temp_value;
-  current_temperature_bed_raw = raw_temp_bed_value;
-  //__memorybarrier;
-  temp_meas_ready = true;
-  //__memorybarrier;
 }
 
 /**
@@ -634,11 +695,72 @@ void Temperature::isr()
 	static uint8 oversample_count = 0;
   static sensor_state adc_sensor_state = sensor_state::initialize_hotend;
 
+  // ADC read/handle
+  {
+    /**
+    * One sensor is sampled on every other call of the ISR.
+    * Each sensor is read 16 (OVERSAMPLENR) times, taking the average.
+    *
+    * On each Prepare pass, ADC is started for a sensor pin.
+    * On the next pass, the ADC value is read and accumulated.
+    *
+    * This gives each ADC 0.9765ms to charge up.
+    */
+
+    static uint16 local_raw_adc_hotend = 0_u16;
+    static uint16 local_raw_adc_bed = 0_u16;
+
+    switch (adc_sensor_state++)
+    {
+    case sensor_state::initialize_hotend:
+    {
+      start_adc<TEMP_0_PIN>();
+    } break;
+    case sensor_state::read_hotend:
+    {
+      local_raw_adc_hotend += ADC;
+
+      if (__unlikely((++oversample_count % OVERSAMPLENR) == 0))
+      {
+        // Update the raw values.
+        interrupt::set_adc_hotend(local_raw_adc_hotend);
+        local_raw_adc_hotend = 0;
+      }
+    } break;
+    case sensor_state::initialize_bed:
+    {
+      start_adc<TEMP_BED_PIN>();
+    } break;
+    case sensor_state::read_bed:
+    {
+      local_raw_adc_bed += ADC;
+
+      if (__unlikely((oversample_count % OVERSAMPLENR) == 0))
+      {
+        // Update the raw values.
+        interrupt::set_adc_bed(local_raw_adc_bed);
+        local_raw_adc_bed = 0;
+      }
+
+      adc_sensor_state = sensor_state::initialize_hotend;
+    }
+    }
+  }
+
   static bool current_extruder_state = false;
   static bool current_bed_state = false;
 
   const uint8_t extruder_pwm = soft_pwm_amount;
-  const uint8_t bed_pwm = soft_pwm_amount_bed;
+  const uint8_t bed_pwm = []() -> uint8 {
+    if constexpr(has_bed_thermal_management)
+    {
+      return soft_pwm_amount_bed;
+    }
+    else
+    {
+      return is_bed_heating ? 0xFF : 0;
+    }
+  }();
 
   // If 'false', ISR PWM sequences will look like:
   // 111111111111000000000011111111111100000000
@@ -717,50 +839,6 @@ void Temperature::isr()
       current_bed_state = new_bed_state;
       set_pin<HEATER_BED_PIN>(new_bed_state);
     }
-  }
-
-	/**
-	 * One sensor is sampled on every other call of the ISR.
-	 * Each sensor is read 16 (OVERSAMPLENR) times, taking the average.
-	 *
-	 * On each Prepare pass, ADC is started for a sensor pin.
-	 * On the next pass, the ADC value is read and accumulated.
-	 *
-	 * This gives each ADC 0.9765ms to charge up.
-	 */
-
-  switch (adc_sensor_state++)
-  {
-  case sensor_state::initialize_hotend:
-  {
-    start_adc<TEMP_0_PIN>();
-  } break;
-  case sensor_state::read_hotend:
-  {
-    raw_temp_value += ADC;
-  } break;
-  case sensor_state::initialize_bed:
-  {
-    start_adc<TEMP_BED_PIN>();
-  } break;
-  case sensor_state::read_bed:
-  {
-    raw_temp_bed_value += ADC;
-
-    __assume(oversample_count < OVERSAMPLENR); // impossible to be >=, yet.
-    if (__unlikely(++oversample_count >= OVERSAMPLENR))
-    {
-      oversample_count = 0;
-
-      // Update the raw values.
-      set_current_temp_raw();
-
-      raw_temp_value = 0;
-      raw_temp_bed_value = 0;
-    }
-
-    adc_sensor_state = sensor_state::initialize_hotend;
-  }
   }
 
 	Tuna::intrinsic::cli();

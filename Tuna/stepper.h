@@ -56,26 +56,13 @@ extern Stepper stepper;
 // uses:
 // r26 to store 0
 // r27 to store the byte 1 of the 24 bit result
-#define MultiU16X8toH16(intRes, charIn1, intIn2) \
-  asm volatile ( \
-                 "clr r26 \n\t" \
-                 "mul %A1, %B2 \n\t" \
-                 "movw %A0, r0 \n\t" \
-                 "mul %A1, %A2 \n\t" \
-                 "add %A0, r1 \n\t" \
-                 "adc %B0, r26 \n\t" \
-                 "lsr r0 \n\t" \
-                 "adc %A0, r26 \n\t" \
-                 "adc %B0, r26 \n\t" \
-                 "clr r1 \n\t" \
-                 : \
-                 "=&r" (intRes) \
-                 : \
-                 "d" (charIn1), \
-                 "d" (intIn2) \
-                 : \
-                 "r26" \
-               )
+
+inline uint8 __forceinline __flatten __const MultiU16X8toH8(uint8 charIn1, uint16 intIn2)
+{
+  // It is faster to use uint24, shift by 8, and let the compiler do it.
+  // Also note that the upper value is always going to be expressable as a single byte.
+  return (charIn1 * uint24(intIn2)) >> 8_u8;
+}
 
 class Stepper final {
 
@@ -218,7 +205,7 @@ class Stepper final {
     // SCARA AB axes are in degrees, not mm
     //
     #if IS_SCARA
-      static FORCE_INLINE float get_axis_position_degrees(AxisEnum axis) { return get_axis_position_mm(axis); }
+      static float __forceinline get_axis_position_degrees(AxisEnum axis) { return get_axis_position_mm(axis); }
     #endif
 
     //
@@ -240,7 +227,7 @@ class Stepper final {
     //
     // The direction of a single motor
     //
-    static FORCE_INLINE bool motor_direction(AxisEnum axis) { return TEST(last_direction_bits, axis); }
+    static bool __forceinline motor_direction(AxisEnum axis) { return TEST(last_direction_bits, axis); }
 
     #if HAS_DIGIPOTSS || HAS_MOTOR_CURRENT_PWM
       static void digitalPotWrite(const int16_t address, const int16_t value);
@@ -254,9 +241,9 @@ class Stepper final {
     #endif
 
     #if ENABLED(Z_DUAL_ENDSTOPS)
-      static FORCE_INLINE void set_homing_flag(const bool state) { performing_homing = state; }
-      static FORCE_INLINE void set_z_lock(const bool state) { locked_z_motor = state; }
-      static FORCE_INLINE void set_z2_lock(const bool state) { locked_z2_motor = state; }
+      static void __forceinline set_homing_flag(const bool state) { performing_homing = state; }
+      static void __forceinline set_z_lock(const bool state) { locked_z_motor = state; }
+      static void __forceinline set_z2_lock(const bool state) { locked_z2_motor = state; }
     #endif
 
     #if ENABLED(BABYSTEPPING)
@@ -275,7 +262,7 @@ class Stepper final {
     //
     // Triggered position of an axis in mm (not core-savvy)
     //
-    static FORCE_INLINE float triggered_position_mm(AxisEnum axis) {
+    static float __forceinline triggered_position_mm(AxisEnum axis) {
       return endstops_trigsteps[axis] * planner.steps_to_mm[axis];
     }
 
@@ -285,7 +272,7 @@ class Stepper final {
 
   private:
 
-    static FORCE_INLINE unsigned short calc_timer(unsigned short step_rate) {
+    static unsigned __forceinline short calc_timer(unsigned short step_rate) {
       unsigned short timer;
 
       NOMORE(step_rate, MAX_STEP_FREQUENCY);
@@ -308,8 +295,7 @@ class Stepper final {
         unsigned short table_address = (unsigned short)&speed_lookuptable_fast[(unsigned char)(step_rate >> 8)][0];
         unsigned char tmp_step_rate = (step_rate & 0x00FF);
         unsigned short gain = (unsigned short)pgm_read_word_near(table_address + 2);
-        MultiU16X8toH16(timer, tmp_step_rate, gain);
-        timer = (unsigned short)pgm_read_word_near(table_address) - timer;
+        timer = (unsigned short)pgm_read_word_near(table_address) - MultiU16X8toH8(tmp_step_rate, gain);
       }
       else { // lower step rates
         unsigned short table_address = (unsigned short)&speed_lookuptable_slow[0][0];
@@ -327,7 +313,7 @@ class Stepper final {
 
     // Initialize the trapezoid generator from the current block.
     // Called whenever a new block begins.
-    static FORCE_INLINE void trapezoid_generator_reset() {
+    static void __forceinline trapezoid_generator_reset() {
 
       static int8_t last_extruder = -1;
 

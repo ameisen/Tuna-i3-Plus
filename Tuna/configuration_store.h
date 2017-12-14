@@ -37,8 +37,8 @@ class MarlinSettings final {
 
       #if ENABLED(AUTO_BED_LEVELING_UBL) // Eventually make these available if any leveling system
                                          // That can store is enabled
-        FORCE_INLINE static int get_start_of_meshes() { return meshes_begin; }
-        FORCE_INLINE static int get_end_of_meshes() { return meshes_end; }
+        static int __forceinline get_start_of_meshes() { return meshes_begin; }
+        static int __forceinline get_end_of_meshes() { return meshes_end; }
         static int calc_num_meshes();
         static void store_mesh(int8_t slot);
         static void load_mesh(int8_t slot, void *into = 0);
@@ -47,15 +47,13 @@ class MarlinSettings final {
         //static void defrag_meshes();  // "
       #endif
     #else
-      FORCE_INLINE
-      static bool load() { reset(); report(); return true; }
+      static bool __forceinline load() { reset(); report(); return true; }
     #endif
 
     #if DISABLED(DISABLE_M503)
       static void report(bool forReplay=false);
     #else
-      FORCE_INLINE
-      static void report(bool forReplay=false) { UNUSED(forReplay); }
+      static void __forceinline report(bool forReplay=false) { UNUSED(forReplay); }
     #endif
 
   private:

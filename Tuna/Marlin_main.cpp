@@ -329,7 +329,7 @@ static Tuna::flash_string injected_commands_P = nullptr;
  * but the planner and stepper like mm/s units.
  */
 static const float homing_feedrate_mm_s[] __flashmem = { HOMING_FEEDRATE_X, HOMING_FEEDRATE_Y, HOMING_FEEDRATE_Z, 0 };
-FORCE_INLINE float homing_feedrate(const AxisEnum a) { return pgm_read_float(&homing_feedrate_mm_s[a]); }
+float __forceinline homing_feedrate(const AxisEnum a) { return pgm_read_float(&homing_feedrate_mm_s[a]); }
 
 float feedrate_mm_s = MMM_TO_MMS(1500.0);
 float last_param_feedrate_mm_s = MMM_TO_MMS(1500.0);
@@ -400,8 +400,8 @@ MarlinBusyState busy_state = NOT_BUSY;
 static millis_t next_busy_signal_ms = 0;
 uint8_t host_keepalive_interval = DEFAULT_KEEPALIVE_INTERVAL;
 
-FORCE_INLINE float pgm_read_any(const float *p) { return pgm_read_float_near(p); }
-FORCE_INLINE signed char pgm_read_any(const signed char *p) { return pgm_read_byte_near(p); }
+float __forceinline pgm_read_any(const float *p) { return pgm_read_float_near(p); }
+signed char __forceinline pgm_read_any(const signed char *p) { return pgm_read_byte_near(p); }
 
 #define XYZ_CONSTS_FROM_CONFIG(type, array, CONFIG) \
   static const __flashmem type array##_P[XYZ] = { X_##CONFIG, Y_##CONFIG, Z_##CONFIG }; \

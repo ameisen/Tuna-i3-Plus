@@ -246,7 +246,7 @@ namespace Tuna
     template <typename U>
     constexpr __forceinline __flatten operator U () const __restrict
     {
-      static_assert(sizeof(T) <= sizeof(U), "Cannot extract pgm value larger than declared storage.");
+      static_assert(sizeof(T) >= sizeof(U), "Cannot extract pgm value larger than declared storage.");
       return get<U>();
     }
 

@@ -73,19 +73,19 @@ public:
     void presort();
     void getfilename_sorted(const uint16_t nr);
     #if ENABLED(SDSORT_GCODE)
-      FORCE_INLINE void setSortOn(bool b) { sort_alpha = b; presort(); }
-      FORCE_INLINE void setSortFolders(int i) { sort_folders = i; presort(); }
+      void __forceinline setSortOn(bool b) { sort_alpha = b; presort(); }
+      void __forceinline setSortFolders(int i) { sort_folders = i; presort(); }
       //FORCE_INLINE void setSortReverse(bool b) { sort_reverse = b; }
     #endif
   #endif
 
-  FORCE_INLINE void pauseSDPrint() { sdprinting = false; }
-  FORCE_INLINE bool isFileOpen() { return file.isOpen(); }
-  FORCE_INLINE bool eof() { return sdpos >= filesize; }
-  FORCE_INLINE int16_t get() { sdpos = file.curPosition(); return (int16_t)file.read(); }
-  FORCE_INLINE void setIndex(long index) { sdpos = index; file.seekSet(index); }
-  FORCE_INLINE uint8_t percentDone() { return (isFileOpen() && filesize) ? sdpos / ((filesize + 99) / 100) : 0; }
-  FORCE_INLINE char* getWorkDirName() { workDir.getFilename(filename); return filename; }
+  void __forceinline pauseSDPrint() { sdprinting = false; }
+  bool __forceinline isFileOpen() { return file.isOpen(); }
+  bool __forceinline eof() { return sdpos >= filesize; }
+  int16 __forceinline get() { sdpos = file.curPosition(); return (int16)file.read(); }
+  void __forceinline setIndex(long index) { sdpos = index; file.seekSet(index); }
+  uint8 __forceinline percentDone() { return (isFileOpen() && filesize) ? sdpos / ((filesize + 99) / 100) : 0; }
+  char* __forceinline getWorkDirName() { workDir.getFilename(filename); return filename; }
 
 public:
   bool saving, logging, sdprinting, cardOK, filenameIsDir;

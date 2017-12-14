@@ -81,10 +81,10 @@ void serial_echopair_P(const char* s_P, float v);
 void serial_echopair_P(const char* s_P, double v);
 void serial_echopair_P(const char* s_P, unsigned int v);
 void serial_echopair_P(const char* s_P, unsigned long v);
-FORCE_INLINE void serial_echopair_P(const char* s_P, uint8_t v) { serial_echopair_P(s_P, (int)v); }
-FORCE_INLINE void serial_echopair_P(const char* s_P, uint16_t v) { serial_echopair_P(s_P, (int)v); }
-FORCE_INLINE void serial_echopair_P(const char* s_P, bool v) { serial_echopair_P(s_P, (int)v); }
-FORCE_INLINE void serial_echopair_P(const char* s_P, void *v) { serial_echopair_P(s_P, (unsigned long)v); }
+inline void __forceinline serial_echopair_P(const char* s_P, uint8_t v) { serial_echopair_P(s_P, (int)v); }
+inline void __forceinline serial_echopair_P(const char* s_P, uint16_t v) { serial_echopair_P(s_P, (int)v); }
+inline void __forceinline serial_echopair_P(const char* s_P, bool v) { serial_echopair_P(s_P, (int)v); }
+inline void __forceinline serial_echopair_P(const char* s_P, void *v) { serial_echopair_P(s_P, (unsigned long)v); }
 
 void serial_spaces(uint8_t count);
 #define SERIAL_ECHO_SP(C)     serial_spaces(C)
@@ -94,7 +94,7 @@ void serial_spaces(uint8_t count);
 //
 // Functions for serial printing from __flashmem. (Saves loads of SRAM.)
 //
-FORCE_INLINE void serialprintPGM(const char* str) {
+inline void __forceinline serialprintPGM(const char* str) {
   while (char ch = pgm_read_byte(str++)) MYSERIAL.write(ch);
 }
 

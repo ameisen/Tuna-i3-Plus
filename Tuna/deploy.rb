@@ -6,7 +6,7 @@ require 'optparse'
 
 $ARDUINO_BIN_PATH = best_path(ENV["ARDUINO_PATH"] + "hardware/tools/avr/bin", Dir.pwd) + "/"
 $AVRDUDE_PATH = $ARDUINO_BIN_PATH + "avrdude.exe"
-$AVR_CMD = "-C \"#{best_path(ENV["ARDUINO_PATH"] + "hardware/tools/avr/etc/avrdude.conf", Dir.pwd)}\" -c wiring -p atmega2560 -b 115200 -D -u"
+$AVR_CMD = "-C \"#{best_path(ENV["ARDUINO_PATH"] + "hardware/tools/avr/etc/avrdude.conf", Dir.pwd)}\" -c wiring -p atmega2560 -b 115200 -D -u" # 115200
 
 $port = nil
 $binary = nil

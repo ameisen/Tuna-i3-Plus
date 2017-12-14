@@ -356,7 +356,7 @@ namespace Tuna::Thermistor
   }
 
   template <bool small_adc, bool small_temp>
-  inline temp_t binsearch_temp_get_branched(arg_type<uintsz<small_adc ? 0xFF : 0xFFFF>> adc)
+  inline temp_t __forceinline __flatten binsearch_temp_get_branched(arg_type<uintsz<small_adc ? 0xFF : 0xFFFF>> adc)
   {
     constexpr const uint8_t max_idx = small_adc ? max_adc_uint8_idx : (temp_table_size - 1);
     constexpr const uint8_t min_idx = small_temp ? min_adc_uint8_temp_idx : 0;
@@ -434,9 +434,9 @@ namespace Tuna::Thermistor
     return temp_t::from(interpolate(le_value_t, g_value_t, interpoland));
   }
 
-  inline temp_t binsearch_temp_get(arg_type<uint16_t> adc)
+  inline temp_t __forceinline __flatten binsearch_temp_get(arg_type<uint16_t> adc)
   {
-    static constexpr bool branched_binsearch = false;
+    static constexpr bool branched_binsearch = true;
 
     if constexpr (!branched_binsearch)
     {

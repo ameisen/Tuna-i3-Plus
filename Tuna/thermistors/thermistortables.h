@@ -28,6 +28,7 @@
 #include "macros.h"
 
 constexpr const uint8 OVERSAMPLENR = 16;
+static_assert(is_pow2(OVERSAMPLENR), "must be pow2");
 
 #define ANY_THERMISTOR_IS(n) (THERMISTORHEATER_0 == n || THERMISTORHEATER_1 == n || THERMISTORHEATER_2 == n || THERMISTORHEATER_3 == n || THERMISTORHEATER_4 == n || THERMISTORBED == n)
 

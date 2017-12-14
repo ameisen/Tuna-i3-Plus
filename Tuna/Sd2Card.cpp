@@ -61,7 +61,7 @@
   }
   //------------------------------------------------------------------------------
   /** SPI read data - only one call so force inline */
-  static inline __attribute__((always_inline))
+  static inline __forceinline
   void spiRead(uint8_t* buf, uint16_t nbyte) {
     if (nbyte-- == 0) return;
     SPDR = 0XFF;
@@ -81,7 +81,7 @@
   }
   //------------------------------------------------------------------------------
   /** SPI send block - only one call so force inline */
-  static inline __attribute__((always_inline))
+  static inline __forceinline
   void spiSendBlock(uint8_t token, const uint8_t* buf) {
     SPDR = token;
     for (uint16_t i = 0; i < 512; i += 2) {

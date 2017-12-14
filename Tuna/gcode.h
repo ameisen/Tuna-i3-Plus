@@ -172,7 +172,7 @@ public:
   static void parse(char * p);
 
   // The code value pointer was set
-  FORCE_INLINE static bool has_value() { return value_ptr != nullptr; }
+  static bool __forceinline has_value() { return value_ptr != nullptr; }
 
   // Seen a parameter with a value
   inline static bool seenval(const char c) { return seen(c) && has_value(); }
@@ -205,12 +205,12 @@ public:
   inline static uint24 value_u24() { return value_ptr ? uint24(strtoul(value_ptr, nullptr, 10)) : 0_u24; }
 
   // Code value for use as time
-  FORCE_INLINE static millis_t value_millis() { return value_ulong(); }
-  FORCE_INLINE static millis_t value_millis_from_seconds() { return value_float() * 1000UL; }
+  static millis_t __forceinline value_millis() { return value_ulong(); }
+  static millis_t __forceinline value_millis_from_seconds() { return value_float() * 1000UL; }
 
   // Reduce to fewer bits
-  FORCE_INLINE static int16_t value_int() { return (int16_t)value_long(); }
-  FORCE_INLINE static uint16_t value_ushort() { return (uint16_t)value_long(); }
+  static int16_t __forceinline value_int() { return (int16_t)value_long(); }
+  static uint16_t __forceinline value_ushort() { return (uint16_t)value_long(); }
   inline static uint8_t value_byte() { return (uint8_t)constrain(value_long(), 0, 255); }
 
   // Bool is true with no value or non-zero
@@ -243,9 +243,9 @@ public:
 
   #else
 
-    FORCE_INLINE static float value_linear_units()                  {            return value_float(); }
-    FORCE_INLINE static float value_axis_units(const AxisEnum a)    { UNUSED(a); return value_float(); }
-    FORCE_INLINE static float value_per_axis_unit(const AxisEnum a) { UNUSED(a); return value_float(); }
+    static float __forceinline value_linear_units()                  {            return value_float(); }
+    static float __forceinline value_axis_units(const AxisEnum a)    { UNUSED(a); return value_float(); }
+    static float __forceinline value_per_axis_unit(const AxisEnum a) { UNUSED(a); return value_float(); }
 
   #endif
 
@@ -255,10 +255,10 @@ public:
 
     #if ENABLED(ULTIPANEL) && DISABLED(DISABLE_M503)
 
-      FORCE_INLINE static char temp_units_code() {
+      static char __forceinline temp_units_code() {
         return input_temp_units == TEMPUNIT_K ? 'K' : input_temp_units == TEMPUNIT_F ? 'F' : 'C';
       }
-      FORCE_INLINE static char* temp_units_name() {
+      static char* __forceinline temp_units_name() {
         return input_temp_units == TEMPUNIT_K ? PSTR("Kelvin") : input_temp_units == TEMPUNIT_F ? PSTR("Fahrenheit") : PSTR("Celsius");
       }
       inline static float to_temp_units(const float &f) {
@@ -301,27 +301,27 @@ public:
 
   #else // !TEMPERATURE_UNITS_SUPPORT
 
-    FORCE_INLINE static float value_celsius()      { return value_float(); }
-    FORCE_INLINE static float value_celsius_diff() { return value_float(); }
+    static float __forceinline value_celsius()      { return value_float(); }
+    static float __forceinline value_celsius_diff() { return value_float(); }
 
   #endif // !TEMPERATURE_UNITS_SUPPORT
 
-  FORCE_INLINE static float value_feedrate() { return value_linear_units(); }
+  static float __forceinline value_feedrate() { return value_linear_units(); }
 
   void unknown_command_error();
 
   // Provide simple value accessors with default option
-  FORCE_INLINE static float    floatval(const char c, const float dval=0.0)   { return seenval(c) ? value_float()        : dval; }
-  FORCE_INLINE static bool     boolval(const char c, const bool dval=false)   { return seen(c)    ? value_bool()         : dval; }
-  FORCE_INLINE static uint8_t  byteval(const char c, const uint8_t dval=0)    { return seenval(c) ? value_byte()         : dval; }
-  FORCE_INLINE static int16_t  intval(const char c, const int16_t dval=0)     { return seenval(c) ? value_int()          : dval; }
-  FORCE_INLINE static uint16_t ushortval(const char c, const uint16_t dval=0) { return seenval(c) ? value_ushort()       : dval; }
-  FORCE_INLINE static int24    i24val(const char c, const int24 dval = 0)     { return seenval(c) ? value_i24()          : dval; }
-  FORCE_INLINE static uint24   u24val(const char c, const uint24 dval = 0)    { return seenval(c) ? value_u24()          : dval; }
-  FORCE_INLINE static int32_t  longval(const char c, const int32_t dval=0)    { return seenval(c) ? value_long()         : dval; }
-  FORCE_INLINE static uint32_t ulongval(const char c, const uint32_t dval=0)  { return seenval(c) ? value_ulong()        : dval; }
-  FORCE_INLINE static float    linearval(const char c, const float dval=0.0)  { return seenval(c) ? value_linear_units() : dval; }
-  FORCE_INLINE static float    celsiusval(const char c, const float dval=0.0) { return seenval(c) ? value_celsius()      : dval; }
+  static float    __forceinline floatval(const char c, const float dval=0.0)   { return seenval(c) ? value_float()        : dval; }
+  static bool     __forceinline boolval(const char c, const bool dval=false)   { return seen(c)    ? value_bool()         : dval; }
+  static uint8_t  __forceinline byteval(const char c, const uint8_t dval=0)    { return seenval(c) ? value_byte()         : dval; }
+  static int16_t  __forceinline intval(const char c, const int16_t dval=0)     { return seenval(c) ? value_int()          : dval; }
+  static uint16_t __forceinline ushortval(const char c, const uint16_t dval=0) { return seenval(c) ? value_ushort()       : dval; }
+  static int24    __forceinline i24val(const char c, const int24 dval = 0)     { return seenval(c) ? value_i24()          : dval; }
+  static uint24   __forceinline u24val(const char c, const uint24 dval = 0)    { return seenval(c) ? value_u24()          : dval; }
+  static int32_t  __forceinline longval(const char c, const int32_t dval=0)    { return seenval(c) ? value_long()         : dval; }
+  static uint32_t __forceinline ulongval(const char c, const uint32_t dval=0)  { return seenval(c) ? value_ulong()        : dval; }
+  static float    __forceinline linearval(const char c, const float dval=0.0)  { return seenval(c) ? value_linear_units() : dval; }
+  static float    __forceinline celsiusval(const char c, const float dval=0.0) { return seenval(c) ? value_celsius()      : dval; }
 
 };
 
