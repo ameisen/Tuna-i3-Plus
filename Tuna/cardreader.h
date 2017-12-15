@@ -75,7 +75,7 @@ public:
     #if ENABLED(SDSORT_GCODE)
       void __forceinline setSortOn(bool b) { sort_alpha = b; presort(); }
       void __forceinline setSortFolders(int i) { sort_folders = i; presort(); }
-      //FORCE_INLINE void setSortReverse(bool b) { sort_reverse = b; }
+      //__forceinline void setSortReverse(bool b) { sort_reverse = b; }
     #endif
   #endif
 

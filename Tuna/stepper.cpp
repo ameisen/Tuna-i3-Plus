@@ -59,7 +59,7 @@
   #include <SPI.h>
 #endif
 
-constexpr const bool enable_scurve = false;
+constexpr const bool enable_scurve = true;
 
 Stepper stepper; // Singleton
 
