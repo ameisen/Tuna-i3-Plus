@@ -23,7 +23,7 @@
 #ifndef __TYPES_H__
 #define __TYPES_H__
 
-using millis_t = uint32_t;
+using millis_t = uint32;
 using millis24_t = __uint24;
 using millis16_t = uint16_t;
 

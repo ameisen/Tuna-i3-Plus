@@ -126,7 +126,7 @@ class Stepper final {
     //
     // Constructor / initializer
     //
-    Stepper() { };
+    Stepper() = default;
 
     //
     // Initialize stepper hardware
@@ -137,11 +137,11 @@ class Stepper final {
     // Interrupt Service Routines
     //
 
-    static void isr();
+    static void __forceinline __flatten isr();
 
     #if ENABLED(LIN_ADVANCE)
-      static void advance_isr();
-      static void advance_isr_scheduler();
+      static void __forceinline __flatten advance_isr();
+      static void __forceinline __flatten advance_isr_scheduler();
     #endif
 
     //
@@ -153,8 +153,8 @@ class Stepper final {
     // Set the current position in steps
     //
     static void set_position(const int24 &a, const int24 &b, const int24 &c, const int24 &e);
-    static void set_position(const AxisEnum &a, const int24 &v);
-    static void set_e_position(const int24 &e);
+    static void __forceinline __flatten set_position(const AxisEnum &a, const int24 &v);
+    static void __forceinline __flatten set_e_position(const int24 &e);
 
     //
     // Set direction bits for all steppers
@@ -174,7 +174,7 @@ class Stepper final {
     //
     // Get the position (mm) of an axis based on stepper position(s)
     //
-    static float get_axis_position_mm(AxisEnum axis);
+    static float __forceinline __flatten get_axis_position_mm(AxisEnum axis);
 
     //
     // SCARA AB axes are in degrees, not mm
@@ -187,7 +187,7 @@ class Stepper final {
     // The stepper subsystem goes to sleep when it runs out of things to execute. Call this
     // to notify the subsystem that it is time to go to work.
     //
-    static void wake_up();
+    static void __forceinline __flatten wake_up();
 
     //
     // Wait for moves to finish and disable all steppers
@@ -202,7 +202,7 @@ class Stepper final {
     //
     // The direction of a single motor
     //
-    static bool __forceinline motor_direction(AxisEnum axis) { return TEST(last_direction_bits, axis); }
+    static inline bool __forceinline __flatten motor_direction(AxisEnum axis) { return TEST(last_direction_bits, axis); }
 
     #if HAS_DIGIPOTSS
       static void digitalPotWrite(const int16_t address, const int16_t value);
@@ -219,25 +219,25 @@ class Stepper final {
       static void babystep(const AxisEnum axis, const bool direction); // perform a short step with a single stepper motor, outside of any convention
     #endif
 
-    static inline void kill_current_block() {
+    static inline void __forceinline __flatten kill_current_block() {
       step_events_completed = current_block->step_event_count;
     }
 
     //
     // Handle a triggered endstop
     //
-    static void endstop_triggered(AxisEnum axis);
+    static void __forceinline __flatten endstop_triggered(AxisEnum axis);
 
     //
     // Triggered position of an axis in mm (not core-savvy)
     //
-    static float __forceinline triggered_position_mm(AxisEnum axis) {
+    static inline float __forceinline __flatten triggered_position_mm(AxisEnum axis) {
       return endstops_trigsteps[axis] * planner.steps_to_mm[axis];
     }
 
   private:
 
-    static unsigned __forceinline short calc_timer(unsigned short step_rate) {
+    static inline unsigned __forceinline __flatten short calc_timer(unsigned short step_rate) {
       unsigned short timer;
 
       NOMORE(step_rate, MAX_STEP_FREQUENCY);
@@ -278,7 +278,7 @@ class Stepper final {
 
     // Initialize the trapezoid generator from the current block.
     // Called whenever a new block begins.
-    static void __forceinline trapezoid_generator_reset() {
+    static inline void __forceinline __flatten trapezoid_generator_reset() {
 
       static int8_t last_extruder = -1;
 

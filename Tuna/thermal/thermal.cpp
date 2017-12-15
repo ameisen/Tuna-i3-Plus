@@ -131,17 +131,17 @@ namespace
     sum_t m_MeanSum = 0;
   public:
 
-    bool is_positive () const __restrict
+    inline bool __forceinline __flatten is_positive () const __restrict
     {
       return m_Positive;
     }
 
-    temp_t getMean() const __restrict
+    inline temp_t __forceinline __flatten getMean() const __restrict
     {
       return temp_t::from(m_MeanSum / MeanCount);
     }
 
-    void appendValue(arg_type<temp_t> value, bool positive) __restrict
+    inline void __forceinline __flatten appendValue(arg_type<temp_t> value, bool positive) __restrict
     {
       const auto raw_value = value.raw();
       m_MeanSum -= tempt_t(m_MeanSum / MeanCount);
@@ -166,7 +166,7 @@ namespace
   temp_trend temperatureTrendCalculator;
 }
 
-Temperature::Trend Temperature::get_temperature_trend()
+Temperature::Trend __forceinline __flatten Temperature::get_temperature_trend()
 {
   return temperatureTrendCalculator.is_positive() ? Trend::Up : Trend::Down;
 }
@@ -178,7 +178,7 @@ void Temperature::PID_autotune(arg_type<temp_t> temp, arg_type<int> ncycles, boo
 void Temperature::updatePID() {}
 
 template <Temperature::Manager manager_type>
-uint8 Temperature::getHeaterPower() {
+uint8 __forceinline __flatten Temperature::getHeaterPower() {
 	if constexpr (manager_type == Manager::Hotend)
 	{
 		return soft_pwm_amount;
@@ -374,10 +374,6 @@ bool Temperature::updateTemperaturesFromRawValues() {
 			temperature_bed_raw = interrupt::get_adc_bed();
       interrupt::set_ready(false);
 		}
-
-    //Serial.print("temperature raw    : "); Serial.println(temperature_raw);
-    //Serial.print("max temperature raw: "); Serial.println(Hotend::max_temperature::Adc);
-    //Serial.print("min temperature raw: "); Serial.println(Hotend::min_temperature::Adc);
 
 #if ENABLE_ERROR_3
 		if constexpr (HEATER_0_RAW_LO_TEMP < HEATER_0_RAW_HI_TEMP)
@@ -595,7 +591,7 @@ void Temperature::disable_all_heaters() {
  *  - For PINS_DEBUGGING, monitor and report endstop pins
  *  - For ENDSTOP_INTERRUPTS_FEATURE check endstops if flagged
  */
-ISR(TIMER0_COMPB_vect) { Temperature::isr(); }
+ISR(TIMER0_COMPB_vect) { Temperature::isr(); } __forceinline __flatten
 
 volatile bool Temperature::in_temp_isr = false;
 
@@ -681,7 +677,7 @@ inline void __forceinline __flatten set_pin(bool state)
   }
 }
 
-void Temperature::isr()
+void __forceinline __flatten Temperature::isr()
 {
 	// The stepper ISR can interrupt this ISR. When it does it re-enables this ISR
 	// at the end of its run, potentially causing re-entry. This flag prevents it.

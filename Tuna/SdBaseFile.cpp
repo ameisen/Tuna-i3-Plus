@@ -56,7 +56,7 @@ bool SdBaseFile::addCluster() {
 // Add a cluster to a directory file and zero the cluster.
 // return with first block of cluster in the cache
 bool SdBaseFile::addDirCluster() {
-  uint32_t block;
+  uint32 block;
   // max folder size
   if (__unlikely(fileSize_ / sizeof(dir_t) >= 0XFFFF)) goto fail;
 
@@ -114,12 +114,12 @@ bool SdBaseFile::close() {
  * Reasons for failure include file is not contiguous, file has zero length
  * or an I/O error occurred.
  */
-bool SdBaseFile::contiguousRange(uint32_t* bgnBlock, uint32_t* endBlock) {
+bool SdBaseFile::contiguousRange(uint32* bgnBlock, uint32* endBlock) {
   // error if no blocks
   if (__unlikely(firstCluster_ == 0)) goto fail;
 
-  for (uint32_t c = firstCluster_; ; c++) {
-    uint32_t next;
+  for (uint32 c = firstCluster_; ; c++) {
+    uint32 next;
     if (__unlikely(!vol_->fatGet(c, &next))) goto fail;
 
     // check for contiguous
@@ -155,8 +155,8 @@ fail:
  *
  */
 bool SdBaseFile::createContiguous(SdBaseFile* dirFile,
-                                  const char* path, uint32_t size) {
-  uint32_t count;
+                                  const char* path, uint32 size) {
+  uint32 count;
   // don't allow zero length file
   if (__unlikely(size == 0)) goto fail;
   if (__unlikely(!open(dirFile, path, O_CREAT | O_EXCL | O_RDWR))) goto fail;
@@ -466,7 +466,7 @@ fail:
 }
 //------------------------------------------------------------------------------
 bool SdBaseFile::mkdir(SdBaseFile* parent, const uint8_t dname[11]) {
-  uint32_t block;
+  uint32 block;
   dir_t d;
   dir_t* p;
 
@@ -757,7 +757,7 @@ bool SdBaseFile::openCachedEntry(uint8_t dirIndex, uint8_t oflag) {
   dirIndex_ = dirIndex;
 
   // copy first cluster number for directory fields
-  firstCluster_ = (uint32_t)p->firstClusterHigh << 16;
+  firstCluster_ = (uint32)p->firstClusterHigh << 16;
   firstCluster_ |= p->firstClusterLow;
 
   // make sure it is a normal file or subdirectory
@@ -841,9 +841,9 @@ bool SdBaseFile::openParent(SdBaseFile* dir) {
   dir_t entry;
   dir_t* p;
   SdBaseFile file;
-  uint32_t c;
-  uint32_t cluster;
-  uint32_t lbn;
+  uint32 c;
+  uint32 cluster;
+  uint32 lbn;
   // error if already open or dir is root or dir is not a directory
   if (__unlikely(isOpen() || !dir || dir->isRoot() || !dir->isDir())) goto fail;
   vol_ = dir->vol_;
@@ -855,7 +855,7 @@ bool SdBaseFile::openParent(SdBaseFile* dir) {
   if (__unlikely(entry.name[0] != '.' || entry.name[1] != '.')) goto fail;
   // start cluster for '..'
   cluster = entry.firstClusterLow;
-  cluster |= (uint32_t)entry.firstClusterHigh << 16;
+  cluster |= (uint32)entry.firstClusterHigh << 16;
   if (cluster == 0) return openRoot(vol_);
   // start block for '..'
   lbn = vol_->clusterStartBlock(cluster);
@@ -877,7 +877,7 @@ bool SdBaseFile::openParent(SdBaseFile* dir) {
   do {
     if (__unlikely(file.readDir(&entry, nullptr) != 32)) goto fail;
     c = entry.firstClusterLow;
-    c |= (uint32_t)entry.firstClusterHigh << 16;
+    c |= (uint32)entry.firstClusterHigh << 16;
   } while (c != cluster);
   // open parent
   return open(&file, file.curPosition() / 32 - 1, O_READ);
@@ -1053,7 +1053,7 @@ int16_t SdBaseFile::read(void* buf, uint16_t nbyte) {
   uint8_t* dst = reinterpret_cast<uint8_t*>(buf);
   uint16_t offset;
   uint16_t toRead;
-  uint32_t block;  // raw device block number
+  uint32 block;  // raw device block number
 
   // error if not open or write only
   if (__unlikely(!isOpen() || !(flags_ & O_READ))) goto fail;
@@ -1252,7 +1252,7 @@ fail:
  */
 bool SdBaseFile::rename(SdBaseFile* dirFile, const char* newPath) {
   dir_t entry;
-  uint32_t dirCluster = 0;
+  uint32 dirCluster = 0;
   SdBaseFile file;
   dir_t* d;
 
@@ -1304,7 +1304,7 @@ bool SdBaseFile::rename(SdBaseFile* dirFile, const char* newPath) {
   // update dot dot if directory
   if (dirCluster) {
     // get new dot dot
-    uint32_t block = vol_->clusterStartBlock(dirCluster);
+    uint32 block = vol_->clusterStartBlock(dirCluster);
     if (!vol_->cacheRawBlock(block, SdVolume::CACHE_FOR_READ)) goto fail;
     memcpy(&entry, &vol_->cache()->dir[1], sizeof(entry));
 
@@ -1448,9 +1448,9 @@ SdBaseFile::SdBaseFile(const char* path, uint8_t oflag) {
  * \return The value one, true, is returned for success and
  * the value zero, false, is returned for failure.
  */
-bool SdBaseFile::seekSet(uint32_t pos) {
-  uint32_t nCur;
-  uint32_t nNew;
+bool SdBaseFile::seekSet(uint32 pos) {
+  uint32 nCur;
+  uint32 nNew;
   // error if file not open or seek past end of file
   if (__unlikely(!isOpen() || pos > fileSize_)) goto fail;
 
@@ -1659,8 +1659,8 @@ fail:
  * Reasons for failure include file is read only, file is a directory,
  * \a length is greater than the current file size or an I/O error occurs.
  */
-bool SdBaseFile::truncate(uint32_t length) {
-  uint32_t newPos;
+bool SdBaseFile::truncate(uint32 length) {
+  uint32 newPos;
   // error if not a normal file or read-only
   if (!isFile() || !(flags_ & O_WRITE)) goto fail;
 
@@ -1682,7 +1682,7 @@ bool SdBaseFile::truncate(uint32_t length) {
     firstCluster_ = 0;
   }
   else {
-    uint32_t toFree;
+    uint32 toFree;
     if (!vol_->fatGet(curCluster_, &toFree)) goto fail;
 
     if (!vol_->isEOC(toFree)) {
@@ -1752,7 +1752,7 @@ int16_t SdBaseFile::write(const void* buf, uint16_t nbyte) {
         }
       }
       else {
-        uint32_t next;
+        uint32 next;
         if (!vol_->fatGet(curCluster_, &next)) goto fail;
         if (vol_->isEOC(next)) {
           // add cluster if at end of chain
@@ -1770,7 +1770,7 @@ int16_t SdBaseFile::write(const void* buf, uint16_t nbyte) {
     NOMORE(n, nToWrite);
 
     // block for data write
-    uint32_t block = vol_->clusterStartBlock(curCluster_) + blockOfCluster;
+    uint32 block = vol_->clusterStartBlock(curCluster_) + blockOfCluster;
     if (n == 512) {
       // full block - don't need to use cache
       if (vol_->cacheBlockNumber() == block) {

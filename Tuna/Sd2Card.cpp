@@ -163,7 +163,7 @@
 #endif  // SOFTWARE_SPI
 //------------------------------------------------------------------------------
 // send command and return error code.  Return zero for OK
-uint8_t Sd2Card::cardCommand(uint8_t cmd, uint32_t arg) {
+uint8_t Sd2Card::cardCommand(uint8_t cmd, uint32 arg) {
   // select card
   chipSelectLow();
 
@@ -196,7 +196,7 @@ uint8_t Sd2Card::cardCommand(uint8_t cmd, uint32_t arg) {
  * \return The number of 512 byte data blocks in the card
  *         or zero if an error occurs.
  */
-uint32_t Sd2Card::cardSize() {
+uint32 Sd2Card::cardSize() {
   csd_t csd;
   if (!readCSD(&csd)) return 0;
   if (csd.v1.csd_ver == 0) {
@@ -205,10 +205,10 @@ uint32_t Sd2Card::cardSize() {
                       | (csd.v1.c_size_mid << 2) | csd.v1.c_size_low;
     uint8_t c_size_mult = (csd.v1.c_size_mult_high << 1)
                           | csd.v1.c_size_mult_low;
-    return (uint32_t)(c_size + 1) << (c_size_mult + read_bl_len - 7);
+    return (uint32)(c_size + 1) << (c_size_mult + read_bl_len - 7);
   }
   else if (csd.v2.csd_ver == 1) {
-    uint32_t c_size = ((uint32_t)csd.v2.c_size_high << 16)
+    uint32 c_size = ((uint32)csd.v2.c_size_high << 16)
                       | (csd.v2.c_size_mid << 8) | csd.v2.c_size_low;
     return (c_size + 1) << 10;
   }
@@ -242,7 +242,7 @@ void Sd2Card::chipSelectLow() {
  * \return The value one, true, is returned for success and
  * the value zero, false, is returned for failure.
  */
-bool Sd2Card::erase(uint32_t firstBlock, uint32_t lastBlock) {
+bool Sd2Card::erase(uint32 firstBlock, uint32 lastBlock) {
   csd_t csd;
   if (!readCSD(&csd)) goto fail;
   // check for single block erase
@@ -301,7 +301,7 @@ bool Sd2Card::init(uint8_t sckRateID, uint8_t chipSelectPin) {
   chipSelectPin_ = chipSelectPin;
   // 16-bit init start time allows over a minute
   uint16_t t0 = (uint16_t)millis();
-  uint32_t arg;
+  uint32 arg;
 
   // If init takes more than 4s it could trigger
   // watchdog leading to a reboot loop.
@@ -391,7 +391,7 @@ fail:
  * \return The value one, true, is returned for success and
  * the value zero, false, is returned for failure.
  */
-bool Sd2Card::readBlock(uint32_t blockNumber, uint8_t* dst) {
+bool Sd2Card::readBlock(uint32 blockNumber, uint8_t* dst) {
   // use address if not SDHC card
   if (type() != SD_CARD_TYPE_SDHC) blockNumber <<= 9;
 
@@ -543,7 +543,7 @@ fail:
  * \return The value one, true, is returned for success and
  * the value zero, false, is returned for failure.
  */
-bool Sd2Card::readStart(uint32_t blockNumber) {
+bool Sd2Card::readStart(uint32 blockNumber) {
   if (type() != SD_CARD_TYPE_SDHC) blockNumber <<= 9;
   if (__unlikely(cardCommand(CMD18, blockNumber))) {
     error(SD_CARD_ERROR_CMD18);
@@ -614,7 +614,7 @@ fail:
  * \return The value one, true, is returned for success and
  * the value zero, false, is returned for failure.
  */
-bool Sd2Card::writeBlock(uint32_t blockNumber, const uint8_t* src) {
+bool Sd2Card::writeBlock(uint32 blockNumber, const uint8_t* src) {
   // use address if not SDHC card
   if (type() != SD_CARD_TYPE_SDHC) blockNumber <<= 9;
   if (__unlikely(cardCommand(CMD24, blockNumber))) {
@@ -687,7 +687,7 @@ fail:
  * \return The value one, true, is returned for success and
  * the value zero, false, is returned for failure.
  */
-bool Sd2Card::writeStart(uint32_t blockNumber, uint32_t eraseCount) {
+bool Sd2Card::writeStart(uint32 blockNumber, uint32 eraseCount) {
   // send pre-erase count
   if (__unlikely(cardAcmd(ACMD23, eraseCount))) {
     error(SD_CARD_ERROR_ACMD23);

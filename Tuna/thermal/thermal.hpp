@@ -135,7 +135,7 @@ namespace Tuna
 
 	  static void init();
 
-    static Trend get_temperature_trend();
+    static Trend __forceinline __flatten get_temperature_trend();
 
 	  /**
 	   * Static (class) methods
@@ -196,7 +196,7 @@ namespace Tuna
 	   * The software PWM power for a heater
 	   */
 	  template <Manager manager_type>
-	  static __pure uint8 getHeaterPower();
+	  static __pure uint8 __forceinline __flatten getHeaterPower();
 
 	  /**
 	   * Switch off all heaters, set all target temperatures to 0

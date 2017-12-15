@@ -131,7 +131,7 @@ float Planner::min_feedrate_mm_s,
 
 int24 Planner::position[NUM_AXIS] = { 0 };
 
-uint32_t Planner::cutoff_long;
+uint32 Planner::cutoff_long;
 
 float Planner::previous_speed[NUM_AXIS],
       Planner::previous_nominal_speed;
@@ -154,7 +154,7 @@ float Planner::previous_speed[NUM_AXIS],
 #endif
 
 #if ENABLED(ULTRA_LCD)
-  volatile uint32_t Planner::block_buffer_runtime_us = 0;
+  volatile uint32 Planner::block_buffer_runtime_us = 0;
 #endif
 
 /**
@@ -183,14 +183,14 @@ void Planner::init() {
  * by the provided factors.
  */
 void Planner::calculate_trapezoid_for_block(block_t * __restrict const block, const float & __restrict entry_factor, const float & __restrict exit_factor) {
-  uint32_t initial_rate = CEIL(block->nominal_rate * entry_factor),
+  uint32 initial_rate = CEIL(block->nominal_rate * entry_factor),
            final_rate = CEIL(block->nominal_rate * exit_factor); // (steps per second)
 
   // Limit minimal step rate (Otherwise the timer will overflow.)
   NOLESS(initial_rate, MINIMAL_STEP_RATE);
   NOLESS(final_rate, MINIMAL_STEP_RATE);
 
-  int32_t accel = block->acceleration_steps_per_s2,
+  int32 accel = block->acceleration_steps_per_s2,
           accelerate_steps = CEIL(estimate_acceleration_distance(initial_rate, block->nominal_rate, accel)),
           decelerate_steps = FLOOR(estimate_acceleration_distance(block->nominal_rate, final_rate, -accel)),
           plateau_steps = block->step_event_count - accelerate_steps - decelerate_steps;
@@ -201,7 +201,7 @@ void Planner::calculate_trapezoid_for_block(block_t * __restrict const block, co
   if (plateau_steps < 0) {
     accelerate_steps = CEIL(intersection_distance(initial_rate, final_rate, accel, block->step_event_count));
     NOLESS(accelerate_steps, 0); // Check limits due to numerical round-off
-    accelerate_steps = min((uint32_t)accelerate_steps, block->step_event_count);//(We can cast here to unsigned, because the above line ensures that we are above zero)
+    accelerate_steps = min((uint32)accelerate_steps, block->step_event_count);//(We can cast here to unsigned, because the above line ensures that we are above zero)
     plateau_steps = 0;
   }
 
@@ -764,7 +764,7 @@ void Planner::_buffer_line(const float & __restrict a, const float & __restrict 
         SERIAL_ECHOLNPGM(MSG_ERR_COLD_EXTRUDE_STOP);
       }
       #if ENABLED(PREVENT_LENGTHY_EXTRUDE)
-        if (labs(de) > (int32_t)axis_steps_per_mm[E_AXIS_N] * (EXTRUDE_MAXLENGTH)) { // It's not important to get max. extrusion length in a precision < 1mm, so save some cycles and cast to int
+        if (labs(de) > (int32)axis_steps_per_mm[E_AXIS_N] * (EXTRUDE_MAXLENGTH)) { // It's not important to get max. extrusion length in a precision < 1mm, so save some cycles and cast to int
           position[E_AXIS] = target[E_AXIS]; // Behave as if the move really took place, but ignore E part
           de = 0; // no difference
           #if ENABLED(LIN_ADVANCE)
@@ -806,7 +806,7 @@ void Planner::_buffer_line(const float & __restrict a, const float & __restrict 
   if (de < 0) SBI(dm, E_AXIS);
 
   const float esteps_float = de * volumetric_multiplier[extruder] * flow_percentage[extruder] * 0.01;
-  const int32_t esteps = abs(esteps_float) + 0.5;
+  const int32 esteps = abs(esteps_float) + 0.5;
 
   // Calculate the buffer head after we push this byte
   const uint8_t next_buffer_head = next_block_index(block_buffer_head);
@@ -1174,7 +1174,7 @@ void Planner::_buffer_line(const float & __restrict a, const float & __restrict 
 
   // Compute and limit the acceleration rate for the trapezoid generator.
   const float steps_per_mm = block->step_event_count * inverse_millimeters;
-  uint32_t accel;
+  uint32 accel;
   if (!block->steps[X_AXIS] && !block->steps[Y_AXIS] && !block->steps[Z_AXIS]) {
     // convert to: acceleration steps/sec^2
     accel = CEIL(retract_acceleration * steps_per_mm);
@@ -1182,7 +1182,7 @@ void Planner::_buffer_line(const float & __restrict a, const float & __restrict 
   else {
     #define LIMIT_ACCEL_LONG(AXIS,INDX) do{ \
       if (block->steps[AXIS] && max_acceleration_steps_per_s2[AXIS+INDX] < accel) { \
-        const uint32_t comp = max_acceleration_steps_per_s2[AXIS+INDX] * block->step_event_count; \
+        const uint32 comp = max_acceleration_steps_per_s2[AXIS+INDX] * block->step_event_count; \
         if (accel * block->steps[AXIS] > comp) accel = comp / block->steps[AXIS]; \
       } \
     }while(0)
@@ -1219,7 +1219,7 @@ void Planner::_buffer_line(const float & __restrict a, const float & __restrict 
   }
   block->acceleration_steps_per_s2 = accel;
   block->acceleration = accel / steps_per_mm;
-  block->acceleration_rate = (long)(accel * 16777216.0 / ((F_CPU) * 0.125)); // * 8.388608
+  block->acceleration_rate = int24(accel * 16777216.0 / ((F_CPU) * 0.125)); // * 8.388608
 
   // Initial limit on the segment entry velocity
   float vmax_junction;
@@ -1392,7 +1392,7 @@ void Planner::_buffer_line(const float & __restrict a, const float & __restrict 
     block->use_advance_lead =  esteps
                             && (block->steps[X_AXIS] || block->steps[Y_AXIS])
                             && extruder_advance_k
-                            && (uint32_t)esteps != block->step_event_count
+                            && (uint32)esteps != block->step_event_count
                             && de_float > 0.0;
     if (block->use_advance_lead)
       block->abs_adv_steps_multiplier8 = LROUND(
@@ -1508,7 +1508,7 @@ void Planner::reset_acceleration_rates() {
   #else
     #define HIGHEST_CONDITION true
   #endif
-  uint32_t highest_rate = 1;
+  uint32 highest_rate = 1;
   LOOP_XYZE_N(i) {
     max_acceleration_steps_per_s2[i] = max_acceleration_mm_per_s2[i] * axis_steps_per_mm[i];
     if (HIGHEST_CONDITION) NOLESS(highest_rate, max_acceleration_steps_per_s2[i]);

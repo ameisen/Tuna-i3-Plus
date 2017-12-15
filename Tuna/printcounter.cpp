@@ -149,7 +149,7 @@ void PrintCounter::showStats() {
 void PrintCounter::tick() {
   if (!this->isRunning()) return;
 
-  static uint32_t update_last = millis(),
+  static uint32 update_last = millis(),
                   eeprom_last = millis();
 
   millis_t now = millis();

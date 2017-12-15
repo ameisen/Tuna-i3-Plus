@@ -164,8 +164,8 @@ class Sd2Card final {
  public:
   /** Construct an instance of Sd2Card. */
   Sd2Card() : errorCode_(SD_CARD_ERROR_INIT_NOT_CALLED), type_(0) {}
-  uint32_t cardSize();
-  bool erase(uint32_t firstBlock, uint32_t lastBlock);
+  uint32 cardSize();
+  bool erase(uint32 firstBlock, uint32 lastBlock);
   bool eraseSingleBlockEnable();
   /**
    *  Set SD error code.
@@ -186,7 +186,7 @@ class Sd2Card final {
    */
   bool init(uint8_t sckRateID = SPI_FULL_SPEED,
             uint8_t chipSelectPin = SD_CHIP_SELECT_PIN);
-  bool readBlock(uint32_t block, uint8_t* dst);
+  bool readBlock(uint32 block, uint8_t* dst);
   /**
    * Read a card's CID register. The CID contains card identification
    * information such as Manufacturer ID, Product name, Product serial
@@ -211,16 +211,16 @@ class Sd2Card final {
     return readRegister(CMD9, csd);
   }
   bool readData(uint8_t* dst);
-  bool readStart(uint32_t blockNumber);
+  bool readStart(uint32 blockNumber);
   bool readStop();
   bool setSckRate(uint8_t sckRateID);
   /** Return the card type: SD V1, SD V2 or SDHC
    * \return 0 - SD V1, 1 - SD V2, or 3 - SDHC.
    */
   int type() const {return type_;}
-  bool writeBlock(uint32_t blockNumber, const uint8_t* src);
+  bool writeBlock(uint32 blockNumber, const uint8_t* src);
   bool writeData(const uint8_t* src);
-  bool writeStart(uint32_t blockNumber, uint32_t eraseCount);
+  bool writeStart(uint32 blockNumber, uint32 eraseCount);
   bool writeStop();
  private:
   //----------------------------------------------------------------------------
@@ -230,11 +230,11 @@ class Sd2Card final {
   uint8_t status_;
   uint8_t type_;
   // private functions
-  uint8_t cardAcmd(uint8_t cmd, uint32_t arg) {
+  uint8_t cardAcmd(uint8_t cmd, uint32 arg) {
     cardCommand(CMD55, 0);
     return cardCommand(cmd, arg);
   }
-  uint8_t cardCommand(uint8_t cmd, uint32_t arg);
+  uint8_t cardCommand(uint8_t cmd, uint32 arg);
 
   bool readData(uint8_t* dst, uint16_t count);
   bool readRegister(uint8_t cmd, void* buf);

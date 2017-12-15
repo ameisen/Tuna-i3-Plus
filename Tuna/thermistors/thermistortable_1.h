@@ -130,7 +130,7 @@ namespace Tuna::Thermistor
   constexpr const auto max_temperature_integer = make_uintsz<max_temp_uncast>;
   constexpr const auto min_temperature_integer = make_uintsz<min_temp_uncast>;
 
-  constexpr inline uint16 clamp_adc(uint16 adc)
+  constexpr inline uint16 __forceinline __flatten clamp_adc(uint16 adc)
   {
     return clamp(adc, uint16(min_adc), max_adc);
   }
@@ -263,14 +263,14 @@ namespace Tuna::Thermistor
   constexpr int8 higher_adc_idx = (low_adc_idx < hi_adc_idx) ? 1 : -1;
 
   template <typename T>
-  struct interpolator
+  struct interpolator final
   {
     const T delta;
     const T max;
   };
 
   template <uint16 x, uint16 a, uint16 b>
-  constexpr interpolator<uint16> interpoland()
+  constexpr inline interpolator<uint16> __forceinline __flatten interpoland()
   {
     uint16 delta = x - a;
     uint16 max_diff = b - a;
@@ -279,10 +279,10 @@ namespace Tuna::Thermistor
   }
 
   template <uint16 delta, uint16 max, uint16 b, uint16 a>
-  constexpr uint16 interpolate()
+  constexpr inline uint16 __forceinline __flatten interpolate()
   {
-    uint32_t a_lambda = (uint32_t(a) * uint32_t(delta));
-    uint32_t b_lambda = (uint32_t(b) * uint32_t(max - delta));
+    uint32 a_lambda = (uint32(a) * uint32(delta));
+    uint32 b_lambda = (uint32(b) * uint32(max - delta));
     return (a_lambda + b_lambda) / max;
   }
 
@@ -391,7 +391,7 @@ namespace Tuna::Thermistor
     adc_t le_value = as<adc_t>(temp_table[L - 1].Adc);
     adc_t g_value = as<adc_t>(temp_table[L].Adc);
 
-    const auto get_interpoland = [](arg_type<adc_t> a, arg_type<adc_t> b, arg_type<adc_t> x) -> interpolator<delta_t>
+    const auto __forceinline __flatten get_interpoland = [](arg_type<adc_t> a, arg_type<adc_t> b, arg_type<adc_t> x) -> interpolator<delta_t>
     {
       delta_t delta = x - a;
       delta_t max_diff = b - a;
@@ -399,7 +399,7 @@ namespace Tuna::Thermistor
       return { delta, max_diff };
     };
 
-    const auto interpolate = [](arg_type<deltatemp_t> b, arg_type<deltatemp_t> a, arg_type<interpolator<delta_t>> delta) -> deltatemp_t
+    const auto __forceinline __flatten interpolate = [](arg_type<deltatemp_t> b, arg_type<deltatemp_t> a, arg_type<interpolator<delta_t>> delta) -> deltatemp_t
     {
       constexpr const auto MaxTemp = make_uintsz<Thermistor::max_temperature.raw()>;
       constexpr const auto DeltaTimesTemp = make_uintsz<uint64(max_adc_delta_local) * MaxTemp>;
@@ -418,7 +418,7 @@ namespace Tuna::Thermistor
     auto interpoland = get_interpoland(le_value, g_value, adc);
 
     const deltatemp_t g_value_t = as<deltatemp_t>(temp_table[L].Temperature);
-    const deltatemp_t le_value_t = [&, L]()->deltatemp_t
+    const deltatemp_t __forceinline __flatten le_value_t = [&, L]()->deltatemp_t
     {
       // Save on a load when we can derive it from something already loaded.
       if constexpr (IsFixedStepTable_Temperature)
@@ -436,7 +436,7 @@ namespace Tuna::Thermistor
 
   inline temp_t __forceinline __flatten binsearch_temp_get(arg_type<uint16_t> adc)
   {
-    static constexpr bool branched_binsearch = false;
+    static constexpr bool branched_binsearch = true;
 
     if constexpr (!branched_binsearch)
     {
@@ -467,20 +467,27 @@ namespace Tuna::Thermistor
       }
       else
       {
-        const bool small_temp = (adc >= min_adc_uint8_temp);
-        if (small_temp)
+        if constexpr (min_adc_uint8_temp == max_adc)
         {
-          return binsearch_temp_get_branched<false, true>(adc);
+          return binsearch_temp_get_branched<false, false>(adc);
         }
         else
         {
-          return binsearch_temp_get_branched<false, false>(adc);
+          const bool small_temp = (adc >= min_adc_uint8_temp);
+          if (small_temp)
+          {
+            return binsearch_temp_get_branched<false, true>(adc);
+          }
+          else
+          {
+            return binsearch_temp_get_branched<false, false>(adc);
+          }
         }
       }
     }
   }
 
-  inline temp_t adc_to_temperature(arg_type<uint16_t> adc)
+  inline temp_t __forceinline __flatten adc_to_temperature(arg_type<uint16_t> adc)
   {
     return binsearch_temp_get(adc);
   }

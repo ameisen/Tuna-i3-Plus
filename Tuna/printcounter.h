@@ -36,8 +36,8 @@ struct printStatistics {    // 16 bytes (20 with real doubles)
   //const uint8_t magic;    // Magic header, it will always be 0x16
   uint16_t totalPrints;     // Number of prints
   uint16_t finishedPrints;  // Number of complete prints
-  uint32_t printTime;       // Accumulated printing time
-  uint32_t longestPrint;    // Longest successful print job
+  uint32 printTime;       // Accumulated printing time
+  uint32 longestPrint;    // Longest successful print job
   double   filamentUsed;    // Accumulated filament consumed in mm
 };
 

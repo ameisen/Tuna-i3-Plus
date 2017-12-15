@@ -177,51 +177,17 @@ volatile int24 Stepper::endstops_trigsteps[XYZ];
 // C1 B1 A1 is longIn1
 // D2 C2 B2 A2 is longIn2
 //
-#define MultiU24X32toH16(intRes, longIn1, longIn2) \
-  asm ( \
-                 "clr r26 \n\t" \
-                 "mul %A1, %B2 \n\t" \
-                 "mov r27, r1 \n\t" \
-                 "mul %B1, %C2 \n\t" \
-                 "movw %A0, r0 \n\t" \
-                 "mul %C1, %C2 \n\t" \
-                 "add %B0, r0 \n\t" \
-                 "mul %C1, %B2 \n\t" \
-                 "add %A0, r0 \n\t" \
-                 "adc %B0, r1 \n\t" \
-                 "mul %A1, %C2 \n\t" \
-                 "add r27, r0 \n\t" \
-                 "adc %A0, r1 \n\t" \
-                 "adc %B0, r26 \n\t" \
-                 "mul %B1, %B2 \n\t" \
-                 "add r27, r0 \n\t" \
-                 "adc %A0, r1 \n\t" \
-                 "adc %B0, r26 \n\t" \
-                 "mul %C1, %A2 \n\t" \
-                 "add r27, r0 \n\t" \
-                 "adc %A0, r1 \n\t" \
-                 "adc %B0, r26 \n\t" \
-                 "mul %B1, %A2 \n\t" \
-                 "add r27, r1 \n\t" \
-                 "adc %A0, r26 \n\t" \
-                 "adc %B0, r26 \n\t" \
-                 "lsr r27 \n\t" \
-                 "adc %A0, r26 \n\t" \
-                 "adc %B0, r26 \n\t" \
-                 "mul %D2, %A1 \n\t" \
-                 "add %A0, r0 \n\t" \
-                 "adc %B0, r1 \n\t" \
-                 "mul %D2, %B1 \n\t" \
-                 "add %B0, r0 \n\t" \
-                 "clr r1 \n\t" \
-                 : \
-                 "=&r" (intRes) \
-                 : \
-                 "d" ((long)longIn1), \
-                 "d" ((long)longIn2) \
-                 : \
-                 "r26" , "r27" \
-               )
+inline uint16 __forceinline __flatten MultiU24X24toH16(int24 longIn1, int24 longIn2)
+{
+  const uint64 oper1 = uint64(longIn1);
+  __assume(oper1 <= type_trait<uint24>::max);
+  const uint24 oper2 = uint24(longIn2);
+  __assume(oper2 <= type_trait<uint24>::max);
+  const uint64 mul_result = oper1 * oper2;
+  __assume(mul_result <= (uint64(type_trait<uint24>::max) * type_trait<uint24>::max));
+  const uint16 result = uint16(mul_result >> 24_u8);
+  return result;
+}
 
 // Some useful constants
 
@@ -245,7 +211,7 @@ volatile int24 Stepper::endstops_trigsteps[XYZ];
  *  step_events_completed reaches block->decelerate_after after which it decelerates until the trapezoid generator is reset.
  *  The slope of acceleration is calculated using v = u + at where t is the accumulated timer values of the steps so far.
  */
-void Stepper::wake_up() {
+void __forceinline __flatten Stepper::wake_up() {
   // TCNT1 = 0;
   ENABLE_STEPPER_DRIVER_INTERRUPT();
 }
@@ -302,48 +268,46 @@ ISR(TIMER1_COMPA_vect) {
   Stepper::advance_isr_scheduler();
 }
 
-#define _ENABLE_ISRs() do { Tuna::intrinsic::cli(); if (Temperature::in_temp_isr) CBI(TIMSK0, OCIE0B); else SBI(TIMSK0, OCIE0B); ENABLE_STEPPER_DRIVER_INTERRUPT(); } while(0)
+namespace
+{
+  inline void __forceinline __flatten _enable_interrupts()
+  {
+    Tuna::intrinsic::cli();
+    if (Temperature::in_temp_isr)
+      CBI(TIMSK0, OCIE0B);
+    else
+      SBI(TIMSK0, OCIE0B); ENABLE_STEPPER_DRIVER_INTERRUPT();
+  }
+}
 
-void Stepper::isr() {
+void __forceinline __flatten Stepper::isr() {
 
-  uint16_t ocr_val;
+  uint16 ocr_val;
+
+  // sample endstops in between step pulses
+  static uint16_t step_remaining = 0;
 
   #define ENDSTOP_NOMINAL_OCR_VAL 3000    // check endstops every 1.5ms to guarantee two stepper ISRs within 5ms for BLTouch
   #define OCR_VAL_TOLERANCE 1000          // First max delay is 2.0ms, last min delay is 0.5ms, all others 1.5ms
 
-  #define _SPLIT(L) (ocr_val = (uint16_t)L)
-  #if ENABLED(ENDSTOP_INTERRUPTS_FEATURE)
-    #define SPLIT(L) _SPLIT(L)
-  #else                 // sample endstops in between step pulses
-    static uint16_t step_remaining = 0;
-    #define SPLIT(L) do { \
-      _SPLIT(L); \
-      if (ENDSTOPS_ENABLED && L > ENDSTOP_NOMINAL_OCR_VAL) { \
-        const uint16_t remainder = (uint16_t)L % (ENDSTOP_NOMINAL_OCR_VAL); \
-        ocr_val = (remainder < OCR_VAL_TOLERANCE) ? ENDSTOP_NOMINAL_OCR_VAL + remainder : ENDSTOP_NOMINAL_OCR_VAL; \
-        step_remaining = (uint16_t)L - ocr_val; \
-      } \
-    }while(0)
-
-    if (__likely(step_remaining != 0) && ENDSTOPS_ENABLED) {   // Just check endstops - not yet time for a step
-      endstops.update();
-      if (step_remaining > ENDSTOP_NOMINAL_OCR_VAL) {
-        step_remaining -= ENDSTOP_NOMINAL_OCR_VAL;
-        ocr_val = ENDSTOP_NOMINAL_OCR_VAL;
-      }
-      else {
-        ocr_val = step_remaining;
-        step_remaining = 0;  //  last one before the ISR that does the step
-      }
-
-      _NEXT_ISR(ocr_val);
-
-      NOLESS(OCR1A, TCNT1 + 16);
-
-      _ENABLE_ISRs(); // re-enable ISRs
-      return;
+  if (__likely(step_remaining != 0) && ENDSTOPS_ENABLED) {   // Just check endstops - not yet time for a step
+    endstops.update();
+    if (step_remaining > ENDSTOP_NOMINAL_OCR_VAL) {
+      step_remaining -= ENDSTOP_NOMINAL_OCR_VAL;
+      ocr_val = ENDSTOP_NOMINAL_OCR_VAL;
     }
-  #endif
+    else {
+      ocr_val = step_remaining;
+      step_remaining = 0;  //  last one before the ISR that does the step
+    }
+
+    _NEXT_ISR(ocr_val);
+
+    NOLESS(OCR1A, TCNT1 + 16);
+
+    _enable_interrupts(); // re-enable ISRs
+    return;
+    }
 
   if (cleaning_buffer_counter) {
     --cleaning_buffer_counter;
@@ -353,7 +317,7 @@ void Stepper::isr() {
       if (!cleaning_buffer_counter && (SD_FINISHED_STEPPERRELEASE)) enqueue_and_echo_commands(SD_FINISHED_RELEASECOMMAND);
     #endif
     _NEXT_ISR(200); // Run at max speed - 10 KHz
-    _ENABLE_ISRs(); // re-enable ISRs
+    _enable_interrupts(); // re-enable ISRs
     return;
   }
 
@@ -390,7 +354,7 @@ void Stepper::isr() {
     }
     else {
       _NEXT_ISR(2000); // Run at slow speed - 1 KHz
-      _ENABLE_ISRs(); // re-enable ISRs
+      _enable_interrupts(); // re-enable ISRs
       return;
     }
   }
@@ -506,7 +470,7 @@ void Stepper::isr() {
      * 10µs = 160 or 200 cycles.
      */
     #if EXTRA_CYCLES_XYZE > 20
-      uint32_t pulse_start = TCNT0;
+      uint32 pulse_start = TCNT0;
     #endif
 
     #if HAS_X_STEP
@@ -521,7 +485,7 @@ void Stepper::isr() {
 
     // For minimum pulse time wait before stopping pulses
     #if EXTRA_CYCLES_XYZE > 20
-      while (EXTRA_CYCLES_XYZE > (uint32_t)(TCNT0 - pulse_start) * (INT0_PRESCALER)) { /* nada */ }
+      while (EXTRA_CYCLES_XYZE > (uint32)(TCNT0 - pulse_start) * (INT0_PRESCALER)) { /* nada */ }
       pulse_start = TCNT0;
     #elif EXTRA_CYCLES_XYZE > 0
       DELAY_NOPS(EXTRA_CYCLES_XYZE);
@@ -544,7 +508,7 @@ void Stepper::isr() {
 
     // For minimum pulse time wait after stopping pulses also
     #if EXTRA_CYCLES_XYZE > 20
-      if (i) while (EXTRA_CYCLES_XYZE > (uint32_t)(TCNT0 - pulse_start) * (INT0_PRESCALER)) { /* nada */ }
+      if (i) while (EXTRA_CYCLES_XYZE > (uint32)(TCNT0 - pulse_start) * (INT0_PRESCALER)) { /* nada */ }
     #elif EXTRA_CYCLES_XYZE > 0
       if (i) DELAY_NOPS(EXTRA_CYCLES_XYZE);
     #endif
@@ -572,7 +536,7 @@ void Stepper::isr() {
   // Calculate new timer value
   if (step_events_completed <= (uint24)current_block->accelerate_until) {
 
-    MultiU24X32toH16(acc_step_rate, acceleration_time, current_block->acceleration_rate);
+    acc_step_rate = MultiU24X24toH16(acceleration_time, current_block->acceleration_rate);
     acc_step_rate += current_block->initial_rate;
 
     // upper limit
@@ -581,7 +545,7 @@ void Stepper::isr() {
     // step_rate to timer interval
     const uint16_t timer = calc_timer(acc_step_rate);
 
-    SPLIT(timer);  // split step into multiple ISRs if larger than  ENDSTOP_NOMINAL_OCR_VAL
+    ocr_val = timer;  // split step into multiple ISRs if larger than  ENDSTOP_NOMINAL_OCR_VAL
     _NEXT_ISR(ocr_val);
 
     acceleration_time += timer;
@@ -591,9 +555,9 @@ void Stepper::isr() {
       if (current_block->use_advance_lead) {
         #if ENABLED(MIXING_EXTRUDER)
           MIXING_STEPPERS_LOOP(j)
-            current_estep_rate[j] = ((uint32_t)acc_step_rate * current_block->abs_adv_steps_multiplier8 * current_block->step_event_count / current_block->mix_event_count[j]) >> 17;
+            current_estep_rate[j] = ((uint32)acc_step_rate * current_block->abs_adv_steps_multiplier8 * current_block->step_event_count / current_block->mix_event_count[j]) >> 17;
         #else
-          current_estep_rate[TOOL_E_INDEX] = ((uint32_t)acc_step_rate * current_block->abs_adv_steps_multiplier8) >> 17;
+          current_estep_rate[TOOL_E_INDEX] = ((uint32)acc_step_rate * current_block->abs_adv_steps_multiplier8) >> 17;
         #endif
       }
     #endif // LIN_ADVANCE
@@ -602,7 +566,7 @@ void Stepper::isr() {
   }
   else if (step_events_completed > (uint24)current_block->decelerate_after) {
     uint16_t step_rate;
-    MultiU24X32toH16(step_rate, deceleration_time, current_block->acceleration_rate);
+    step_rate = MultiU24X24toH16(deceleration_time, current_block->acceleration_rate);
 
     if (step_rate < acc_step_rate) { // Still decelerating?
       step_rate = acc_step_rate - step_rate;
@@ -614,7 +578,7 @@ void Stepper::isr() {
     // step_rate to timer interval
     const uint16_t timer = calc_timer(step_rate);
 
-    SPLIT(timer);  // split step into multiple ISRs if larger than  ENDSTOP_NOMINAL_OCR_VAL
+    ocr_val = timer;  // split step into multiple ISRs if larger than  ENDSTOP_NOMINAL_OCR_VAL
     _NEXT_ISR(ocr_val);
 
     deceleration_time += timer;
@@ -624,9 +588,9 @@ void Stepper::isr() {
       if (current_block->use_advance_lead) {
         #if ENABLED(MIXING_EXTRUDER)
           MIXING_STEPPERS_LOOP(j)
-            current_estep_rate[j] = ((uint32_t)step_rate * current_block->abs_adv_steps_multiplier8 * current_block->step_event_count / current_block->mix_event_count[j]) >> 17;
+            current_estep_rate[j] = ((uint32)step_rate * current_block->abs_adv_steps_multiplier8 * current_block->step_event_count / current_block->mix_event_count[j]) >> 17;
         #else
-          current_estep_rate[TOOL_E_INDEX] = ((uint32_t)step_rate * current_block->abs_adv_steps_multiplier8) >> 17;
+          current_estep_rate[TOOL_E_INDEX] = ((uint32)step_rate * current_block->abs_adv_steps_multiplier8) >> 17;
         #endif
       }
     #endif // LIN_ADVANCE
@@ -646,7 +610,7 @@ void Stepper::isr() {
 
     #endif
 
-    SPLIT(OCR1A_nominal);  // split step into multiple ISRs if larger than  ENDSTOP_NOMINAL_OCR_VAL
+    ocr_val = OCR1A_nominal;  // split step into multiple ISRs if larger than  ENDSTOP_NOMINAL_OCR_VAL
     _NEXT_ISR(ocr_val);
 
     // ensure we're running at the correct step rate, even if we just came off an acceleration
@@ -667,7 +631,7 @@ void Stepper::isr() {
 
   // Timer interrupt for E. e_steps is set in the main routine;
 
-  void Stepper::advance_isr() {
+  void __forceinline __flatten Stepper::advance_isr() {
 
     nextAdvanceISR = eISR_Rate;
 
@@ -707,7 +671,7 @@ void Stepper::isr() {
     for (uint8_t i = step_loops; i--;) {
 
       #if EXTRA_CYCLES_E > 20
-        uint32_t pulse_start = TCNT0;
+        uint32 pulse_start = TCNT0;
       #endif
 
       START_E_PULSE(0);
@@ -726,7 +690,7 @@ void Stepper::isr() {
 
       // For minimum pulse time wait before stopping pulses
       #if EXTRA_CYCLES_E > 20
-        while (EXTRA_CYCLES_E > (uint32_t)(TCNT0 - pulse_start) * (INT0_PRESCALER)) { /* nada */ }
+        while (EXTRA_CYCLES_E > (uint32)(TCNT0 - pulse_start) * (INT0_PRESCALER)) { /* nada */ }
         pulse_start = TCNT0;
       #elif EXTRA_CYCLES_E > 0
         DELAY_NOPS(EXTRA_CYCLES_E);
@@ -748,7 +712,7 @@ void Stepper::isr() {
 
       // For minimum pulse time wait before looping
       #if EXTRA_CYCLES_E > 20
-        if (i) while (EXTRA_CYCLES_E > (uint32_t)(TCNT0 - pulse_start) * (INT0_PRESCALER)) { /* nada */ }
+        if (i) while (EXTRA_CYCLES_E > (uint32)(TCNT0 - pulse_start) * (INT0_PRESCALER)) { /* nada */ }
       #elif EXTRA_CYCLES_E > 0
         if (i) DELAY_NOPS(EXTRA_CYCLES_E);
       #endif
@@ -756,7 +720,7 @@ void Stepper::isr() {
     } // steps_loop
   }
 
-  void Stepper::advance_isr_scheduler() {
+  void __forceinline __flatten Stepper::advance_isr_scheduler() {
     // Disable Timer0 ISRs and enable global ISR again to capture UART events (incoming chars)
     CBI(TIMSK0, OCIE0B); // Temperature ISR
     DISABLE_STEPPER_DRIVER_INTERRUPT();
@@ -791,7 +755,7 @@ void Stepper::isr() {
     NOLESS(OCR1A, TCNT1 + 16);
 
     // Restore original ISR settings
-    _ENABLE_ISRs();
+    _enable_interrupts();
   }
 
 #endif // LIN_ADVANCE
@@ -1036,13 +1000,13 @@ void Stepper::set_position(const int24 &a, const int24 &b, const int24 &c, const
   CRITICAL_SECTION_END;
 }
 
-void Stepper::set_position(const AxisEnum &axis, const int24 &v) {
+void __forceinline __flatten Stepper::set_position(const AxisEnum &axis, const int24 &v) {
   CRITICAL_SECTION_START;
   count_position[axis] = v;
   CRITICAL_SECTION_END;
 }
 
-void Stepper::set_e_position(const int24 &e) {
+void __forceinline __flatten Stepper::set_e_position(const int24 &e) {
   CRITICAL_SECTION_START;
   count_position[E_AXIS] = e;
   CRITICAL_SECTION_END;
@@ -1062,7 +1026,7 @@ int24 Stepper::position(AxisEnum axis) {
  * Get an axis position according to stepper position(s)
  * For CORE machines apply translation from ABC to XYZ.
  */
-float Stepper::get_axis_position_mm(AxisEnum axis) {
+float __forceinline __flatten Stepper::get_axis_position_mm(AxisEnum axis) {
   float axis_steps;
   #if IS_CORE
     // Requesting one of the "core" axes?
@@ -1100,7 +1064,7 @@ void Stepper::quick_stop() {
   #endif
 }
 
-void Stepper::endstop_triggered(AxisEnum axis) {
+void __forceinline __flatten Stepper::endstop_triggered(AxisEnum axis) {
 
   #if IS_CORE
 
@@ -1164,8 +1128,8 @@ void Stepper::report_positions() {
   #define _APPLY_DIR(AXIS, INVERT) AXIS ##_APPLY_DIR(INVERT, true)
 
   #if EXTRA_CYCLES_BABYSTEP > 20
-    #define _SAVE_START const uint32_t pulse_start = TCNT0
-    #define _PULSE_WAIT while (EXTRA_CYCLES_BABYSTEP > (uint32_t)(TCNT0 - pulse_start) * (INT0_PRESCALER)) { /* nada */ }
+    #define _SAVE_START const uint32 pulse_start = TCNT0
+    #define _PULSE_WAIT while (EXTRA_CYCLES_BABYSTEP > (uint32)(TCNT0 - pulse_start) * (INT0_PRESCALER)) { /* nada */ }
   #else
     #define _SAVE_START NOOP
     #if EXTRA_CYCLES_BABYSTEP > 0

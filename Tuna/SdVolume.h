@@ -48,7 +48,7 @@ union cache_t {
            /** Used to access cached FAT16 entries. */
   uint16_t fat16[256];
            /** Used to access cached FAT32 entries. */
-  uint32_t fat32[128];
+  uint32 fat32[128];
            /** Used to access cached directory entries. */
   dir_t    dir[16];
            /** Used to access a cached Master Boot Record. */
@@ -95,25 +95,25 @@ class SdVolume final {
   /** \return The volume's cluster size in blocks. */
   uint8_t blocksPerCluster() const {return blocksPerCluster_;}
   /** \return The number of blocks in one FAT. */
-  uint32_t blocksPerFat()  const {return blocksPerFat_;}
+  uint32 blocksPerFat()  const {return blocksPerFat_;}
   /** \return The total number of clusters in the volume. */
-  uint32_t clusterCount() const {return clusterCount_;}
+  uint32 clusterCount() const {return clusterCount_;}
   /** \return The shift count required to multiply by blocksPerCluster. */
   uint8_t clusterSizeShift() const {return clusterSizeShift_;}
   /** \return The logical block number for the start of file data. */
-  uint32_t dataStartBlock() const {return dataStartBlock_;}
+  uint32 dataStartBlock() const {return dataStartBlock_;}
   /** \return The number of FAT structures on the volume. */
   uint8_t fatCount() const {return fatCount_;}
   /** \return The logical block number for the start of the first FAT. */
-  uint32_t fatStartBlock() const {return fatStartBlock_;}
+  uint32 fatStartBlock() const {return fatStartBlock_;}
   /** \return The FAT type of the volume. Values are 12, 16 or 32. */
   uint8_t fatType() const {return fatType_;}
-  int32_t freeClusterCount();
+  int32 freeClusterCount();
   /** \return The number of entries in the root directory for FAT16 volumes. */
-  uint32_t rootDirEntryCount() const {return rootDirEntryCount_;}
+  uint32 rootDirEntryCount() const {return rootDirEntryCount_;}
   /** \return The logical block number for the start of the root directory
        on FAT16 volumes or the first cluster number on FAT32 volumes. */
-  uint32_t rootDirStart() const {return rootDirStart_;}
+  uint32 rootDirStart() const {return rootDirStart_;}
   /** Sd2Card object for this volume
    * \return pointer to Sd2Card object.
    */
@@ -124,7 +124,7 @@ class SdVolume final {
    * \param[out] v value of entry
    * \return true for success or false for failure
    */
-  bool dbgFat(uint32_t n, uint32_t* v) {return fatGet(n, v);}
+  bool dbgFat(uint32 n, uint32* v) {return fatGet(n, v);}
   //------------------------------------------------------------------------------
  private:
   // Allow SdBaseFile access to SdVolume private data.
@@ -137,70 +137,70 @@ class SdVolume final {
 
 #if USE_MULTIPLE_CARDS
   cache_t cacheBuffer_;        // 512 byte cache for device blocks
-  uint32_t cacheBlockNumber_;  // Logical number of block in the cache
+  uint32 cacheBlockNumber_;  // Logical number of block in the cache
   Sd2Card* sdCard_;            // Sd2Card object for cache
   bool cacheDirty_;            // cacheFlush() will write block if true
-  uint32_t cacheMirrorBlock_;  // block number for mirror FAT
+  uint32 cacheMirrorBlock_;  // block number for mirror FAT
 #else  // USE_MULTIPLE_CARDS
   static cache_t cacheBuffer_;        // 512 byte cache for device blocks
-  static uint32_t cacheBlockNumber_;  // Logical number of block in the cache
+  static uint32 cacheBlockNumber_;  // Logical number of block in the cache
   static Sd2Card* sdCard_;            // Sd2Card object for cache
   static bool cacheDirty_;            // cacheFlush() will write block if true
-  static uint32_t cacheMirrorBlock_;  // block number for mirror FAT
+  static uint32 cacheMirrorBlock_;  // block number for mirror FAT
 #endif  // USE_MULTIPLE_CARDS
-  uint32_t allocSearchStart_;   // start cluster for alloc search
+  uint32 allocSearchStart_;   // start cluster for alloc search
   uint8_t blocksPerCluster_;    // cluster size in blocks
-  uint32_t blocksPerFat_;       // FAT size in blocks
-  uint32_t clusterCount_;       // clusters in one FAT
+  uint32 blocksPerFat_;       // FAT size in blocks
+  uint32 clusterCount_;       // clusters in one FAT
   uint8_t clusterSizeShift_;    // shift to convert cluster count to block count
-  uint32_t dataStartBlock_;     // first data block number
+  uint32 dataStartBlock_;     // first data block number
   uint8_t fatCount_;            // number of FATs on volume
-  uint32_t fatStartBlock_;      // start block for first FAT
+  uint32 fatStartBlock_;      // start block for first FAT
   uint8_t fatType_;             // volume type (12, 16, OR 32)
   uint16_t rootDirEntryCount_;  // number of entries in FAT16 root dir
-  uint32_t rootDirStart_;       // root start block for FAT16, cluster for FAT32
+  uint32 rootDirStart_;       // root start block for FAT16, cluster for FAT32
   //----------------------------------------------------------------------------
-  bool allocContiguous(uint32_t count, uint32_t* curCluster);
-  uint8_t blockOfCluster(uint32_t position) const {
+  bool allocContiguous(uint32 count, uint32* curCluster);
+  uint8_t blockOfCluster(uint32 position) const {
     return (position >> 9) & (blocksPerCluster_ - 1);
   }
-  uint32_t clusterStartBlock(uint32_t cluster) const {
+  uint32 clusterStartBlock(uint32 cluster) const {
     return dataStartBlock_ + ((cluster - 2) << clusterSizeShift_);
   }
-  uint32_t blockNumber(uint32_t cluster, uint32_t position) const {
+  uint32 blockNumber(uint32 cluster, uint32 position) const {
     return clusterStartBlock(cluster) + blockOfCluster(position);
   }
   cache_t* cache() {return &cacheBuffer_;}
-  uint32_t cacheBlockNumber() {return cacheBlockNumber_;}
+  uint32 cacheBlockNumber() {return cacheBlockNumber_;}
 #if USE_MULTIPLE_CARDS
   bool cacheFlush();
-  bool cacheRawBlock(uint32_t blockNumber, bool dirty);
+  bool cacheRawBlock(uint32 blockNumber, bool dirty);
 #else  // USE_MULTIPLE_CARDS
   static bool cacheFlush();
-  static bool cacheRawBlock(uint32_t blockNumber, bool dirty);
+  static bool cacheRawBlock(uint32 blockNumber, bool dirty);
 #endif  // USE_MULTIPLE_CARDS
   // used by SdBaseFile write to assign cache to SD location
-  void cacheSetBlockNumber(uint32_t blockNumber, bool dirty) {
+  void cacheSetBlockNumber(uint32 blockNumber, bool dirty) {
     cacheDirty_ = dirty;
     cacheBlockNumber_  = blockNumber;
   }
   void cacheSetDirty() {cacheDirty_ |= CACHE_FOR_WRITE;}
-  bool chainSize(uint32_t beginCluster, uint32_t* size);
-  bool fatGet(uint32_t cluster, uint32_t* value);
-  bool fatPut(uint32_t cluster, uint32_t value);
-  bool fatPutEOC(uint32_t cluster) {
+  bool chainSize(uint32 beginCluster, uint32* size);
+  bool fatGet(uint32 cluster, uint32* value);
+  bool fatPut(uint32 cluster, uint32 value);
+  bool fatPutEOC(uint32 cluster) {
     return fatPut(cluster, 0x0FFFFFFF);
   }
-  bool freeChain(uint32_t cluster);
-  bool isEOC(uint32_t cluster) const {
+  bool freeChain(uint32 cluster);
+  bool isEOC(uint32 cluster) const {
     if (FAT12_SUPPORT && fatType_ == 12) return  cluster >= FAT12EOC_MIN;
     if (fatType_ == 16) return cluster >= FAT16EOC_MIN;
     return  cluster >= FAT32EOC_MIN;
   }
-  bool readBlock(uint32_t block, uint8_t* dst) {
+  bool readBlock(uint32 block, uint8_t* dst) {
     return sdCard_->readBlock(block, dst);
   }
-  bool writeBlock(uint32_t block, const uint8_t* dst) {
+  bool writeBlock(uint32 block, const uint8_t* dst) {
     return sdCard_->writeBlock(block, dst);
   }
   //------------------------------------------------------------------------------

@@ -300,7 +300,7 @@ bool axis_homed[XYZ] = { false }, axis_known_position[XYZ] = { false };
  * sending commands to Marlin, and lines will be checked for sequentiality.
  * M110 N<int> sets the current line number.
  */
-static long gcode_N, gcode_LastN, Stopped_gcode_LastN = 0;
+static uint24 gcode_N, gcode_LastN, Stopped_gcode_LastN = 0;
 
 /**
  * GCode Command Queue
@@ -546,7 +546,7 @@ void servo_init() {
 void gcode_line_error(const char* err, bool doFlush = true) {
 	SERIAL_ERROR_START();
 	serialprintPGM(err);
-	SERIAL_ERRORLN(gcode_LastN);
+	SERIAL_ERRORLN(uint32(gcode_LastN));
 	//Serial.println(gcode_N);
 	if (doFlush) FlushSerialRequestResend();
 	serial_count = 0;
@@ -3035,7 +3035,7 @@ void FlushSerialRequestResend() {
 	//char command_queue[cmd_queue_index_r][100]="Resend:";
 	MYSERIAL.flush();
 	SERIAL_PROTOCOLPGM(MSG_RESEND);
-	SERIAL_PROTOCOLLN(gcode_LastN + 1);
+	SERIAL_PROTOCOLLN(uint32(gcode_LastN + 1));
 	ok_to_send();
 }
 

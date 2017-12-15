@@ -50,7 +50,7 @@
  *  106            E_STEPPERS                       (uint8_t)
  *  107  M92 XYZE  planner.axis_steps_per_mm        (float x4 ... x8)
  *  123  M203 XYZE planner.max_feedrate_mm_s        (float x4 ... x8)
- *  139  M201 XYZE planner.max_acceleration_mm_per_s2 (uint32_t x4 ... x8)
+ *  139  M201 XYZE planner.max_acceleration_mm_per_s2 (uint32 x4 ... x8)
  *  155  M204 P    planner.acceleration             (float)
  *  159  M204 R    planner.retract_acceleration     (float)
  *  163  M204 T    planner.travel_acceleration      (float)
@@ -625,7 +625,7 @@ void MarlinSettings::postprocess() {
       EEPROM_WRITE(Planner::preheat_presets[q].bed);
     }
 
-      const uint32_t dummyui32 = 0;
+      const uint32 dummyui32 = 0;
       for (uint8_t q = 3; q--;) EEPROM_WRITE(dummyui32);
 
       // TUNA
@@ -703,9 +703,9 @@ void MarlinSettings::postprocess() {
       // Get only the number of E stepper parameters previously stored
       // Any steppers added later are set to their defaults
       const float def1[] = DEFAULT_AXIS_STEPS_PER_UNIT, def2[] = DEFAULT_MAX_FEEDRATE;
-      const uint32_t def3[] = DEFAULT_MAX_ACCELERATION;
+      const uint32 def3[] = DEFAULT_MAX_ACCELERATION;
       float tmp1[XYZ + esteppers], tmp2[XYZ + esteppers];
-      uint32_t tmp3[XYZ + esteppers];
+      uint32 tmp3[XYZ + esteppers];
       EEPROM_READ(tmp1);
       EEPROM_READ(tmp2);
       EEPROM_READ(tmp3);
@@ -989,7 +989,7 @@ void MarlinSettings::postprocess() {
         EEPROM_READ(Planner::preheat_presets[q].bed);
       }
 
-        uint32_t dummyui32;
+        uint32 dummyui32;
         for (uint8_t q = 3; q--;) EEPROM_READ(dummyui32);
 
         // TUNA
@@ -1170,7 +1170,7 @@ void MarlinSettings::postprocess() {
  */
 void MarlinSettings::reset() {
   static const float tmp1[] __flashmem = DEFAULT_AXIS_STEPS_PER_UNIT, tmp2[] __flashmem = DEFAULT_MAX_FEEDRATE;
-  static const uint32_t tmp3[] __flashmem = DEFAULT_MAX_ACCELERATION;
+  static const uint32 tmp3[] __flashmem = DEFAULT_MAX_ACCELERATION;
   LOOP_XYZE_N(i) {
     planner.axis_steps_per_mm[i]          = pgm_read_float(&tmp1[i < COUNT(tmp1) ? i : COUNT(tmp1) - 1]);
     planner.max_feedrate_mm_s[i]          = pgm_read_float(&tmp2[i < COUNT(tmp2) ? i : COUNT(tmp2) - 1]);

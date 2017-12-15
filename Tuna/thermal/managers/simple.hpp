@@ -17,10 +17,10 @@ namespace Tuna::Thermal::Manager
     };
 
     static bool calibrate(arg_type<temp_t> target);
-    static uint8 get_power(arg_type<temp_t> current, arg_type<temp_t> target);
+    static uint8 __forceinline __flatten get_power(arg_type<temp_t> current, arg_type<temp_t> target);
     static __pure void debug_dump();
 
-    static __pure const calibration & GetCalibration();
+    static __pure const __forceinline __flatten calibration & GetCalibration();
     static void SetCalibration(arg_type<calibration> val);
   };
 }

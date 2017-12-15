@@ -73,7 +73,7 @@ namespace
   uint8 pwm_table[numTableEntries] = {};
   Simple::calibration pwm_calibration;
 
-  static pair<bool, tableidx_t> get_diff_idx(arg_type<temp_t> current, arg_type<temp_t> target)
+  static pair<bool, tableidx_t> __forceinline __flatten get_diff_idx(arg_type<temp_t> current, arg_type<temp_t> target)
   {
     temp_t difference = target - current;
     auto difference_raw = difference.raw();
@@ -88,7 +88,7 @@ namespace
   }
 }
 
-const Simple::calibration & Simple::GetCalibration()
+const __forceinline __flatten Simple::calibration & Simple::GetCalibration()
 {
   return pwm_calibration;
 }
@@ -465,7 +465,7 @@ bool Simple::calibrate(arg_type<temp_t> target)
   return true;
 }
 
-uint8 Simple::get_power(arg_type<temp_t> current, arg_type<temp_t> target) 
+uint8 __forceinline __flatten Simple::get_power(arg_type<temp_t> current, arg_type<temp_t> target)
 {
   constexpr const bool tempLog = false;
 

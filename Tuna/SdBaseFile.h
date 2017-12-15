@@ -45,9 +45,9 @@
  */
 struct filepos_t {
   /** stream position */
-  uint32_t position;
+  uint32 position;
   /** cluster for position */
-  uint32_t cluster;
+  uint32 cluster;
   filepos_t() : position(0), cluster(0) {}
 };
 
@@ -211,13 +211,13 @@ class SdBaseFile {
   void setpos(filepos_t* pos);
   //----------------------------------------------------------------------------
   bool close();
-  bool contiguousRange(uint32_t* bgnBlock, uint32_t* endBlock);
+  bool contiguousRange(uint32* bgnBlock, uint32* endBlock);
   bool createContiguous(SdBaseFile* dirFile,
-                        const char* path, uint32_t size);
+                        const char* path, uint32 size);
   /** \return The current cluster number for a file or directory. */
-  uint32_t curCluster() const {return curCluster_;}
+  uint32 curCluster() const {return curCluster_;}
   /** \return The current position for a file or directory. */
-  uint32_t curPosition() const {return curPosition_;}
+  uint32 curPosition() const {return curPosition_;}
   /** \return Current working directory */
   static SdBaseFile* cwd() {return cwd_;}
   /** Set the date/time callback function
@@ -258,9 +258,9 @@ class SdBaseFile {
   bool exists(const char* name);
   int16_t fgets(char* str, int16_t num, char* delim = 0);
   /** \return The total number of bytes in a file or directory. */
-  uint32_t fileSize() const {return fileSize_;}
+  uint32 fileSize() const {return fileSize_;}
   /** \return The first cluster number for a file or directory. */
-  uint32_t firstCluster() const {return firstCluster_;}
+  uint32 firstCluster() const {return firstCluster_;}
   bool getFilename(char* name);
   /** \return True if this is a directory else false. */
   bool isDir() const {return type_ >= FAT_FILE_TYPE_MIN_DIR;}
@@ -305,15 +305,15 @@ class SdBaseFile {
    * \param[in] offset The new position in bytes from the current position.
    * \return true for success or false for failure.
    */
-  bool seekCur(int32_t offset) {
+  bool seekCur(int32 offset) {
     return seekSet(curPosition_ + offset);
   }
   /** Set the files position to end-of-file + \a offset. See seekSet().
    * \param[in] offset The new position in bytes from end-of-file.
    * \return true for success or false for failure.
    */
-  bool seekEnd(int32_t offset = 0) {return seekSet(fileSize_ + offset);}
-  bool seekSet(uint32_t pos);
+  bool seekEnd(int32 offset = 0) {return seekSet(fileSize_ + offset);}
+  bool seekSet(uint32 pos);
   bool sync();
   bool timestamp(SdBaseFile* file);
   bool timestamp(uint8_t flag, uint16_t year, uint8_t month, uint8_t day,
@@ -324,7 +324,7 @@ class SdBaseFile {
    * \return The file or directory type.
    */
   uint8_t type() const {return type_;}
-  bool truncate(uint32_t size);
+  bool truncate(uint32 size);
   /** \return SdVolume that contains this file. */
   SdVolume* volume() const {return vol_;}
   int16_t write(const void* buf, uint16_t nbyte);
@@ -346,12 +346,12 @@ class SdBaseFile {
   uint8_t   flags_;         // See above for definition of flags_ bits
   uint8_t   fstate_;        // error and eof indicator
   uint8_t   type_;          // type of file see above for values
-  uint32_t  curCluster_;    // cluster for current file position
-  uint32_t  curPosition_;   // current file position in bytes from beginning
-  uint32_t  dirBlock_;      // block for this files directory entry
+  uint32  curCluster_;    // cluster for current file position
+  uint32  curPosition_;   // current file position in bytes from beginning
+  uint32  dirBlock_;      // block for this files directory entry
   uint8_t   dirIndex_;      // index of directory entry in dirBlock
-  uint32_t  fileSize_;      // file size in bytes
-  uint32_t  firstCluster_;  // first cluster of file
+  uint32  fileSize_;      // file size in bytes
+  uint32  firstCluster_;  // first cluster of file
   SdVolume* vol_;           // volume where file is located
 
   /** experimental don't use */
@@ -375,24 +375,24 @@ class SdBaseFile {
 #if ALLOW_DEPRECATED_FUNCTIONS && !defined(DOXYGEN)
  public:
   /** \deprecated Use:
-   * bool contiguousRange(uint32_t* bgnBlock, uint32_t* endBlock);
+   * bool contiguousRange(uint32* bgnBlock, uint32* endBlock);
    * \param[out] bgnBlock the first block address for the file.
    * \param[out] endBlock the last  block address for the file.
    * \return true for success or false for failure.
    */
-  bool contiguousRange(uint32_t& bgnBlock, uint32_t& endBlock) {  // NOLINT
+  bool contiguousRange(uint32& bgnBlock, uint32& endBlock) {  // NOLINT
     return contiguousRange(&bgnBlock, &endBlock);
   }
   /** \deprecated Use:
     * bool createContiguous(SdBaseFile* dirFile,
-    *   const char* path, uint32_t size)
+    *   const char* path, uint32 size)
     * \param[in] dirFile The directory where the file will be created.
     * \param[in] path A path with a valid DOS 8.3 file name.
     * \param[in] size The desired file size.
     * \return true for success or false for failure.
     */
   bool createContiguous(SdBaseFile& dirFile,  // NOLINT
-                        const char* path, uint32_t size) {
+                        const char* path, uint32 size) {
     return createContiguous(&dirFile, path, size);
   }
   /** \deprecated Use:

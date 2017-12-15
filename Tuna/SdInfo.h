@@ -116,7 +116,7 @@ typedef struct CID {
   unsigned char prv_n : 4;
   // byte 9-12
   /** Product serial number */
-  uint32_t psn;
+  uint32 psn;
   // byte 13
   /** Manufacturing date year low digit */
   unsigned char mdt_year_high : 4;

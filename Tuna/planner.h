@@ -83,7 +83,7 @@ struct block_t final
   uint24 step_event_count;                // The number of step events required to complete this block
 
   #if ENABLED(MIXING_EXTRUDER)
-    uint32_t mix_event_count[MIXING_STEPPERS]; // Scaled step_event_count for the mixing steppers
+    uint32 mix_event_count[MIXING_STEPPERS]; // Scaled step_event_count for the mixing steppers
   #endif
 
   int24 accelerate_until,                 // The index of the step event on which to stop acceleration
@@ -95,7 +95,7 @@ struct block_t final
   // Advance extrusion
   #if ENABLED(LIN_ADVANCE)
     bool use_advance_lead;
-    uint32_t abs_adv_steps_multiplier8; // Factorised by 2^8 to avoid float
+    uint32 abs_adv_steps_multiplier8; // Factorised by 2^8 to avoid float
   #endif
 
   // Fields used by the motion planner to manage acceleration
@@ -116,7 +116,7 @@ struct block_t final
   #endif
 
   #if ENABLED(BARICUDA)
-    uint32_t valve_pressure, e_to_p_pressure;
+    uint32 valve_pressure, e_to_p_pressure;
   #endif
 
   uint32 segment_time;
@@ -200,7 +200,7 @@ class Planner final {
     /**
      * Limit where 64bit math is necessary for acceleration calculation
      */
-    static uint32_t cutoff_long;
+    static uint32 cutoff_long;
 
     #if ENABLED(DISABLE_INACTIVE_EXTRUDER)
       /**
@@ -223,7 +223,7 @@ class Planner final {
     #endif
 
     #if ENABLED(ULTRA_LCD)
-      volatile static uint32_t block_buffer_runtime_us; //Theoretical block buffer runtime in µs
+      volatile static uint32 block_buffer_runtime_us; //Theoretical block buffer runtime in µs
     #endif
 
   public:
@@ -361,7 +361,7 @@ class Planner final {
     /**
      * Does the buffer have any blocks queued?
      */
-    static bool blocks_queued() { return (block_buffer_head != block_buffer_tail); }
+    static inline bool __forceinline __flatten blocks_queued() { return (block_buffer_head != block_buffer_tail); }
 
     /**
      * "Discards" the block and "releases" the memory.

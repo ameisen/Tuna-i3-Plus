@@ -198,8 +198,8 @@ public:
   }
 
   // Code value as a long or ulong
-  inline static int32_t value_long() { return value_ptr ? strtol(value_ptr, nullptr, 10) : 0L; }
-  inline static uint32_t value_ulong() { return value_ptr ? strtoul(value_ptr, nullptr, 10) : 0UL; }
+  inline static int32 value_long() { return value_ptr ? strtol(value_ptr, nullptr, 10) : 0L; }
+  inline static uint32 value_ulong() { return value_ptr ? strtoul(value_ptr, nullptr, 10) : 0UL; }
 
   inline static int24 value_i24() { return value_ptr ? int24(strtol(value_ptr, nullptr, 10)) : 0_i24; }
   inline static uint24 value_u24() { return value_ptr ? uint24(strtoul(value_ptr, nullptr, 10)) : 0_u24; }
@@ -318,8 +318,8 @@ public:
   static uint16_t __forceinline ushortval(const char c, const uint16_t dval=0) { return seenval(c) ? value_ushort()       : dval; }
   static int24    __forceinline i24val(const char c, const int24 dval = 0)     { return seenval(c) ? value_i24()          : dval; }
   static uint24   __forceinline u24val(const char c, const uint24 dval = 0)    { return seenval(c) ? value_u24()          : dval; }
-  static int32_t  __forceinline longval(const char c, const int32_t dval=0)    { return seenval(c) ? value_long()         : dval; }
-  static uint32_t __forceinline ulongval(const char c, const uint32_t dval=0)  { return seenval(c) ? value_ulong()        : dval; }
+  static int32  __forceinline longval(const char c, const int32 dval=0)    { return seenval(c) ? value_long()         : dval; }
+  static uint32 __forceinline ulongval(const char c, const uint32 dval=0)  { return seenval(c) ? value_ulong()        : dval; }
   static float    __forceinline linearval(const char c, const float dval=0.0)  { return seenval(c) ? value_linear_units() : dval; }
   static float    __forceinline celsiusval(const char c, const float dval=0.0) { return seenval(c) ? value_celsius()      : dval; }
 
