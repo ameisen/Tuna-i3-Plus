@@ -212,6 +212,7 @@ void Planner::calculate_trapezoid_for_block(block_t * __restrict const block, co
   if (!TEST(block->flag, BLOCK_BIT_BUSY)) { // Don't update variables if block is busy.
     block->accelerate_until = accelerate_steps;
     block->decelerate_after = accelerate_steps + plateau_steps;
+    block->deceleration_period = block->step_event_count - block->decelerate_after;
     block->initial_rate = initial_rate;
     block->final_rate = final_rate;
   }

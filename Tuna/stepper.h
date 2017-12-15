@@ -73,11 +73,10 @@ class Stepper final {
   private:
 
     static uint8_t last_direction_bits;        // The next stepping-bits to be output
-    static uint16_t cleaning_buffer_counter;
 
     // Counter variables for the Bresenham line tracer
-    static int24 counter_X, counter_Y, counter_Z, counter_E;
-    static volatile uint24 step_events_completed; // The number of step events executed in the current block
+    static int24 counter[XYZE];
+    static uint24 step_events_completed; // The number of step events executed in the current block
 
     #if ENABLED(LIN_ADVANCE)
       static uint16_t nextMainISR, nextAdvanceISR, eISR_Rate;

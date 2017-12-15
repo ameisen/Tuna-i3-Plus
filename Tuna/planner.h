@@ -86,9 +86,11 @@ struct block_t final
     uint32 mix_event_count[MIXING_STEPPERS]; // Scaled step_event_count for the mixing steppers
   #endif
 
-  int24 accelerate_until,                 // The index of the step event on which to stop acceleration
+  uint24 accelerate_until,                 // The index of the step event on which to stop acceleration
           decelerate_after,                 // The index of the step event on which to start decelerating
           acceleration_rate;                // The acceleration rate used for acceleration calculation
+
+  uint24 deceleration_period;
 
   uint8 direction_bits;                   // The direction bit set for this block (refers to *_DIRECTION_BIT in config.h)
 
