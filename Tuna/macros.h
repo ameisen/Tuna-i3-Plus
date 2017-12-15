@@ -28,13 +28,6 @@
 #define ABC  3
 #define XYZ  3
 
-#define _UNUSED      __attribute__((unused))
-#define _O0          __attribute__((optimize("O0")))
-#define _Os          __attribute__((optimize("Os")))
-#define _O1          __attribute__((optimize("O1")))
-#define _O2          __attribute__((optimize("O2")))
-#define _O3          __attribute__((optimize("O3")))
-
 // Bracket code that shouldn't be interrupted
 #ifndef CRITICAL_SECTION_START
   #define CRITICAL_SECTION_START  unsigned char _sreg = SREG; Tuna::intrinsic::cli();
@@ -47,7 +40,7 @@
 
 // Highly granular delays for step pulses, etc.
 #define DELAY_0_NOP NOOP
-#define DELAY_1_NOP __asm__("nop\n\t")
+#define DELAY_1_NOP Tuna::intrinsic::nop();
 #define DELAY_2_NOP DELAY_1_NOP; DELAY_1_NOP
 #define DELAY_3_NOP DELAY_1_NOP; DELAY_2_NOP
 #define DELAY_4_NOP DELAY_1_NOP; DELAY_3_NOP
@@ -109,8 +102,8 @@
 #define SIGN(a) ((a>0)-(a<0))
 
 // Macros to contrain values
-#define NOLESS(v,n) do{ if (v < n) v = n; }while(0)
-#define NOMORE(v,n) do{ if (v > n) v = n; }while(0)
+#define NOLESS(v,n) { if (v < n) { v = n; __assume(v == n); } __assume(v >= n);}
+#define NOMORE(v,n) { if (v > n) { v = n; __assume(v == n); } __assume(v <= n);}
 
 // Macros to support option testing
 #define _CAT(a, ...) a ## __VA_ARGS__
@@ -173,7 +166,7 @@
 #define PENDING(NOW,SOON) ((long)(NOW-(SOON))<0)
 #define ELAPSED(NOW,SOON) (!PENDING(NOW,SOON))
 
-#define NOOP do{} while(0)
+#define NOOP {}
 
 #define CEILING(x,y) (((x) + (y) - 1) / (y))
 

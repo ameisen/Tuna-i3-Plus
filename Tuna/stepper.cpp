@@ -59,6 +59,8 @@
   #include <SPI.h>
 #endif
 
+constexpr const bool enable_scurve = false;
+
 Stepper stepper; // Singleton
 
 // public:
@@ -744,15 +746,33 @@ void __forceinline __flatten Stepper::isr()
   // Calculate new timer value
   if (step_events_completed <= (uint24)current_block->accelerate_until)
   {
-    const uint16 delta = step_events_completed;
-    const uint16 maxdiff = current_block->accelerate_until;
-    const uint24 a_lambda = uint24(delta) * 63;
-    const uint8 idx = a_lambda / maxdiff;
+    if constexpr (enable_scurve)
+    {
+      const uint16 delta = step_events_completed;
+      const uint16 maxdiff = current_block->accelerate_until;
+      const uint24 a_lambda = uint24(delta) * 63;
+      const uint8 idx = a_lambda / maxdiff;
+      __assume(idx < 64);
 
-    const scalar_t & __restrict scalar = scalars[idx];
+      const scalar_t & __restrict scalar = scalars[idx];
 
-    acc_step_rate = current_block->nominal_rate - current_block->initial_rate;
-    acc_step_rate = (scalar * acc_step_rate).rounded_to<uint16>();
+      acc_step_rate = current_block->nominal_rate - current_block->initial_rate;
+      acc_step_rate = (scalar * acc_step_rate).rounded_to<uint16>();
+    }
+    else
+    {
+      acc_step_rate = MultiU24X24toH16(acceleration_time, current_block->acceleration_rate);
+    }
+
+    //debug::dump("u_idx"_p, idx);
+    //static scalar_t lscalar = {};
+    //if (lscalar != scalar)
+    //{
+    //  debug::dump("step_events_completed"_p, step_events_completed);
+    //  debug::dump("accelerate_until"_p, current_block->accelerate_until);
+    //  lscalar = scalar;
+    //}
+    //debug::dump("u_step_rate"_p, acc_step_rate);
 
     acc_step_rate += current_block->initial_rate;
 
@@ -778,27 +798,46 @@ void __forceinline __flatten Stepper::isr()
 
     eISR_Rate = adv_rate(e_steps[TOOL_E_INDEX], timer, step_loops);
   }
-  else if (step_events_completed > (uint24)current_block->decelerate_after)
+  else if (step_events_completed > current_block->decelerate_after)
   {
-    const uint16 delta = step_events_completed - current_block->decelerate_after;
-    const uint16 maxdiff = current_block->deceleration_period;
-    const uint24 a_lambda = uint24(delta) * 63;
-    const uint8 idx = a_lambda / maxdiff;
-
-    const scalar_t & __restrict scalar = scalars[idx];
-
     uint16 step_rate;
-    if (current_block->nominal_rate >= current_block->final_rate)
+    if constexpr (enable_scurve)
     {
-      step_rate = current_block->nominal_rate - current_block->final_rate;
-      step_rate = (scalar * step_rate).rounded_to<uint16>();
-      step_rate = current_block->nominal_rate - step_rate;
+      const uint16 delta = step_events_completed - current_block->decelerate_after;
+      const uint16 maxdiff = current_block->deceleration_period;
+      const uint24 a_lambda = uint24(delta) * 63;
+      const uint8 idx = a_lambda / maxdiff;
+      __assume(idx < 64);
+
+      const scalar_t & __restrict scalar = scalars[idx];
+
+      //debug::dump("d_idx"_p, idx);
+      //static scalar_t lscalar = {};
+      //if (lscalar != scalar)
+      //{
+      //  debug::dump("step_events_completed"_p, step_events_completed);
+      //  debug::dump("decelerate_after"_p, current_block->decelerate_after);
+      //  lscalar = scalar;
+      //}
+
+      if (current_block->nominal_rate >= current_block->final_rate)
+      {
+        step_rate = current_block->nominal_rate - current_block->final_rate;
+        step_rate = (scalar * step_rate).rounded_to<uint16>();
+        //debug::dump("d_step_rate"_p, step_rate);
+        step_rate = current_block->nominal_rate - step_rate;
+      }
+      else
+      {
+        step_rate = current_block->final_rate - current_block->nominal_rate;
+        step_rate = (scalar * step_rate).rounded_to<uint16>();
+        //debug::dump("d_step_rate"_p, step_rate);
+        step_rate = current_block->final_rate - step_rate;
+      }
     }
     else
     {
-      step_rate = current_block->final_rate - current_block->nominal_rate;
-      step_rate = (scalar * step_rate).rounded_to<uint16>();
-      step_rate = current_block->final_rate - step_rate;
+      step_rate = MultiU24X24toH16(deceleration_time, current_block->acceleration_rate);
     }
 
     // step_rate to timer interval
@@ -1197,7 +1236,7 @@ void Stepper::set_position(const int24 &a, const int24 &b, const int24 &c, const
 
   synchronize(); // Bad to set stepper counts in the middle of a move
 
-  CRITICAL_SECTION_START;
+  Tuna::critical_section_not_isr _critsec;
 
   #if CORE_IS_XY
     // corexy positioning
@@ -1223,28 +1262,24 @@ void Stepper::set_position(const int24 &a, const int24 &b, const int24 &c, const
   #endif
 
   count_position[E_AXIS] = e;
-  CRITICAL_SECTION_END;
 }
 
 void __forceinline __flatten Stepper::set_position(const AxisEnum &axis, const int24 &v) {
-  CRITICAL_SECTION_START;
+  Tuna::critical_section_not_isr _critsec;
   count_position[axis] = v;
-  CRITICAL_SECTION_END;
 }
 
 void __forceinline __flatten Stepper::set_e_position(const int24 &e) {
-  CRITICAL_SECTION_START;
+  Tuna::critical_section_not_isr _critsec;
   count_position[E_AXIS] = e;
-  CRITICAL_SECTION_END;
 }
 
 /**
  * Get a stepper's position in steps.
  */
 int24 Stepper::position(AxisEnum axis) {
-  CRITICAL_SECTION_START;
+  Tuna::critical_section_not_isr _critsec;
   const int24 count_pos = count_position[axis];
-  CRITICAL_SECTION_END;
   return count_pos;
 }
 
@@ -1307,11 +1342,13 @@ void __forceinline __flatten Stepper::endstop_triggered(AxisEnum axis) {
 }
 
 void Stepper::report_positions() {
-  CRITICAL_SECTION_START;
-  const long xpos = count_position[X_AXIS],
-             ypos = count_position[Y_AXIS],
-             zpos = count_position[Z_AXIS];
-  CRITICAL_SECTION_END;
+  long xpos, ypos, zpos;
+  {
+    Tuna::critical_section_not_isr _critsec;
+    xpos = count_position[X_AXIS];
+    ypos = count_position[Y_AXIS];
+    zpos = count_position[Z_AXIS];
+  }
 
   #if CORE_IS_XY || CORE_IS_XZ || IS_SCARA
     SERIAL_PROTOCOLPGM(MSG_COUNT_A);

@@ -155,6 +155,7 @@
     <ClInclude Include="tunalib\arg_type.hpp" />
     <ClInclude Include="tunalib\async.hpp" />
     <ClInclude Include="tunalib\chrono.hpp" />
+    <ClInclude Include="tunalib\debug.hpp" />
     <ClInclude Include="tunalib\fixed.hpp" />
     <ClInclude Include="tunalib\flash.hpp" />
     <ClInclude Include="tunalib\initializer_list.h" />

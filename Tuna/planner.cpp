@@ -190,10 +190,10 @@ void Planner::calculate_trapezoid_for_block(block_t * __restrict const block, co
   NOLESS(initial_rate, MINIMAL_STEP_RATE);
   NOLESS(final_rate, MINIMAL_STEP_RATE);
 
-  int32 accel = block->acceleration_steps_per_s2,
-          accelerate_steps = CEIL(estimate_acceleration_distance(initial_rate, block->nominal_rate, accel)),
-          decelerate_steps = FLOOR(estimate_acceleration_distance(block->nominal_rate, final_rate, -accel)),
-          plateau_steps = block->step_event_count - accelerate_steps - decelerate_steps;
+  int32 accel = block->acceleration_steps_per_s2;
+  int32 accelerate_steps = CEIL(estimate_acceleration_distance(initial_rate, block->nominal_rate, accel));
+  int32 decelerate_steps = FLOOR(estimate_acceleration_distance(block->nominal_rate, final_rate, -accel));
+  int32 plateau_steps = block->step_event_count - accelerate_steps - decelerate_steps;
 
   // Is the Plateau of Nominal Rate smaller than nothing? That means no cruising, and we will
   // have to use intersection_distance() to calculate when to abort accel and start braking
@@ -201,22 +201,49 @@ void Planner::calculate_trapezoid_for_block(block_t * __restrict const block, co
   if (plateau_steps < 0) {
     accelerate_steps = CEIL(intersection_distance(initial_rate, final_rate, accel, block->step_event_count));
     NOLESS(accelerate_steps, 0); // Check limits due to numerical round-off
-    accelerate_steps = min((uint32)accelerate_steps, block->step_event_count);//(We can cast here to unsigned, because the above line ensures that we are above zero)
+    accelerate_steps = min(accelerate_steps, block->step_event_count);//(We can cast here to unsigned, because the above line ensures that we are above zero)
     plateau_steps = 0;
+  }
+
+
+  constexpr const bool use_triangular = false;
+  if constexpr (use_triangular)
+  {
+    if (plateau_steps > 0)
+    {
+      uint24 plateau_half = plateau_steps / 2;
+      plateau_steps -= plateau_half * 2;
+      accelerate_steps += plateau_steps;
+    }
+  }
+
+  constexpr const bool longer_plateau = false;
+  constexpr const uint8 numerator = 1; // 3
+  constexpr const uint8 denominator = 2; // 4
+  if constexpr (longer_plateau)
+  {
+    uint24 accel_frac = (accelerate_steps / denominator) * numerator;
+    uint24 decel_frac = (decelerate_steps / denominator) * numerator;
+    accelerate_steps -= accel_frac;
+    decelerate_steps -= decel_frac;
+
+    plateau_steps += accel_frac + decel_frac;
   }
 
   // block->accelerate_until = accelerate_steps;
   // block->decelerate_after = accelerate_steps+plateau_steps;
 
-  CRITICAL_SECTION_START;  // Fill variables used by the stepper in a critical section
-  if (!TEST(block->flag, BLOCK_BIT_BUSY)) { // Don't update variables if block is busy.
-    block->accelerate_until = accelerate_steps;
-    block->decelerate_after = accelerate_steps + plateau_steps;
-    block->deceleration_period = block->step_event_count - block->decelerate_after;
-    block->initial_rate = initial_rate;
-    block->final_rate = final_rate;
+  // Fill variables used by the stepper in a critical section
+  {
+    Tuna::critical_section_not_isr _critsec;
+    if (!TEST(block->flag, BLOCK_BIT_BUSY)) { // Don't update variables if block is busy.
+      block->accelerate_until = accelerate_steps;
+      block->decelerate_after = accelerate_steps + plateau_steps;
+      block->deceleration_period = block->step_event_count - block->decelerate_after;
+      block->initial_rate = initial_rate;
+      block->final_rate = final_rate;
+    }
   }
-  CRITICAL_SECTION_END;
 }
 
 // "Junction jerk" in this context is the immediate change in speed at the junction of two blocks.
@@ -994,9 +1021,13 @@ void Planner::_buffer_line(const float & __restrict a, const float & __restrict 
   }
 
   if (esteps)
+  {
     NOLESS(fr_mm_s, min_feedrate_mm_s);
+  }
   else
+  {
     NOLESS(fr_mm_s, min_travel_feedrate_mm_s);
+  }
 
   /**
    * This part of the code calculates the total length of the movement.

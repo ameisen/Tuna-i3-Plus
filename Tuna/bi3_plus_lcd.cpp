@@ -657,36 +657,36 @@ namespace Tuna::lcd
 			}
 			case 0x00: {
 				clear_command_queue();
-				enqueue_and_echo_commands("G8 X5"_p);
+				enqueue_and_echo_commands("G9 X5 F3000"_p);
 				break;
 			}
 			case 0x01: {
 				clear_command_queue();
-				enqueue_and_echo_commands("G8 X-5"_p);
+				enqueue_and_echo_commands("G9 X-5 F3000"_p);
 
 				break;
 			}
 			case 0x02: {
 				clear_command_queue();
-				enqueue_and_echo_commands("G8 Y5"_p);
+				enqueue_and_echo_commands("G9 Y5 F3000"_p);
 
 				break;
 			}
 			case 0x03: {
 				clear_command_queue();
-				enqueue_and_echo_commands("G8 Y-5"_p);
+				enqueue_and_echo_commands("G9 Y-5 F3000"_p);
 
 				break;
 			}
 			case 0x04: {
 				clear_command_queue();
-				enqueue_and_echo_commands("G8 Z2"_p);
+				enqueue_and_echo_commands("G9 Z2 F3000"_p);
 
 				break;
 			}
 			case 0x05: {
 				clear_command_queue();
-				enqueue_and_echo_commands("G8 Z-2"_p);
+				enqueue_and_echo_commands("G9 Z-2 F3000"_p);
 
 				break;
 			}

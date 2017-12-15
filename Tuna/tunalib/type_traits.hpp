@@ -145,6 +145,14 @@ namespace Tuna
     constexpr static type min = { 0x00_u8 };
     constexpr static type ones = { 0xFF_u8 };
     constexpr static type zeros = { 0x00_u8 };
+
+    template <uint8 base>
+    constexpr static usize string_length =
+      (base == 2) ? 8 :
+      (base == 8) ? 3 :
+      (base == 10) ? 3 :
+      (base == 16) ? 2 :
+      0;
   };
 
   template <>
@@ -181,6 +189,14 @@ namespace Tuna
     constexpr static type min = { 0x80_i8 };
     constexpr static type ones = { 0xFF_i8 };
     constexpr static type zeros = { 0x00_i8 };
+
+    template <uint8 base>
+    constexpr static usize string_length =
+      (base == 2) ? 8 :
+      (base == 8) ? 3 :
+      (base == 10) ? 4 :
+      (base == 16) ? 2 :
+      0;
   };
 
   template <>
@@ -217,6 +233,14 @@ namespace Tuna
     constexpr static type min = { 0x0000_u16 };
     constexpr static type ones = { 0xFFFF_u16 };
     constexpr static type zeros = { 0x0000_u16 };
+
+    template <uint8 base>
+    constexpr static usize string_length =
+      (base == 2) ? 16 :
+      (base == 8) ? 6 :
+      (base == 10) ? 5 :
+      (base == 16) ? 4 :
+      0;
   };
   // Alias, AVR, TODO
   c_static_assert(sizeof(unsigned int) == sizeof(uint16), "AVR error");
@@ -257,6 +281,14 @@ namespace Tuna
     constexpr static type min = { 0x8000_i16 };
     constexpr static type ones = { 0xFFFF_i16 };
     constexpr static type zeros = { 0x0000_i16 };
+
+    template <uint8 base>
+    constexpr static usize string_length =
+      (base == 2) ? 16 :
+      (base == 8) ? 6 :
+      (base == 10) ? 6 :
+      (base == 16) ? 4 :
+      0;
   };
   // Alias, AVR, TODO
   c_static_assert(sizeof(int) == sizeof(int16), "AVR error");
@@ -298,6 +330,14 @@ namespace Tuna
     constexpr static type min = { 0x000000_u24 };
     constexpr static type ones = { 0xFFFFFF_u24 };
     constexpr static type zeros = { 0x000000_u24 };
+
+    template <uint8 base>
+    constexpr static usize string_length =
+      (base == 2) ? 24 :
+      (base == 8) ? 8 :
+      (base == 10) ? 8 :
+      (base == 16) ? 6 :
+      0;
   };
 
   template <>
@@ -334,6 +374,14 @@ namespace Tuna
     constexpr static type min = { 0x800000_i24 };
     constexpr static type ones = { 0xFFFFFF_i24 };
     constexpr static type zeros = { 0x000099_i24 };
+
+    template <uint8 base>
+    constexpr static usize string_length =
+      (base == 2) ? 24 :
+      (base == 8) ? 8 :
+      (base == 10) ? 9 :
+      (base == 16) ? 6 :
+      0;
   };
 
   template <>
@@ -370,6 +418,14 @@ namespace Tuna
     constexpr static type min = { 0x00000000_u32 };
     constexpr static type ones = { 0xFFFFFFFF_u32 };
     constexpr static type zeros = { 0x00000000_u32 };
+
+    template <uint8 base>
+    constexpr static usize string_length =
+      (base == 2) ? 32 :
+      (base == 8) ? 11 :
+      (base == 10) ? 10 :
+      (base == 16) ? 8 :
+      0;
   };
 
   template <>
@@ -406,6 +462,14 @@ namespace Tuna
     constexpr static type min = { 0x80000000_i32 };
     constexpr static type ones = { 0xFFFFFFFF_i32 };
     constexpr static type zeros = { 0x00000000_i32 };
+
+    template <uint8 base>
+    constexpr static usize string_length =
+      (base == 2) ? 32 :
+      (base == 8) ? 11 :
+      (base == 10) ? 11 :
+      (base == 16) ? 8 :
+      0;
   };
 
   template <>
@@ -442,6 +506,14 @@ namespace Tuna
     constexpr static type min = { 0x0000000000000000_u64 };
     constexpr static type ones = { 0xFFFFFFFFFFFFFFFF_u64 };
     constexpr static type zeros = { 0x0000000000000000_u64 };
+
+    template <uint8 base>
+    constexpr static usize string_length =
+      (base == 2) ? 64 :
+      (base == 8) ? 22 :
+      (base == 10) ? 20 :
+      (base == 16) ? 16 :
+      0;
   };
 
   template <>
@@ -477,6 +549,14 @@ namespace Tuna
     constexpr static type min = { 0x8000000000000000_i64 };
     constexpr static type ones = { 0xFFFFFFFFFFFFFFFF_i64 };
     constexpr static type zeros = { 0x0000000000000000_i64 };
+
+    template <uint8 base>
+    constexpr static usize string_length =
+      (base == 2) ? 64 :
+      (base == 8) ? 22 :
+      (base == 10) ? 20 :
+      (base == 16) ? 16 :
+      0;
   };
 
   template <>
@@ -510,6 +590,14 @@ namespace Tuna
     constexpr static type max = { __builtin_huge_valf() };
     constexpr static type min = { 1.175494e-38f };
     constexpr static type epsilon = { 1.192093e-07f };
+
+    template <uint8 base>
+    constexpr static usize string_length =
+      (base == 2) ? 32 :
+      (base == 8) ? 11 :
+      (base == 10) ? 32 :
+      (base == 16) ? 8 :
+      0;
   };
   // On AVR, float == double == long double, though the compiler doesn't always agree due to strict typing.
   template <> struct type_trait<double> final : type_trait<float> {};

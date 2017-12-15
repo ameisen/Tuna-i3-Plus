@@ -234,6 +234,9 @@
     <ClInclude Include="tunalib\serial.hpp">
       <Filter>tunalib</Filter>
     </ClInclude>
+    <ClInclude Include="tunalib\debug.hpp">
+      <Filter>tunalib</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tunalib">

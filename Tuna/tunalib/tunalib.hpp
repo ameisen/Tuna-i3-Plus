@@ -16,5 +16,6 @@
 #include "tunalib/math.hpp"
 #include "tunalib/serial.hpp"
 #include "tunalib/algorithm_impl.hpp"
+#include "tunalib/debug.hpp"
 
 using namespace Tuna;
