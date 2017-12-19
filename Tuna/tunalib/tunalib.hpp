@@ -17,5 +17,6 @@
 #include "tunalib/serial.hpp"
 #include "tunalib/algorithm_impl.hpp"
 #include "tunalib/debug.hpp"
+#include "tunalib/memory.hpp"
 
 using namespace Tuna;

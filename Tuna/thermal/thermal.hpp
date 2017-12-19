@@ -109,10 +109,9 @@ namespace Tuna
 
 	  static volatile bool in_temp_isr;
 
-    static volatile uint8_t soft_pwm_amount;
+    static memory<uint8_t> soft_pwm_amount;
     static volatile_conditional_type<uint8, has_bed_thermal_management> soft_pwm_amount_bed;
     static volatile_conditional_type<bool, !has_bed_thermal_management> is_bed_heating;
-    static volatile uint8_t soft_bed_pwm_amount;
 
 	  static temp_t watch_target_temp;
 	  static millis_t watch_heater_next_ms;

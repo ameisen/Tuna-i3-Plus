@@ -237,6 +237,9 @@
     <ClInclude Include="tunalib\debug.hpp">
       <Filter>tunalib</Filter>
     </ClInclude>
+    <ClInclude Include="tunalib\memory.hpp">
+      <Filter>tunalib</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tunalib">

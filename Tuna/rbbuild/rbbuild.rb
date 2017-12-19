@@ -317,6 +317,12 @@ if (any_rebuild)
 		}
 	end
 	
+	puts "Cleaning up previous build..."
+	eep_path = File.dirname($BuildOptions.output) + "/" + File.basename($BuildOptions.output) + ".eep"
+	File.delete(eep_path) if File.exist?(eep_path)
+	hex_path = File.dirname($BuildOptions.output) + "/" + File.basename($BuildOptions.output) + ".hex"
+	File.delete(hex_path) if File.exist?(hex_path)
+
 	puts "Compiling..."
 	$pch_files.each { |handler, files|
 		Threader.new(

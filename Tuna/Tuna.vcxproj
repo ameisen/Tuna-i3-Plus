@@ -162,6 +162,7 @@
     <ClInclude Include="tunalib\intrinsics.hpp" />
     <ClInclude Include="tunalib\macros.hpp" />
     <ClInclude Include="tunalib\math.hpp" />
+    <ClInclude Include="tunalib\memory.hpp" />
     <ClInclude Include="tunalib\meta_types.hpp" />
     <ClInclude Include="tunalib\serial.hpp" />
     <ClInclude Include="tunalib\traits.hpp" />

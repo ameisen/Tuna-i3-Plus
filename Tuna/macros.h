@@ -102,8 +102,8 @@
 #define SIGN(a) ((a>0)-(a<0))
 
 // Macros to contrain values
-#define NOLESS(v,n) { if (v < n) { v = n; __assume(v == n); } __assume(v >= n);}
-#define NOMORE(v,n) { if (v > n) { v = n; __assume(v == n); } __assume(v <= n);}
+#define NOLESS(v,n) do{ if (v < n) v = n; }while(0)
+#define NOMORE(v,n) do{ if (v > n) v = n; }while(0)
 
 // Macros to support option testing
 #define _CAT(a, ...) a ## __VA_ARGS__
@@ -166,7 +166,7 @@
 #define PENDING(NOW,SOON) ((long)(NOW-(SOON))<0)
 #define ELAPSED(NOW,SOON) (!PENDING(NOW,SOON))
 
-#define NOOP {}
+#define NOOP do{} while(0)
 
 #define CEILING(x,y) (((x) + (y) - 1) / (y))
 

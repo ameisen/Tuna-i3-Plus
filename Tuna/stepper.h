@@ -61,7 +61,8 @@ inline uint8 __forceinline __flatten __const MultiU16X8toH8(uint8 charIn1, uint1
 {
   // It is faster to use uint24, shift by 8, and let the compiler do it.
   // Also note that the upper value is always going to be expressable as a single byte.
-  return (charIn1 * uint24(intIn2)) >> 8_u8;
+  __assume((charIn1 * intIn2) <= 0xFFFF);
+  return (charIn1 * intIn2) >> 8_u8;
 }
 
 class Stepper final {
@@ -73,6 +74,7 @@ class Stepper final {
   private:
 
     static uint8_t last_direction_bits;        // The next stepping-bits to be output
+    static uint16_t cleaning_buffer_counter;
 
     // Counter variables for the Bresenham line tracer
     static int24 counter[XYZE];
@@ -93,7 +95,7 @@ class Stepper final {
 
     static int24 acceleration_time, deceleration_time;
     //unsigned long accelerate_until, decelerate_after, acceleration_rate, initial_rate, final_rate, nominal_rate;
-    static unsigned short acc_step_rate; // needed for deceleration start point
+    static uint16/*24*/ acc_step_rate; // needed for deceleration start point
     static uint8_t step_loops, step_loops_nominal;
     static unsigned short OCR1A_nominal;
 
@@ -236,12 +238,22 @@ class Stepper final {
 
   private:
 
-    static inline unsigned __forceinline __flatten short calc_timer(unsigned short step_rate) {
+    static inline unsigned __forceinline __flatten short calc_timer(uint16/*24*/ step_rate) {
       unsigned short timer;
 
       NOMORE(step_rate, MAX_STEP_FREQUENCY);
 
-      if (step_rate > 20000) { // If steprate > 20kHz >> step 4 times
+      //step_rate = min(step_rate, 159999_u24);
+
+      /*if (step_rate > 80000) { // If steprate > 40kHz >> step 8 times
+        step_rate >>= 4;
+        step_loops = 16;
+      }
+      else */if (step_rate > 40000) { // If steprate > 40kHz >> step 8 times
+        step_rate >>= 3;
+        step_loops = 8;
+      }
+      else if (step_rate > 20000) { // If steprate > 20kHz >> step 4 times
         step_rate >>= 2;
         step_loops = 4;
       }
@@ -270,20 +282,31 @@ class Stepper final {
       if (timer < 100) { // (20kHz - this should never happen)
         timer = 100;
         MYSERIAL.print(MSG_STEPPER_TOO_HIGH);
-        MYSERIAL.println(step_rate);
+        MYSERIAL.println(uint32(step_rate));
       }
       return timer;
     }
 
     // Initialize the trapezoid generator from the current block.
     // Called whenever a new block begins.
-    static inline void __forceinline __flatten trapezoid_generator_reset() {
+    static inline void __forceinline __flatten trapezoid_generator_reset()
+    {
 
+#if EXTRUDERS > 1
       static int8_t last_extruder = -1;
+#endif
 
-      if (current_block->direction_bits != last_direction_bits || current_block->active_extruder != last_extruder) {
+      if (
+           current_block->direction_bits != last_direction_bits
+#if EXTRUDERS > 1
+        || current_block->active_extruder != last_extruder
+#endif
+      ) 
+      {
         last_direction_bits = current_block->direction_bits;
+#if EXTRUDERS > 1
         last_extruder = current_block->active_extruder;
+#endif
         set_directions();
       }
 

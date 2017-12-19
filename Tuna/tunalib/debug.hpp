@@ -28,6 +28,13 @@ namespace Tuna::debug
 
       static_assert(base <= 16, "unsupported base");
 
+      if (in_value == 0)
+      {
+        buffer[0] = '0';
+        buffer[1] = '\0';
+        return buffer + 1;
+      }
+
       uint8 written = 0;
 
       const auto reverse = [buffer, &written]

@@ -31,7 +31,7 @@
 #include "configuration_store.h"
 #include "watchdog.h"
 
-#define ENABLE_ERROR_1A 1
+#define ENABLE_ERROR_1A 0
 #define ENABLE_ERROR_1B 0
 #define ENABLE_ERROR_2A 0
 #define ENABLE_ERROR_2B 0
@@ -60,7 +60,7 @@ bool Temperature::allow_cold_extrude = false;
 
 millis_t Temperature::next_bed_check_ms;
 
-volatile uint8_t Temperature::soft_pwm_amount = 0;
+memory<uint8_t> Temperature::soft_pwm_amount = 0;
 volatile_conditional_type<uint8, has_bed_thermal_management> Temperature::soft_pwm_amount_bed = 0_u8;
 volatile_conditional_type<bool, !has_bed_thermal_management> Temperature::is_bed_heating = false;
 
@@ -68,42 +68,42 @@ namespace
 {
   struct interrupt final : trait::ce_only
   {
-    static volatile bool ready_;
-    static volatile uint16 raw_adc_hotend;
-    static volatile uint16 raw_adc_bed;
+    static memory<bool> ready_;
+    static memory<uint16> raw_adc_hotend;
+    static memory<uint16> raw_adc_bed;
 
     static inline void __forceinline __flatten set_adc (arg_type<uint16> hotend, arg_type<uint16> bed)
     {
-      raw_adc_hotend = hotend;
-      raw_adc_bed = bed;
-      ready_ = true;
+      raw_adc_hotend.write_through(hotend);
+      raw_adc_bed.write_through(bed);
+      ready_.write_through(true);
     }
 
     static inline void __forceinline __flatten set_adc_hotend (arg_type<uint16> adc)
     {
-      raw_adc_hotend = adc;
-      ready_ = true;
+      raw_adc_hotend.write_through(adc);
+      ready_.write_through(true);
     }
 
     static inline void __forceinline __flatten set_adc_bed (arg_type<uint16> adc)
     {
-      raw_adc_bed = adc;
-      ready_ = true;
+      raw_adc_bed.write_through(adc);
+      ready_.write_through(true);
     }
 
     static inline uint16 __forceinline __flatten __pure get_adc_hotend()
     {
-      return raw_adc_hotend;
+      return raw_adc_hotend.read_through();
     }
 
     static inline uint16 __forceinline __flatten __pure get_adc_bed()
     {
-      return raw_adc_bed;
+      return raw_adc_bed.read_through();
     }
 
     static inline bool __forceinline __flatten __pure is_ready()
     {
-      return ready_;
+      return ready_.read_through();
     }
 
     static inline void __forceinline __flatten set_ready(bool state)
@@ -112,9 +112,9 @@ namespace
     }
   };
 
-  volatile bool interrupt::ready_ = false;
-  volatile uint16 interrupt::raw_adc_hotend = 0_u16;
-  volatile uint16 interrupt::raw_adc_bed = 0_u16;
+  memory<bool> interrupt::ready_ = false;
+  memory<uint16> interrupt::raw_adc_hotend = 0_u16;
+  memory<uint16> interrupt::raw_adc_bed = 0_u16;
 }
 
 namespace
@@ -295,16 +295,16 @@ bool Temperature::manage_heater() {
   // Failsafe to make sure fubar'd PID settings don't force the heater always on.
   if (__unlikely(target_temperature == 0_C))
   {
-    soft_pwm_amount = 0;
+    soft_pwm_amount.write_through(0);
     WRITE_HEATER_0(LOW);
   }
   else if (__unlikely((current_temperature <= Hotend::min_temperature::Temperature || is_preheating()) || current_temperature >= Hotend::max_temperature::Temperature))
   {
-    soft_pwm_amount = 0;
+    soft_pwm_amount.write_through(0);
   }
   else
   {
-    soft_pwm_amount = HeaterManager::get_power(current_temperature, target_temperature);
+    soft_pwm_amount.write_through(HeaterManager::get_power(current_temperature, target_temperature));
   }
 
   // Failsafe to make sure fubar'd PID settings don't force the heater always on.
@@ -562,7 +562,7 @@ void Temperature::disable_all_heaters() {
 	print_job_timer.stop();
 
 	setTargetHotend(0);
-	soft_pwm_amount = 0;
+	soft_pwm_amount.write_through(0);
 	WRITE_HEATER_0(LOW);
 
 	target_temperature_bed = 0;
@@ -746,7 +746,7 @@ void __forceinline __flatten Temperature::isr()
   static bool current_extruder_state = false;
   static bool current_bed_state = false;
 
-  const uint8_t extruder_pwm = soft_pwm_amount;
+  const uint8_t extruder_pwm = soft_pwm_amount.read_through();
   const uint8_t bed_pwm = []() -> uint8 {
     if constexpr(has_bed_thermal_management)
     {

@@ -205,41 +205,12 @@ void Planner::calculate_trapezoid_for_block(block_t * __restrict const block, co
     plateau_steps = 0;
   }
 
-
-  constexpr const bool use_triangular = false;
-  if constexpr (use_triangular)
-  {
-    if (plateau_steps > 0)
-    {
-      uint24 plateau_half = plateau_steps / 2;
-      plateau_steps -= plateau_half * 2;
-      accelerate_steps += plateau_steps;
-    }
-  }
-
-  constexpr const bool longer_plateau = false;
-  constexpr const uint8 numerator = 1; // 3
-  constexpr const uint8 denominator = 2; // 4
-  if constexpr (longer_plateau)
-  {
-    uint24 accel_frac = (accelerate_steps / denominator) * numerator;
-    uint24 decel_frac = (decelerate_steps / denominator) * numerator;
-    accelerate_steps -= accel_frac;
-    decelerate_steps -= decel_frac;
-
-    plateau_steps += accel_frac + decel_frac;
-  }
-
-  // block->accelerate_until = accelerate_steps;
-  // block->decelerate_after = accelerate_steps+plateau_steps;
-
   // Fill variables used by the stepper in a critical section
   {
-    Tuna::critical_section_not_isr _critsec;
+    Tuna::critical_section _critsec;
     if (!TEST(block->flag, BLOCK_BIT_BUSY)) { // Don't update variables if block is busy.
       block->accelerate_until = accelerate_steps;
       block->decelerate_after = accelerate_steps + plateau_steps;
-      block->deceleration_period = block->step_event_count - block->decelerate_after;
       block->initial_rate = initial_rate;
       block->final_rate = final_rate;
     }
@@ -1020,13 +991,13 @@ void Planner::_buffer_line(const float & __restrict a, const float & __restrict 
     #endif
   }
 
-  if (esteps)
+  if (esteps && fr_mm_s < min_feedrate_mm_s)
   {
-    NOLESS(fr_mm_s, min_feedrate_mm_s);
+    fr_mm_s = min_feedrate_mm_s;
   }
-  else
+  else if (!esteps && fr_mm_s < min_travel_feedrate_mm_s)
   {
-    NOLESS(fr_mm_s, min_travel_feedrate_mm_s);
+    fr_mm_s = min_travel_feedrate_mm_s;
   }
 
   /**

@@ -59,8 +59,6 @@
   #include <SPI.h>
 #endif
 
-constexpr const bool enable_scurve = true;
-
 Stepper stepper; // Singleton
 
 // public:
@@ -70,9 +68,9 @@ block_t * __restrict Stepper::current_block = nullptr;  // A pointer to the bloc
 // private:
 
 uint8_t Stepper::last_direction_bits = 0;        // The next stepping-bits to be output
-int24 Stepper::counter[XYZE] = { 0,0,0,0 };
+uint16_t Stepper::cleaning_buffer_counter = 0;
 
-volatile bool terminate_execution = false;
+int24 Stepper::counter[4] = { 0,0,0,0 };
 
 uint24 Stepper::step_events_completed = 0; // The number of step events executed in the current block
 
@@ -265,7 +263,6 @@ void Stepper::set_directions() {
  */
 ISR(TIMER1_COMPA_vect) {
   Stepper::advance_isr_scheduler();
-  //Stepper::isr();
 }
 
 namespace
@@ -273,146 +270,24 @@ namespace
   inline void __forceinline __flatten _enable_interrupts()
   {
     Tuna::intrinsic::cli();
-    if (Temperature::in_temp_isr)
+    if (__unlikely(Temperature::in_temp_isr))
       CBI(TIMSK0, OCIE0B);
     else
       SBI(TIMSK0, OCIE0B); ENABLE_STEPPER_DRIVER_INTERRUPT();
   }
 }
 
-namespace
-{
-  namespace interrupt
-  {
-    constexpr const auto endstop_check_time = make_uintsz<10>; // How often to check endstops.
-
-    static uintsz<endstop_check_time> isr_until_endstop_check = 0;
-  }
-}
-
-void __forceinline __flatten Stepper::isr()
-{
-  // First attempt at writing an ISR for steppers. Good luck, us!
-  // For now, we are skipping the extruder due to linear advance requirements.
-  // I want to get movement smooth, first.
-  
-  // Are endstops enabled?
-
-#if 0
-  constexpr const bool endstops_enabled = true;
-  
-  if constexpr (endstops_enabled)
-  {
-    if (__unlikely(interrupt::isr_until_endstop_check == 0))
-    {
-      endstops.update();
-      interrupt::isr_until_endstop_check = interrupt::endstop_check_time;
-    }
-  }
-
-  if (terminate_execution)
-  {
-    current_block = nullptr;
-    planner.discard_current_block();
-    if constexpr (SD_FINISHED_STEPPERRELEASE)
-    {
-      if (!terminate_execution)
-      {
-        enqueue_and_echo_commands(SD_FINISHED_RELEASECOMMAND);
-      }
-    }
-    _NEXT_ISR(200); // Run at max speed - 10 KHz
-    _enable_interrupts(); // re-enable ISRs
-    return;
-  }
-
-  // If we are not presently operating on a block, we should try to pop one from the buffer.
-  if (__unlikely(current_block == nullptr))
-  {
-    current_block = planner.get_current_block();
-    if (__unlikely(current_block == nullptr))
-    {
-      // Buffer is empty, so just skip execution.
-      _NEXT_ISR(2000); // Run at slow speed - 1 KHz
-      _enable_interrupts();
-      return;
-    }
-
-    // Otherwise, we are acquiring a new block.
-    trapezoid_generator_reset();
-
-    // This should all have been done in the planner, but the current
-    // Marlin planner does not store the best data in order to do this,
-    // So we have to recalculate a sort-of trapezoid (preferably curved)
-    // here.
-
-    // TODO : When we drastically improve the planner, we can cut this down quite a bit.
-    // For now, we have to calculate all of this crap per-axis as it is.
-
-    // How many steps are we moving along each axis?
-    const int24 steps[XYZE] = {
-      current_block->steps[X_AXIS],
-      current_block->steps[Y_AXIS],
-      current_block->steps[Z_AXIS],
-      current_block->steps[E_AXIS],
-    };
-
-    const uint24 acceleration[XYZE] ={
-      current_block->acceleration_steps_per_s2,
-      current_block->acceleration_steps_per_s2,
-      current_block->acceleration_steps_per_s2,
-      current_block->acceleration_steps_per_s2
-    };
-
-    // What is our speed coming into this block? In steps/sec.
-    const uint24 entry_speed = current_block->initial_rate;
-
-    // What is our speed exiting this block? In steps/sec.
-    const uint24 exit_speed = current_block->final_rate;
-
-    // What is our average speed over the block? In steps/sec.
-    const uint24 mean_speed = current_block->nominal_rate;
-
-    // How long this block is supposed to take, in seconds.
-    // Currently uses float.
-    // segment_time might work here? The planner code is strange and hard to read.
-    const auto block_time = current_block->millimeters / current_block->nominal_speed;
-
-    // Now, we are generating a triangular shape, meaning we are making a curve that goes from our entry speed
-    // ending up at our exit speed, averaging our mean_speed, and taking block_time to finish.
-    // Somewhat difficult.
-    // We are also limited by the 'acceleration' values, and should go no higher than them.
-    // Triangular is being used instead of trapezoidal as once a curve is applied, it will be smoother with less jerk and snap.
-    
-    // To determine optimal triangle shape, we want the ratio of the ratio of entry to mean, and exit to mean.
-    // The greater the difference, the more of the 'triangle' they get, to minimize acceleration.
-    const uint24 entry_mean_diff = (mean_speed > entry_speed) ? (mean_speed - entry_speed) : (entry_speed - mean_speed);
-    const uint24 exit_mean_diff = (mean_speed > exit_speed) ? (mean_speed - exit_speed) : (exit_speed - mean_speed);
-  }
-
-#endif
+void __forceinline __flatten Stepper::isr() {
 
   uint16 ocr_val;
 
   // sample endstops in between step pulses
   static uint16_t step_remaining = 0;
 
-#define ENDSTOP_NOMINAL_OCR_VAL 2048    // check endstops every 1.5ms to guarantee two stepper ISRs within 5ms for BLTouch
-#define OCR_VAL_TOLERANCE 1000          // First max delay is 2.0ms, last min delay is 0.5ms, all others 1.5ms
+  #define ENDSTOP_NOMINAL_OCR_VAL 3000    // check endstops every 1.5ms to guarantee two stepper ISRs within 5ms for BLTouch
+  #define OCR_VAL_TOLERANCE 1000          // First max delay is 2.0ms, last min delay is 0.5ms, all others 1.5ms
 
-  const auto split = [&](auto value)
-  {
-    const uint16 value16 = uint16(value);
-    ocr_val = value16;
-    if (ENDSTOPS_ENABLED && value > ENDSTOP_NOMINAL_OCR_VAL)
-    {
-        const uint16_t remainder = value16 % (ENDSTOP_NOMINAL_OCR_VAL);
-        ocr_val = (remainder < OCR_VAL_TOLERANCE) ? ENDSTOP_NOMINAL_OCR_VAL + remainder : ENDSTOP_NOMINAL_OCR_VAL;
-        step_remaining = value16 - ocr_val;
-    }
-  };
-
-  if (__likely(step_remaining != 0) && ENDSTOPS_ENABLED) {   // Just check endstops - not yet time for a step
+  if (__likely(step_remaining != 0) && __unlikely(ENDSTOPS_ENABLED)) {   // Just check endstops - not yet time for a step
     endstops.update();
     if (step_remaining > ENDSTOP_NOMINAL_OCR_VAL) {
       step_remaining -= ENDSTOP_NOMINAL_OCR_VAL;
@@ -429,17 +304,14 @@ void __forceinline __flatten Stepper::isr()
 
     _enable_interrupts(); // re-enable ISRs
     return;
-  }
+    }
 
-  if (terminate_execution)
-  {
+  if (__unlikely(cleaning_buffer_counter != 0)) {
+    --cleaning_buffer_counter;
     current_block = nullptr;
     planner.discard_current_block();
     #ifdef SD_FINISHED_RELEASECOMMAND
-    if (!terminate_execution && (SD_FINISHED_STEPPERRELEASE))
-    {
-      enqueue_and_echo_commands(SD_FINISHED_RELEASECOMMAND);
-    }
+      if (!cleaning_buffer_counter && (SD_FINISHED_STEPPERRELEASE)) enqueue_and_echo_commands(SD_FINISHED_RELEASECOMMAND);
     #endif
     _NEXT_ISR(200); // Run at max speed - 10 KHz
     _enable_interrupts(); // re-enable ISRs
@@ -453,8 +325,11 @@ void __forceinline __flatten Stepper::isr()
     if (__likely(current_block != nullptr)) {
       trapezoid_generator_reset();
 
+      __assume(current_block->step_event_count > 0);
+
       // Initialize Bresenham counters to 1/2 the ceiling
-      counter[X_AXIS] = counter[Y_AXIS] = counter[Z_AXIS] = counter[E_AXIS] = -(current_block->step_event_count >> 1);
+      counter[3] = counter[2] = counter[1] = counter[0] = -(current_block->step_event_count >> 1);
+
       #if ENABLED(MIXING_EXTRUDER)
         MIXING_STEPPERS_LOOP(i)
           counter_m[i] = -(current_block->mix_event_count[i] >> 1);
@@ -483,6 +358,12 @@ void __forceinline __flatten Stepper::isr()
     }
   }
 
+  __assume(current_block->step_event_count > 0);
+  __assume(current_block->decelerate_after >= current_block->accelerate_until);
+  __assume(current_block->decelerate_after <= current_block->step_event_count);
+  __assume(current_block->accelerate_until <= current_block->step_event_count);
+  __assume((current_block->accelerate_until + current_block->decelerate_after) <= current_block->step_event_count);
+
   // Update endstops state, if enabled
   #if ENABLED(ENDSTOP_INTERRUPTS_FEATURE)
     if (e_hit && ENDSTOPS_ENABLED) {
@@ -490,12 +371,12 @@ void __forceinline __flatten Stepper::isr()
       e_hit--;
     }
   #else
-    if (ENDSTOPS_ENABLED) endstops.update();
+  if (__unlikely(ENDSTOPS_ENABLED)) endstops.update();
   #endif
 
   // Take multiple steps per interrupt (For high speed moves)
   bool all_steps_done = false;
-  for (uint8_t i = step_loops; i--;) {
+  for (uint8_t i = step_loops; __likely(i--);) {
     #if ENABLED(LIN_ADVANCE)
 
       counter[E_AXIS] += current_block->steps[E_AXIS];
@@ -505,7 +386,7 @@ void __forceinline __flatten Stepper::isr()
           // Don't step E here for mixing extruder
           __assume(count_direction[E_AXIS] == -1 || count_direction[E_AXIS] == 1);
           count_position[E_AXIS] += count_direction[E_AXIS];
-          motor_direction(E_AXIS) ? --e_steps[TOOL_E_INDEX] : ++e_steps[TOOL_E_INDEX];
+          __unlikely(motor_direction(E_AXIS)) ? --e_steps[TOOL_E_INDEX] : ++e_steps[TOOL_E_INDEX];
         #endif
       }
 
@@ -525,6 +406,11 @@ void __forceinline __flatten Stepper::isr()
     #define _COUNTER(AXIS) counter[_AXIS(AXIS)]
     #define _APPLY_STEP(AXIS) AXIS ##_APPLY_STEP
     #define _INVERT_STEP_PIN(AXIS) INVERT_## AXIS ##_STEP_PIN
+
+    // Advance the Bresenham counter; start a pulse if the axis needs a step
+    #define PULSE_START(AXIS) \
+      _COUNTER(AXIS) += current_block->steps[_AXIS(AXIS)]; \
+      if (_COUNTER(AXIS) > 0) { _APPLY_STEP(AXIS)(!_INVERT_STEP_PIN(AXIS),0); }
 
     // Stop an active pulse, reset the Bresenham counter, update the position
     #define PULSE_STOP(AXIS) \
@@ -594,33 +480,14 @@ void __forceinline __flatten Stepper::isr()
       uint32 pulse_start = TCNT0;
     #endif
 
-    // Advance the Bresenham counter; start a pulse if the axis needs a step
     #if HAS_X_STEP
-    {
-      _COUNTER(X) += current_block->steps[_AXIS(X)];
-      if (_COUNTER(X) > 0)
-      {
-        _APPLY_STEP(X)(!_INVERT_STEP_PIN(X), 0);
-      }
-    }
+      PULSE_START(X);
     #endif
     #if HAS_Y_STEP
-    {
-      _COUNTER(Y) += current_block->steps[_AXIS(Y)];
-      if (_COUNTER(Y) > 0)
-      {
-        _APPLY_STEP(Y)(!_INVERT_STEP_PIN(Y), 0);
-      }
-    }
+      PULSE_START(Y);
     #endif
     #if HAS_Z_STEP
-    {
-      _COUNTER(Z) += current_block->steps[_AXIS(Z)];
-      if (_COUNTER(Z) > 0)
-      {
-        _APPLY_STEP(Z)(!_INVERT_STEP_PIN(Z), 0);
-      }
-    }
+      PULSE_START(Z);
     #endif
 
     // For minimum pulse time wait before stopping pulses
@@ -672,114 +539,23 @@ void __forceinline __flatten Stepper::isr()
 
   // If we have esteps to execute, fire the next advance_isr "now"
   if (e_steps[TOOL_E_INDEX]) nextAdvanceISR = 0;
-  
-  //using scalar_t = fixedsz<1, 7>;
-  using value_t = fixedsz<65535, 10>;
-  using scalar_t = value_t;
-  static constexpr const scalar_t scalars[] = {
-    0.000583887 ,
-    0.002334183 ,
-    0.0052468   ,
-    0.009314937 ,
-    0.014529091 ,
-    0.020877085 ,
-    0.028344093 ,
-    0.036912676 ,
-    0.04656282  ,
-    0.057271987 ,
-    0.069015167 ,
-    0.081764931 ,
-    0.095491503 ,
-    0.110162823 ,
-    0.125744626 ,
-    0.14220052  ,
-    0.159492071 ,
-    0.177578894 ,
-    0.196418746 ,
-    0.215967627 ,
-    0.236179878 ,
-    0.257008293 ,
-    0.278404227 ,
-    0.300317708 ,
-    0.322697556 ,
-    0.345491503 ,
-    0.368646311 ,
-    0.392107902 ,
-    0.415821479 ,
-    0.43973166  ,
-    0.4637826   ,
-    0.487918127 ,
-    0.512081873 ,
-    0.5362174   ,
-    0.56026834  ,
-    0.584178521 ,
-    0.607892098 ,
-    0.631353689 ,
-    0.654508497 ,
-    0.677302444 ,
-    0.699682292 ,
-    0.721595773 ,
-    0.742991707 ,
-    0.763820122 ,
-    0.784032373 ,
-    0.803581254 ,
-    0.822421106 ,
-    0.840507929 ,
-    0.85779948  ,
-    0.874255374 ,
-    0.889837177 ,
-    0.904508497 ,
-    0.918235069 ,
-    0.930984833 ,
-    0.942728013 ,
-    0.95343718  ,
-    0.963087324 ,
-    0.971655907 ,
-    0.979122915 ,
-    0.985470909 ,
-    0.990685063 ,
-    0.9947532   ,
-    0.997665817 ,
-    0.999416113 ,
-  };
 
   // Calculate new timer value
-  if (step_events_completed <= (uint24)current_block->accelerate_until)
-  {
-    if constexpr (enable_scurve)
-    {
-      const uint16 delta = step_events_completed;
-      const uint16 maxdiff = current_block->accelerate_until;
-      const uint24 a_lambda = uint24(delta) * 63;
-      const uint8 idx = a_lambda / maxdiff;
-      __assume(idx < 64);
+  if (step_events_completed <= current_block->accelerate_until) {
 
-      const scalar_t & __restrict scalar = scalars[idx];
-
-      acc_step_rate = current_block->nominal_rate - current_block->initial_rate;
-      acc_step_rate = (scalar * acc_step_rate).rounded_to<uint16>();
-    }
-    else
-    {
-      acc_step_rate = MultiU24X24toH16(acceleration_time, current_block->acceleration_rate);
-    }
-
-    //debug::dump("u_idx"_p, idx);
-    //static scalar_t lscalar = {};
-    //if (lscalar != scalar)
-    //{
-    //  debug::dump("step_events_completed"_p, step_events_completed);
-    //  debug::dump("accelerate_until"_p, current_block->accelerate_until);
-    //  lscalar = scalar;
-    //}
-    //debug::dump("u_step_rate"_p, acc_step_rate);
-
+    acc_step_rate = MultiU24X24toH16(acceleration_time, current_block->acceleration_rate);
     acc_step_rate += current_block->initial_rate;
+
+    // upper limit
+    if (__unlikely(acc_step_rate > current_block->nominal_rate))
+    {
+      acc_step_rate = current_block->nominal_rate;
+    }
 
     // step_rate to timer interval
     const uint16_t timer = calc_timer(acc_step_rate);
 
-    split(timer);  // split step into multiple ISRs if larger than  ENDSTOP_NOMINAL_OCR_VAL
+    ocr_val = timer;  // split step into multiple ISRs if larger than  ENDSTOP_NOMINAL_OCR_VAL
     _NEXT_ISR(ocr_val);
 
     acceleration_time += timer;
@@ -798,52 +574,22 @@ void __forceinline __flatten Stepper::isr()
 
     eISR_Rate = adv_rate(e_steps[TOOL_E_INDEX], timer, step_loops);
   }
-  else if (step_events_completed > current_block->decelerate_after)
-  {
-    uint16 step_rate;
-    if constexpr (enable_scurve)
-    {
-      const uint16 delta = step_events_completed - current_block->decelerate_after;
-      const uint16 maxdiff = current_block->deceleration_period;
-      const uint24 a_lambda = uint24(delta) * 63;
-      const uint8 idx = a_lambda / maxdiff;
-      __assume(idx < 64);
+  else if (step_events_completed > current_block->decelerate_after) {
+    uint16_t step_rate = MultiU24X24toH16(deceleration_time, current_block->acceleration_rate);
 
-      const scalar_t & __restrict scalar = scalars[idx];
-
-      //debug::dump("d_idx"_p, idx);
-      //static scalar_t lscalar = {};
-      //if (lscalar != scalar)
-      //{
-      //  debug::dump("step_events_completed"_p, step_events_completed);
-      //  debug::dump("decelerate_after"_p, current_block->decelerate_after);
-      //  lscalar = scalar;
-      //}
-
-      if (current_block->nominal_rate >= current_block->final_rate)
-      {
-        step_rate = current_block->nominal_rate - current_block->final_rate;
-        step_rate = (scalar * step_rate).rounded_to<uint16>();
-        //debug::dump("d_step_rate"_p, step_rate);
-        step_rate = current_block->nominal_rate - step_rate;
-      }
-      else
-      {
-        step_rate = current_block->final_rate - current_block->nominal_rate;
-        step_rate = (scalar * step_rate).rounded_to<uint16>();
-        //debug::dump("d_step_rate"_p, step_rate);
-        step_rate = current_block->final_rate - step_rate;
-      }
+    if (step_rate < acc_step_rate) { // Still decelerating?
+      step_rate = acc_step_rate - step_rate;
+      NOLESS(step_rate, current_block->final_rate);
     }
     else
     {
-      step_rate = MultiU24X24toH16(deceleration_time, current_block->acceleration_rate);
+      step_rate = current_block->final_rate;
     }
 
     // step_rate to timer interval
     const uint16_t timer = calc_timer(step_rate);
 
-    split(timer);  // split step into multiple ISRs if larger than  ENDSTOP_NOMINAL_OCR_VAL
+    ocr_val = timer;  // split step into multiple ISRs if larger than  ENDSTOP_NOMINAL_OCR_VAL
     _NEXT_ISR(ocr_val);
 
     deceleration_time += timer;
@@ -865,6 +611,7 @@ void __forceinline __flatten Stepper::isr()
     #endif
   }
   else {
+    acc_step_rate = current_block->nominal_rate;
 
     #if ENABLED(LIN_ADVANCE)
 
@@ -875,7 +622,7 @@ void __forceinline __flatten Stepper::isr()
 
     #endif
 
-    split(OCR1A_nominal); // split step into multiple ISRs if larger than  ENDSTOP_NOMINAL_OCR_VAL
+    ocr_val = OCR1A_nominal;  // split step into multiple ISRs if larger than  ENDSTOP_NOMINAL_OCR_VAL
     _NEXT_ISR(ocr_val);
 
     // ensure we're running at the correct step rate, even if we just came off an acceleration
@@ -1236,7 +983,7 @@ void Stepper::set_position(const int24 &a, const int24 &b, const int24 &c, const
 
   synchronize(); // Bad to set stepper counts in the middle of a move
 
-  Tuna::critical_section_not_isr _critsec;
+  CRITICAL_SECTION_START;
 
   #if CORE_IS_XY
     // corexy positioning
@@ -1262,24 +1009,28 @@ void Stepper::set_position(const int24 &a, const int24 &b, const int24 &c, const
   #endif
 
   count_position[E_AXIS] = e;
+  CRITICAL_SECTION_END;
 }
 
 void __forceinline __flatten Stepper::set_position(const AxisEnum &axis, const int24 &v) {
-  Tuna::critical_section_not_isr _critsec;
+  CRITICAL_SECTION_START;
   count_position[axis] = v;
+  CRITICAL_SECTION_END;
 }
 
 void __forceinline __flatten Stepper::set_e_position(const int24 &e) {
-  Tuna::critical_section_not_isr _critsec;
+  CRITICAL_SECTION_START;
   count_position[E_AXIS] = e;
+  CRITICAL_SECTION_END;
 }
 
 /**
  * Get a stepper's position in steps.
  */
 int24 Stepper::position(AxisEnum axis) {
-  Tuna::critical_section_not_isr _critsec;
+  CRITICAL_SECTION_START;
   const int24 count_pos = count_position[axis];
+  CRITICAL_SECTION_END;
   return count_pos;
 }
 
@@ -1315,12 +1066,14 @@ void Stepper::finish_and_disable() {
 }
 
 void Stepper::quick_stop() {
-  terminate_execution = true;
+  cleaning_buffer_counter = 5000;
   DISABLE_STEPPER_DRIVER_INTERRUPT();
   while (planner.blocks_queued()) planner.discard_current_block();
   current_block = nullptr;
   ENABLE_STEPPER_DRIVER_INTERRUPT();
-  terminate_execution = false;
+  #if ENABLED(ULTRA_LCD)
+    planner.clear_block_buffer_runtime();
+  #endif
 }
 
 void __forceinline __flatten Stepper::endstop_triggered(AxisEnum axis) {
@@ -1342,13 +1095,11 @@ void __forceinline __flatten Stepper::endstop_triggered(AxisEnum axis) {
 }
 
 void Stepper::report_positions() {
-  long xpos, ypos, zpos;
-  {
-    Tuna::critical_section_not_isr _critsec;
-    xpos = count_position[X_AXIS];
-    ypos = count_position[Y_AXIS];
-    zpos = count_position[Z_AXIS];
-  }
+  CRITICAL_SECTION_START;
+  const long xpos = count_position[X_AXIS],
+             ypos = count_position[Y_AXIS],
+             zpos = count_position[Z_AXIS];
+  CRITICAL_SECTION_END;
 
   #if CORE_IS_XY || CORE_IS_XZ || IS_SCARA
     SERIAL_PROTOCOLPGM(MSG_COUNT_A);

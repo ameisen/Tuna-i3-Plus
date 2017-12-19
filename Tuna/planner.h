@@ -90,8 +90,6 @@ struct block_t final
           decelerate_after,                 // The index of the step event on which to start decelerating
           acceleration_rate;                // The acceleration rate used for acceleration calculation
 
-  uint24 deceleration_period;
-
   uint8 direction_bits;                   // The direction bit set for this block (refers to *_DIRECTION_BIT in config.h)
 
   // Advance extrusion

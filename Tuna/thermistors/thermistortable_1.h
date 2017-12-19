@@ -89,7 +89,7 @@ namespace Tuna::Thermistor
     { 994, 15 },
     { 1000, 10 },
     { 1005, 5 },
-    { 1009, 0 }
+    { 1009, 0 },
   };
   constexpr uint8_t temp_table_size = array_size(temp_table);
 
