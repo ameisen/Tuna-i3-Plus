@@ -209,10 +209,12 @@ void Planner::calculate_trapezoid_for_block(block_t * __restrict const block, co
   {
     Tuna::critical_section _critsec;
     if (!TEST(block->flag, BLOCK_BIT_BUSY)) { // Don't update variables if block is busy.
-      block->accelerate_until = accelerate_steps;
-      block->decelerate_after = accelerate_steps + plateau_steps;
-      block->initial_rate = initial_rate;
-      block->final_rate = final_rate;
+      block_t * __restrict out = as<block_t * __restrict>(block);
+      out->accelerate_until = accelerate_steps;
+      out->decelerate_after = accelerate_steps + plateau_steps;
+      out->initial_rate = initial_rate;
+      out->final_rate = final_rate;
+      out->acceleration_rate = int24(accel * 16777216.0 / ((F_CPU) * 0.125)); // * 8.388608
     }
   }
 }
@@ -265,7 +267,7 @@ void Planner::reverse_pass() {
       b = prev_block_index(b);
       block[2] = block[1];
       block[1] = block[0];
-      block[0] = &block_buffer[b];
+      block[0] = as<block_t * __restrict>(&block_buffer[b]);
       reverse_pass_kernel(block[1], block[2]);
     }
   }
@@ -302,7 +304,7 @@ void Planner::forward_pass() {
   for (uint8_t b = block_buffer_tail; b != block_buffer_head; b = next_block_index(b)) {
     block[0] = block[1];
     block[1] = block[2];
-    block[2] = &block_buffer[b];
+    block[2] = as<block_t * __restrict>(&block_buffer[b]);
     forward_pass_kernel(block[0], block[1]);
   }
   forward_pass_kernel(block[1], block[2]);
@@ -319,7 +321,7 @@ void Planner::recalculate_trapezoids() {
 
   while (block_index != block_buffer_head) {
     block_t * __restrict current = next;
-    next = &block_buffer[block_index];
+    next = as<block_t * __restrict>(&block_buffer[block_index]);
     if (current) {
       // Recalculate if current block entry or exit junction speed has changed.
       if (TEST(current->flag, BLOCK_BIT_RECALCULATE) || TEST(next->flag, BLOCK_BIT_RECALCULATE)) {
@@ -380,7 +382,7 @@ void Planner::recalculate() {
 
     float high = 0.0;
     for (uint8_t b = block_buffer_tail; b != block_buffer_head; b = next_block_index(b)) {
-      const block_t & __restrict block = block_buffer[b];
+      const block_t & __restrict block = as<const block_t & __restrict>(block_buffer[b]);
       if (block.steps[X_AXIS] || block.steps[Y_AXIS] || block.steps[Z_AXIS]) {
         float se = (float)block.steps[E_AXIS] / block.step_event_count * block.nominal_speed; // mm/sec;
         NOLESS(high, se);
@@ -419,7 +421,7 @@ void Planner::check_axes_activity() {
   if (blocks_queued()) {
 
     #if FAN_COUNT > 0
-      for (uint8_t i = 0; i < FAN_COUNT; i++) tail_fan_speed[i] = block_buffer[block_buffer_tail].fan_speed[i];
+      for (uint8_t i = 0; i < FAN_COUNT; i++) tail_fan_speed[i] = as<const block_t & __restrict>(block_buffer[block_buffer_tail]).fan_speed[i];
     #endif
 
     #if ENABLED(BARICUDA)
@@ -433,7 +435,7 @@ void Planner::check_axes_activity() {
     #endif
 
     for (uint8_t b = block_buffer_tail; b != block_buffer_head; b = next_block_index(b)) {
-      const block_t & __restrict block = block_buffer[b];
+      const block_t & __restrict block = as<const block_t & __restrict>(block_buffer[b]);
       LOOP_XYZE(i) if (block.steps[i]) axis_active[i]++;
     }
   }
@@ -815,7 +817,7 @@ void Planner::_buffer_line(const float & __restrict a, const float & __restrict 
   while (block_buffer_tail == next_buffer_head) idle();
 
   // Prepare to set up new block
-  block_t* block = &block_buffer[block_buffer_head];
+  block_t * __restrict block = as<block_t * __restrict>(&block_buffer[block_buffer_head]);
 
   // Clear all flags, including the "busy" bit
   block->flag = 0;
@@ -865,7 +867,9 @@ void Planner::_buffer_line(const float & __restrict a, const float & __restrict 
     block->e_to_p_pressure = baricuda_e_to_p_pressure;
   #endif
 
+#if EXTRUDERS > 1
   block->active_extruder = extruder;
+#endif
 
   //enable active axes
   #if CORE_IS_XY
@@ -1222,7 +1226,6 @@ void Planner::_buffer_line(const float & __restrict a, const float & __restrict 
   }
   block->acceleration_steps_per_s2 = accel;
   block->acceleration = accel / steps_per_mm;
-  block->acceleration_rate = int24(accel * 16777216.0 / ((F_CPU) * 0.125)); // * 8.388608
 
   // Initial limit on the segment entry velocity
   float vmax_junction;
