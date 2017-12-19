@@ -297,4 +297,27 @@ namespace Tuna
     // static_assert(value > uint8(-1), "out of range u8 literal");
     return value;
   }
+
+  namespace _internal
+  {
+    template <typename T>
+    struct remove_reference
+    {
+      using type = T;
+    };
+
+    template <typename T>
+    struct remove_reference<T &>
+    {
+      using type = T;
+    };
+
+    template <typename T>
+    struct remove_reference<T &&>
+    {
+      using type = T;
+    };
+  }
+
+  template <typename T> using remove_reference = typename _internal::remove_reference<T>::type;
 }

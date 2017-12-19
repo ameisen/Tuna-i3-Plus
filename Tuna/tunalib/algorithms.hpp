@@ -1,9 +1,12 @@
 #pragma once
 
+#include "initializer_list.h"
+
 // Get rid of any macros that someone already may have defined.
 #undef min
 #undef max
 #undef clamp
+#undef bit
 
 namespace Tuna
 {
@@ -131,5 +134,21 @@ namespace Tuna
   constexpr inline __forceinline __flatten bool is_pow2(arg_type<T> value)
   {
     return _internal::is_pow2(value);
+  }
+
+  template <typename T>
+  constexpr inline __forceinline __flatten __const remove_reference<T> bit (uint8 _bit)
+  {
+    return remove_reference<T>(1 << _bit);
+  }
+
+  template <typename T, typename... BITS>
+  constexpr inline __forceinline __flatten __const remove_reference<T> bits (BITS... _bits)
+  {
+    remove_reference<T> value = 0;
+
+    T _unused[] = { (value |= bit<T>(_bits))... };
+
+    return value;
   }
 }
