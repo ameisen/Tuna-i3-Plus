@@ -106,11 +106,11 @@ namespace Tuna::debug
       {
         if constexpr (sizeof...(Args) != 0)
         {
-          writer += _sprintf_P(writer, "%f\t"_p.c_str(), value);
+          writer += sprintf_P(writer, "%f\t"_p.c_str(), value);
         }
         else
         {
-          writer += _sprintf_P(writer, "%f"_p.c_str(), value);
+          writer += sprintf_P(writer, "%f"_p.c_str(), value);
         }
         
       }
