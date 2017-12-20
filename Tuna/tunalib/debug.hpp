@@ -18,7 +18,7 @@ namespace Tuna::debug
       return buffer + N2;
     }
 
-    template <typename T, uint8 base = 10>
+    template <bool tabulate = false, typename T, uint8 base = 10>
     char * int_to_string(char * __restrict buffer, arg_type<T> in_value)
     {
       typename type_trait<T>::unsigned_type value = in_value;
@@ -31,8 +31,17 @@ namespace Tuna::debug
       if (in_value == 0)
       {
         buffer[0] = '0';
-        buffer[1] = '\0';
-        return buffer + 1;
+        if constexpr(tabulate)
+        {
+          buffer[1] = '\t';
+          buffer[2] = '\0';
+          return buffer + 2;
+        }
+        else
+        {
+          buffer[1] = '\0';
+          return buffer + 1;
+        }
       }
 
       uint8 written = 0;
@@ -64,39 +73,65 @@ namespace Tuna::debug
       }
 
       reverse();
+      if constexpr(tabulate)
+      {
+        buffer[written++] = '\t';
+      }
       buffer[written] = '\0';
       return &buffer[written];
     }
   }
 
-  template <uint8 base = 10, typename T, usize N>
-  void dump(arg_type<flash_char_array<N>> name, arg_type<T> value)
+  namespace internal
+  {
+    template <typename T, typename ...Args>
+    void dump(char * __restrict writer, const T & __restrict value, const Args & __restrict ...args)
+    {
+      if constexpr (
+        is_same<T, uint8> ||
+        is_same<T, uint16> ||
+        is_same<T, uint24> ||
+        is_same<T, uint32> ||
+        is_same<T, uint64> ||
+        is_same<T, int8> ||
+        is_same<T, int16> ||
+        is_same<T, int24> ||
+        is_same<T, int32> ||
+        is_same<T, int64>
+        )
+      {
+        writer = _internal::int_to_string<sizeof...(Args) != 0>(writer, value);
+      }
+      else if constexpr (is_same<T, float>)
+      {
+        if constexpr (sizeof...(Args) != 0)
+        {
+          writer += _sprintf_P(writer, "%f\t"_p.c_str(), value);
+        }
+        else
+        {
+          writer += _sprintf_P(writer, "%f"_p.c_str(), value);
+        }
+        
+      }
+
+      if constexpr (sizeof...(Args) != 0)
+      {
+        dump(writer, args...);
+      }
+    }
+  }
+
+  template <uint8 base = 10, usize N, typename ...Args>
+  void dump(arg_type<flash_char_array<N>> name, const Args & __restrict ...args)
   {
     // TODO this can be done faster.
     char buffer[N + 32];
     char *writer = buffer;
     writer = _internal::string_copy(writer, name);
-    writer = _internal::string_copy(writer, ": "_p);
+    writer = _internal::string_copy(writer, "\t"_p);
 
-    if constexpr (
-      is_same<T, uint8> ||
-      is_same<T, uint16> ||
-      is_same<T, uint24> ||
-      is_same<T, uint32> ||
-      is_same<T, uint64> ||
-      is_same<T, int8> ||
-      is_same<T, int16> ||
-      is_same<T, int24> ||
-      is_same<T, int32> ||
-      is_same<T, int64>
-    )
-    {
-      _internal::int_to_string(writer, value);
-    }
-    else if constexpr (is_same<T, float>)
-    {
-      sprintf_P(writer, "%f"_p.c_str(), value);
-    }
+    internal::dump(writer, args...);
 
     Serial.println(buffer);
   }
