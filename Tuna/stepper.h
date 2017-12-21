@@ -291,6 +291,7 @@ class Stepper final {
     // Called whenever a new block begins.
     static inline void __forceinline __flatten trapezoid_generator_reset()
     {
+      __assume(current_block->active_extruder == 0);
 
 #if EXTRUDERS > 1
       static int8_t last_extruder = -1;

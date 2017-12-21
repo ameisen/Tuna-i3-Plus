@@ -277,9 +277,68 @@ namespace
   }
 }
 
+constexpr const int16 min_sin = -4096;
+constexpr const int16 max_sin = 4096;
+
+// http://www.coranac.com/2009/07/sines/
+/// A sine approximation via a third-order approx.
+/// @param x    Angle (with 2^15 units/circle)
+/// @return     Sine value (Q12)
+int16 isin_15_32(uint16 val)
+{
+  // S(x) = x * ( (3<<p) - (x*x>>r) ) >> s
+  // n : Q-pos for quarter circle             13
+  // A : Q-pos for output                     12
+  // p : Q-pos for parentheses intermediate   15
+  // r = 2n-p                                 11
+  // s = A-1-p-n                              17
+
+  constexpr const int32 qN = 13;
+  constexpr const int32 qA = 12;
+  constexpr const int32 qP = 15;
+  constexpr const int32 qR = int32(2) * qN - qP;
+  constexpr const int32 qS = qN + qP + 1 - qA;
+
+  int32 x = val;
+  x = x << (30 - qN);          // shift to full s32 range (Q13->Q30)
+
+  if ((x ^ (x << 1)) < 0)     // test for quadrant 1 or 2
+    x = (1_i32 << 31) - x;
+
+  x = x >> (30 - qN);
+
+  return x * ((3_i32 << qP) - (x*x >> qR)) >> qS;
+}
+
+template <typename T>
+struct interpolator final
+{
+  const T delta;
+  const T max;
+};
+
+template <typename T, typename U>
+constexpr inline interpolator<U> __forceinline __flatten interpoland(T x, U a, U b)
+{
+  U delta = x - a;
+  U max_diff = b - a;
+
+  return { delta, max_diff };
+}
+
+template <typename interpolator_t, typename T>
+constexpr inline T __forceinline __flatten interpolate(arg_type<interpolator_t> interpolator, T b, T a)
+{
+  using next_type_1 = typename type_trait<T>::larger_type;
+  using next_type = typename type_trait<next_type_1>::larger_type;
+  next_type a_lambda = (next_type(a) * next_type(interpolator.delta));
+  next_type b_lambda = (next_type(b) * next_type(interpolator.max - interpolator.delta));
+  return (a_lambda + b_lambda) / interpolator.max;
+}
+
 void __forceinline __flatten Stepper::isr() {
 
-#define ENDSTOP_NOMINAL_OCR_VAL 4096    // check endstops every 1.5ms to guarantee two stepper ISRs within 5ms for BLTouch
+#define ENDSTOP_NOMINAL_OCR_VAL 3000    // check endstops every 1.5ms to guarantee two stepper ISRs within 5ms for BLTouch
 #define OCR_VAL_TOLERANCE 1000          // First max delay is 2.0ms, last min delay is 0.5ms, all others 1.5ms
 
   uint16 ocr_val;
@@ -291,7 +350,7 @@ void __forceinline __flatten Stepper::isr() {
   {
     const uint16 value16 = uint16(value);
     ocr_val = value16;
-    if (__unlikely(ENDSTOPS_ENABLED) && value > ENDSTOP_NOMINAL_OCR_VAL)
+    if (ENDSTOPS_ENABLED && value > ENDSTOP_NOMINAL_OCR_VAL)
     {
       const uint16_t remainder = value16 % (ENDSTOP_NOMINAL_OCR_VAL);
       ocr_val = (remainder < OCR_VAL_TOLERANCE) ? ENDSTOP_NOMINAL_OCR_VAL + remainder : ENDSTOP_NOMINAL_OCR_VAL;
@@ -375,7 +434,6 @@ void __forceinline __flatten Stepper::isr() {
   __assume(current_block->decelerate_after <= current_block->step_event_count);
   __assume(current_block->accelerate_until <= current_block->step_event_count);
   __assume((current_block->accelerate_until + current_block->decelerate_after) <= current_block->step_event_count);
-  __assume(current_block->active_extruder == 0);
 
   // Update endstops state, if enabled
   #if ENABLED(ENDSTOP_INTERRUPTS_FEATURE)
@@ -386,6 +444,8 @@ void __forceinline __flatten Stepper::isr() {
   #else
   if (__unlikely(ENDSTOPS_ENABLED)) endstops.update();
   #endif
+
+  static uint24 last_step_events = 0;
 
   // Take multiple steps per interrupt (For high speed moves)
   bool all_steps_done = false;
@@ -493,6 +553,31 @@ void __forceinline __flatten Stepper::isr() {
       uint32 pulse_start = TCNT0;
     #endif
 
+    //if (step_events_completed <= current_block->accelerate_until)
+    //{
+    //  debug::dump(
+    //    "speed"_p,
+    //    acc_step_rate
+    //  );
+    //  Tuna::intrinsic::wdr();
+    //}
+    //else if (step_events_completed > current_block->accelerate_until)
+    //{
+    //  debug::dump(
+    //    "speed"_p,
+    //    acc_step_rate
+    //  );
+    //  Tuna::intrinsic::wdr();
+    //}
+    //else
+    //{
+    //  debug::dump(
+    //    "speed"_p,
+    //    current_block->nominal_rate
+    //  );
+    //  Tuna::intrinsic::wdr();
+    //}
+
     #if HAS_X_STEP
       PULSE_START(X);
     #endif
@@ -556,13 +641,29 @@ void __forceinline __flatten Stepper::isr() {
   // Calculate new timer value
   if (step_events_completed <= current_block->accelerate_until) {
 
-    acc_step_rate = MultiU24X24toH16(acceleration_time, current_block->acceleration_rate);
-    acc_step_rate += current_block->initial_rate;
+    last_step_events = step_events_completed;
 
-    // upper limit
-    if (__unlikely(acc_step_rate > current_block->nominal_rate))
+    //const uint24 accelerate_until = (current_block->accelerate_until / 3) * 2;
+    const uint24 accelerate_until = current_block->accelerate_until;
+
+    if (step_events_completed <= accelerate_until)
     {
-      acc_step_rate = current_block->nominal_rate;
+      const uint16 ratio = (uint32(step_events_completed) << 14) / accelerate_until;
+      __assume(ratio <= (1 << 14));
+      uint16 sin = isin_15_32(ratio + 24576) + 4096;
+      sin = (sin + ((ratio / 2) * 3)) / 4;
+      __assume(sin >= 0 && sin <= (max_sin * 2));
+      // Sin is now a value between 0 and max_sin, which gives us an interpoland.
+      const auto interp = interpoland(sin, 0_u16, uint16(max_sin * 2));
+
+      const uint16 initial_rate16 = uint16(min(current_block->initial_rate, 0xFFFF_u16));
+      const uint16 nominal_rate16 = uint16(min(current_block->nominal_rate, 0xFFFF_u16));
+
+      acc_step_rate = interpolate(interp, initial_rate16, nominal_rate16);
+    }
+    else
+    {
+      acc_step_rate = uint16(min(current_block->nominal_rate, 0xFFFF_u16));
     }
 
     // step_rate to timer interval
@@ -588,19 +689,34 @@ void __forceinline __flatten Stepper::isr() {
     eISR_Rate = adv_rate(e_steps[TOOL_E_INDEX], timer, step_loops);
   }
   else if (step_events_completed > current_block->decelerate_after) {
-    uint16_t step_rate = MultiU24X24toH16(deceleration_time, current_block->acceleration_rate);
 
-    if (step_rate < acc_step_rate) { // Still decelerating?
-      step_rate = acc_step_rate - step_rate;
-      NOLESS(step_rate, current_block->final_rate);
+    //const uint24 decelerate_after = current_block->decelerate_after + (((current_block->step_event_count - current_block->decelerate_after) / 3));
+    const uint24 decelerate_after = current_block->decelerate_after + (current_block->step_event_count - current_block->decelerate_after);
+
+    last_step_events = step_events_completed;
+    
+    if (step_events_completed > decelerate_after)
+    {
+      const uint16 ratio = (uint32(step_events_completed - decelerate_after) << 14) / (current_block->step_event_count - decelerate_after);
+      uint16 sin = isin_15_32(ratio + 24576) + 4096;
+      sin = (sin + ((ratio / 2) * 3)) / 4;
+      __assume(sin >= 0 && sin <= (max_sin * 2));
+      // Sin is now a value between 0 and max_sin, which gives us an interpoland.
+      const auto interp = interpoland(sin, 0_u16, uint16(max_sin * 2));
+
+      const uint16 final_rate16 = uint16(min(current_block->final_rate, 0xFFFF_u16));
+      const uint16 nominal_rate16 = uint16(min(current_block->nominal_rate, 0xFFFF_u16));
+
+      acc_step_rate = interpolate(interp, nominal_rate16, final_rate16);
     }
     else
     {
-      step_rate = current_block->final_rate;
+      acc_step_rate = uint16(min(current_block->nominal_rate, 0xFFFF_u16));
     }
 
+
     // step_rate to timer interval
-    const uint16_t timer = calc_timer(step_rate);
+    const uint16_t timer = calc_timer(acc_step_rate);
 
     split(timer);  // split step into multiple ISRs if larger than  ENDSTOP_NOMINAL_OCR_VAL
     _NEXT_ISR(ocr_val);
@@ -614,7 +730,7 @@ void __forceinline __flatten Stepper::isr() {
           MIXING_STEPPERS_LOOP(j)
             current_estep_rate[j] = ((uint32)step_rate * current_block->abs_adv_steps_multiplier8 * current_block->step_event_count / current_block->mix_event_count[j]) >> 17;
         #else
-          current_estep_rate[TOOL_E_INDEX] = ((uint32)step_rate * current_block->abs_adv_steps_multiplier8) >> 17;
+          current_estep_rate[TOOL_E_INDEX] = ((uint32)acc_step_rate * current_block->abs_adv_steps_multiplier8) >> 17;
         #endif
       }
     #endif // LIN_ADVANCE

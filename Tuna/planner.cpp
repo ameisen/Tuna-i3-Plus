@@ -215,9 +215,9 @@ void Planner::calculate_trapezoid_for_block(block_t * __restrict const block, co
       out->initial_rate = initial_rate;
       out->final_rate = final_rate;
       out->acceleration_rate = int24(accel * 16777216.0 / ((F_CPU) * 0.125)); // * 8.388608
+      }
+      }
     }
-  }
-}
 
 // "Junction jerk" in this context is the immediate change in speed at the junction of two blocks.
 // This method will calculate the junction jerk as the euclidean distance between the nominal
@@ -852,6 +852,8 @@ void Planner::_buffer_line(const float & __restrict a, const float & __restrict 
   // Bail if this is a zero-length block
   if (__unlikely(block->step_event_count < MIN_STEPS_PER_SEGMENT)) return;
 
+  __assume(block->step_event_count > 0);
+
   // For a mixing extruder, get a magnified step_event_count for each
   #if ENABLED(MIXING_EXTRUDER)
     for (uint8_t i = 0; i < MIXING_STEPPERS; i++)
@@ -1003,7 +1005,7 @@ void Planner::_buffer_line(const float & __restrict a, const float & __restrict 
   {
     fr_mm_s = min_travel_feedrate_mm_s;
   }
-
+  __assume(fr_mm_s > 0);
   /**
    * This part of the code calculates the total length of the movement.
    * For cartesian bots, the X_AXIS is the real X movement and same for Y_AXIS.
@@ -1057,10 +1059,12 @@ void Planner::_buffer_line(const float & __restrict a, const float & __restrict 
       #endif
     );
   }
+  __assume(block->millimeters > 0);
   float inverse_millimeters = 1.0 / block->millimeters;  // Inverse millimeters to remove multiple divides
 
   // Calculate moves/second for this move. No divide by zero due to previous checks.
   float inverse_mm_s = fr_mm_s * inverse_millimeters;
+  __assume(inverse_mm_s > 0);
 
   const uint8_t moves_queued = movesplanned();
 
@@ -1085,7 +1089,7 @@ void Planner::_buffer_line(const float & __restrict a, const float & __restrict 
     CRITICAL_SECTION_START
       block_buffer_runtime_us += segment_time;
     CRITICAL_SECTION_END
-  #endif
+#endif
 
   block->nominal_speed = block->millimeters * inverse_mm_s; // (mm/sec) Always > 0
   block->nominal_rate = CEIL(block->step_event_count * inverse_mm_s); // (step/sec) Always > 0
