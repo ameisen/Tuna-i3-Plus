@@ -29,6 +29,9 @@
     <None Include="rbbuild\clang_buildhandler.rb">
       <Filter>rbbuild</Filter>
     </None>
+    <None Include="arduino\wiring_pulse.S">
+      <Filter>arduino</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="tunalib\initializer_list.h">
@@ -240,6 +243,63 @@
     <ClInclude Include="tunalib\memory.hpp">
       <Filter>tunalib</Filter>
     </ClInclude>
+    <ClInclude Include="arduino\binary.h">
+      <Filter>arduino</Filter>
+    </ClInclude>
+    <ClInclude Include="arduino\Client.h">
+      <Filter>arduino</Filter>
+    </ClInclude>
+    <ClInclude Include="arduino\HardwareSerial.h">
+      <Filter>arduino</Filter>
+    </ClInclude>
+    <ClInclude Include="arduino\HardwareSerial_private.h">
+      <Filter>arduino</Filter>
+    </ClInclude>
+    <ClInclude Include="arduino\IPAddress.h">
+      <Filter>arduino</Filter>
+    </ClInclude>
+    <ClInclude Include="arduino\new.h">
+      <Filter>arduino</Filter>
+    </ClInclude>
+    <ClInclude Include="arduino\PluggableUSB.h">
+      <Filter>arduino</Filter>
+    </ClInclude>
+    <ClInclude Include="arduino\Print.h">
+      <Filter>arduino</Filter>
+    </ClInclude>
+    <ClInclude Include="arduino\Printable.h">
+      <Filter>arduino</Filter>
+    </ClInclude>
+    <ClInclude Include="arduino\Server.h">
+      <Filter>arduino</Filter>
+    </ClInclude>
+    <ClInclude Include="arduino\Stream.h">
+      <Filter>arduino</Filter>
+    </ClInclude>
+    <ClInclude Include="arduino\Udp.h">
+      <Filter>arduino</Filter>
+    </ClInclude>
+    <ClInclude Include="arduino\USBAPI.h">
+      <Filter>arduino</Filter>
+    </ClInclude>
+    <ClInclude Include="arduino\USBCore.h">
+      <Filter>arduino</Filter>
+    </ClInclude>
+    <ClInclude Include="arduino\USBDesc.h">
+      <Filter>arduino</Filter>
+    </ClInclude>
+    <ClInclude Include="arduino\WCharacter.h">
+      <Filter>arduino</Filter>
+    </ClInclude>
+    <ClInclude Include="arduino\wiring_private.h">
+      <Filter>arduino</Filter>
+    </ClInclude>
+    <ClInclude Include="arduino\WString.h">
+      <Filter>arduino</Filter>
+    </ClInclude>
+    <ClInclude Include="arduino\Arduino.h">
+      <Filter>arduino</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tunalib">
@@ -271,6 +331,9 @@
     </Filter>
     <Filter Include="tunalib\arch">
       <UniqueIdentifier>{5d858d9c-7647-49ba-8fe7-a7ed6a17d54f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="arduino">
+      <UniqueIdentifier>{a9b38c30-f096-41fa-8462-10d56e314d78}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -306,6 +369,78 @@
     </ClCompile>
     <ClCompile Include="thermal\managers\simple.cpp">
       <Filter>thermal\managers</Filter>
+    </ClCompile>
+    <ClCompile Include="arduino\CDC.cpp">
+      <Filter>arduino</Filter>
+    </ClCompile>
+    <ClCompile Include="arduino\HardwareSerial.cpp">
+      <Filter>arduino</Filter>
+    </ClCompile>
+    <ClCompile Include="arduino\HardwareSerial0.cpp">
+      <Filter>arduino</Filter>
+    </ClCompile>
+    <ClCompile Include="arduino\HardwareSerial1.cpp">
+      <Filter>arduino</Filter>
+    </ClCompile>
+    <ClCompile Include="arduino\HardwareSerial2.cpp">
+      <Filter>arduino</Filter>
+    </ClCompile>
+    <ClCompile Include="arduino\HardwareSerial3.cpp">
+      <Filter>arduino</Filter>
+    </ClCompile>
+    <ClCompile Include="arduino\hooks.c">
+      <Filter>arduino</Filter>
+    </ClCompile>
+    <ClCompile Include="arduino\IPAddress.cpp">
+      <Filter>arduino</Filter>
+    </ClCompile>
+    <ClCompile Include="arduino\main.cpp">
+      <Filter>arduino</Filter>
+    </ClCompile>
+    <ClCompile Include="arduino\new.cpp">
+      <Filter>arduino</Filter>
+    </ClCompile>
+    <ClCompile Include="arduino\PluggableUSB.cpp">
+      <Filter>arduino</Filter>
+    </ClCompile>
+    <ClCompile Include="arduino\Print.cpp">
+      <Filter>arduino</Filter>
+    </ClCompile>
+    <ClCompile Include="arduino\Stream.cpp">
+      <Filter>arduino</Filter>
+    </ClCompile>
+    <ClCompile Include="arduino\Tone.cpp">
+      <Filter>arduino</Filter>
+    </ClCompile>
+    <ClCompile Include="arduino\USBCore.cpp">
+      <Filter>arduino</Filter>
+    </ClCompile>
+    <ClCompile Include="arduino\WInterrupts.c">
+      <Filter>arduino</Filter>
+    </ClCompile>
+    <ClCompile Include="arduino\wiring.c">
+      <Filter>arduino</Filter>
+    </ClCompile>
+    <ClCompile Include="arduino\wiring_analog.c">
+      <Filter>arduino</Filter>
+    </ClCompile>
+    <ClCompile Include="arduino\wiring_digital.c">
+      <Filter>arduino</Filter>
+    </ClCompile>
+    <ClCompile Include="arduino\wiring_pulse.c">
+      <Filter>arduino</Filter>
+    </ClCompile>
+    <ClCompile Include="arduino\wiring_shift.c">
+      <Filter>arduino</Filter>
+    </ClCompile>
+    <ClCompile Include="arduino\WMath.cpp">
+      <Filter>arduino</Filter>
+    </ClCompile>
+    <ClCompile Include="arduino\WString.cpp">
+      <Filter>arduino</Filter>
+    </ClCompile>
+    <ClCompile Include="arduino\abi.cpp">
+      <Filter>arduino</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

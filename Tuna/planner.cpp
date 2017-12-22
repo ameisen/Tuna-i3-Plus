@@ -215,9 +215,21 @@ void Planner::calculate_trapezoid_for_block(block_t * __restrict const block, co
       out->initial_rate = initial_rate;
       out->final_rate = final_rate;
       out->acceleration_rate = int24(accel * 16777216.0 / ((F_CPU) * 0.125)); // * 8.388608
+
+      float initial_component = float(out->accelerate_until) / float(out->step_event_count);
+      float final_component = float(out->step_event_count - out->decelerate_after) / float(out->step_event_count);
+
+      if (initial_component + final_component >= 0.99)
+      {
+        out->plateau_rate = out->nominal_rate;
       }
+      else
+      {
+        out->plateau_rate = uint24((out->nominal_rate - (float(out->final_rate * final_component)) - (float(out->initial_rate) * initial_component)) + 0.5);
       }
     }
+  }
+}
 
 // "Junction jerk" in this context is the immediate change in speed at the junction of two blocks.
 // This method will calculate the junction jerk as the euclidean distance between the nominal
@@ -1093,6 +1105,7 @@ void Planner::_buffer_line(const float & __restrict a, const float & __restrict 
 
   block->nominal_speed = block->millimeters * inverse_mm_s; // (mm/sec) Always > 0
   block->nominal_rate = CEIL(block->step_event_count * inverse_mm_s); // (step/sec) Always > 0
+  block->plateau_rate = block->nominal_rate;
 
   #if ENABLED(FILAMENT_WIDTH_SENSOR)
     static float filwidth_e_count = 0, filwidth_delay_dist = 0;
@@ -1181,6 +1194,7 @@ void Planner::_buffer_line(const float & __restrict a, const float & __restrict 
     LOOP_XYZE(i) current_speed[i] *= speed_factor;
     block->nominal_speed *= speed_factor;
     block->nominal_rate *= speed_factor;
+    block->plateau_rate *= speed_factor;
   }
 
   // Compute and limit the acceleration rate for the trapezoid generator.

@@ -578,24 +578,6 @@ void Temperature::disable_all_heaters() {
 }
 
 /**
- * Timer 0 is shared with millies so don't change the prescaler.
- *
- * This ISR uses the compare method so it runs at the base
- * frequency (16 MHz / 64 / 256 = 976.5625 Hz), but at the TCNT0 set
- * in OCR0B above (128 or halfway between OVFs).
- *
- *  - Manage PWM to all the heaters and fan
- *  - Prepare or Measure one of the raw ADC sensor values
- *  - Check new temperature values for MIN/MAX errors (kill on error)
- *  - Step the babysteps value for each axis towards 0
- *  - For PINS_DEBUGGING, monitor and report endstop pins
- *  - For ENDSTOP_INTERRUPTS_FEATURE check endstops if flagged
- */
-ISR(TIMER0_COMPB_vect) { Temperature::isr(); } __forceinline __flatten
-
-volatile bool Temperature::in_temp_isr = false;
-
-/**
 * States for ADC reading in the ISR
 */
 namespace
@@ -676,6 +658,24 @@ inline void __forceinline __flatten set_pin(bool state)
     }
   }
 }
+
+/**
+* Timer 0 is shared with millies so don't change the prescaler.
+*
+* This ISR uses the compare method so it runs at the base
+* frequency (16 MHz / 64 / 256 = 976.5625 Hz), but at the TCNT0 set
+* in OCR0B above (128 or halfway between OVFs).
+*
+*  - Manage PWM to all the heaters and fan
+*  - Prepare or Measure one of the raw ADC sensor values
+*  - Check new temperature values for MIN/MAX errors (kill on error)
+*  - Step the babysteps value for each axis towards 0
+*  - For PINS_DEBUGGING, monitor and report endstop pins
+*  - For ENDSTOP_INTERRUPTS_FEATURE check endstops if flagged
+*/
+ISR(TIMER0_COMPB_vect) { Temperature::isr(); } __forceinline __flatten
+
+volatile bool Temperature::in_temp_isr = false;
 
 void __forceinline __flatten Temperature::isr()
 {

@@ -36,9 +36,9 @@
     <LibraryWPath />
     <SourcePath>$(ARDUINO_PATH)hardware\arduino\avr\cores\arduino</SourcePath>
     <ExcludePath />
-    <NMakeBuildCommandLine>rbbuild\rbbuild.rb -env windows -env msvc -env msvc2017 -n tuna -t build -I $(ProjectDir).int -s $(ProjectDir) -o $(ProjectDir).bin\tuna.elf -d $(ProjectDir).bin\tuna.elf.hex -d $(ProjectDir).bin\tuna.elf.eep -s "$(ARDUINO_PATH)hardware/arduino/avr/cores/arduino/"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>rbbuild\rbbuild.rb -env windows -env msvc -env msvc2017 -n tuna -t rebuild -I $(ProjectDir).int -s $(ProjectDir) -o $(ProjectDir).bin\tuna.elf -d $(ProjectDir).bin\tuna.elf.hex -d $(ProjectDir).bin\tuna.elf.eep -s "$(ARDUINO_PATH)hardware/arduino/avr/cores/arduino/"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>rbbuild\rbbuild.rb -env windows -env msvc -env msvc2017 -n tuna -t clean -I $(ProjectDir).int -s $(ProjectDir) -o $(ProjectDir).bin\tuna.elf -d $(ProjectDir).bin\tuna.elf.hex -d $(ProjectDir).bin\tuna.elf.eep -s "$(ARDUINO_PATH)hardware/arduino/avr/cores/arduino/"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>rbbuild\rbbuild.rb -env windows -env msvc -env msvc2017 -n tuna -t build -I $(ProjectDir).int -s $(ProjectDir) -o $(ProjectDir).bin\tuna.elf -d $(ProjectDir).bin\tuna.elf.hex -d $(ProjectDir).bin\tuna.elf.eep</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>rbbuild\rbbuild.rb -env windows -env msvc -env msvc2017 -n tuna -t rebuild -I $(ProjectDir).int -s $(ProjectDir) -o $(ProjectDir).bin\tuna.elf -d $(ProjectDir).bin\tuna.elf.hex -d $(ProjectDir).bin\tuna.elf.eep</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>rbbuild\rbbuild.rb -env windows -env msvc -env msvc2017 -n tuna -t clean -I $(ProjectDir).int -s $(ProjectDir) -o $(ProjectDir).bin\tuna.elf -d $(ProjectDir).bin\tuna.elf.hex -d $(ProjectDir).bin\tuna.elf.eep</NMakeCleanCommandLine>
     <OutDir>$(ProjectDir).bin\</OutDir>
     <IntDir>$(ProjectDir).int\</IntDir>
     <NMakeOutput>$(ProjectDir).bin\tuna.elf;$(ProjectDir).bin\tuna.elf.hex;$(ProjectDir).bin\tuna.elf.eep</NMakeOutput>
@@ -64,6 +64,7 @@
     <ProjectCapability Include="VisualMicro" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="arduino\wiring_pulse.S" />
     <None Include="rbbuild\ascii.rb" />
     <None Include="rbbuild\atomic_int.rb" />
     <None Include="rbbuild\buildopts.rb" />
@@ -76,6 +77,25 @@
     <None Include="tunalib\tunalib.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="arduino\Arduino.h" />
+    <ClInclude Include="arduino\binary.h" />
+    <ClInclude Include="arduino\Client.h" />
+    <ClInclude Include="arduino\HardwareSerial.h" />
+    <ClInclude Include="arduino\HardwareSerial_private.h" />
+    <ClInclude Include="arduino\IPAddress.h" />
+    <ClInclude Include="arduino\new.h" />
+    <ClInclude Include="arduino\PluggableUSB.h" />
+    <ClInclude Include="arduino\Print.h" />
+    <ClInclude Include="arduino\Printable.h" />
+    <ClInclude Include="arduino\Server.h" />
+    <ClInclude Include="arduino\Stream.h" />
+    <ClInclude Include="arduino\Udp.h" />
+    <ClInclude Include="arduino\USBAPI.h" />
+    <ClInclude Include="arduino\USBCore.h" />
+    <ClInclude Include="arduino\USBDesc.h" />
+    <ClInclude Include="arduino\WCharacter.h" />
+    <ClInclude Include="arduino\wiring_private.h" />
+    <ClInclude Include="arduino\WString.h" />
     <ClInclude Include="bi3_plus_lcd.h" />
     <ClInclude Include="cardreader.h" />
     <ClInclude Include="Conditionals_LCD.h" />
@@ -177,6 +197,30 @@
     <ClInclude Include="__vm\.Tuna.vsarduino.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="arduino\abi.cpp" />
+    <ClCompile Include="arduino\CDC.cpp" />
+    <ClCompile Include="arduino\HardwareSerial.cpp" />
+    <ClCompile Include="arduino\HardwareSerial0.cpp" />
+    <ClCompile Include="arduino\HardwareSerial1.cpp" />
+    <ClCompile Include="arduino\HardwareSerial2.cpp" />
+    <ClCompile Include="arduino\HardwareSerial3.cpp" />
+    <ClCompile Include="arduino\hooks.c" />
+    <ClCompile Include="arduino\IPAddress.cpp" />
+    <ClCompile Include="arduino\main.cpp" />
+    <ClCompile Include="arduino\new.cpp" />
+    <ClCompile Include="arduino\PluggableUSB.cpp" />
+    <ClCompile Include="arduino\Print.cpp" />
+    <ClCompile Include="arduino\Stream.cpp" />
+    <ClCompile Include="arduino\Tone.cpp" />
+    <ClCompile Include="arduino\USBCore.cpp" />
+    <ClCompile Include="arduino\WInterrupts.c" />
+    <ClCompile Include="arduino\wiring.c" />
+    <ClCompile Include="arduino\wiring_analog.c" />
+    <ClCompile Include="arduino\wiring_digital.c" />
+    <ClCompile Include="arduino\wiring_pulse.c" />
+    <ClCompile Include="arduino\wiring_shift.c" />
+    <ClCompile Include="arduino\WMath.cpp" />
+    <ClCompile Include="arduino\WString.cpp" />
     <ClCompile Include="bi3_plus_lcd.cpp" />
     <ClCompile Include="cardreader.cpp" />
     <ClCompile Include="configuration_store.cpp" />

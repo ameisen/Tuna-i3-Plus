@@ -111,6 +111,8 @@ struct block_t final
            final_rate,                      // The minimal rate at exit
            acceleration_steps_per_s2;       // acceleration steps/sec^2
 
+  uint24 plateau_rate;
+
   #if FAN_COUNT > 0
     uint8 fan_speed[FAN_COUNT];
   #endif

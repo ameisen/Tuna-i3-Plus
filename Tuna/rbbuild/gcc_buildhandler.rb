@@ -208,7 +208,7 @@ $gpp_buildhandler = Class.new do
 			"--param asan-instrument-writes=0",
 			"--param asan-memintrin=0",
 			"--param asan-use-after-return=0",
-			"-I#{quote_wrap(best_path(ENV["ARDUINO_PATH"] + "hardware/arduino/avr/cores/arduino", Dir.pwd))}",
+			"-I./arduino",
 			"-I#{quote_wrap(best_path(ENV["ARDUINO_PATH"] + "hardware/arduino/avr/variants/mega", Dir.pwd))}",
 			"-I.",
 			"-isystem./tuna",
