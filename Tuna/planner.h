@@ -79,7 +79,7 @@ struct block_t final
   uint8 active_extruder;            // The extruder to move (if E move)
 
   // Fields used by the Bresenham algorithm for tracing the line
-  int24 steps[NUM_AXIS];                  // Step count along each axis
+  uint24 steps[NUM_AXIS];                 // Step count along each axis
   uint24 step_event_count;                // The number of step events required to complete this block
 
   #if ENABLED(MIXING_EXTRUDER)
@@ -187,7 +187,7 @@ class Planner final {
      * The current position of the tool in absolute steps
      * Recalculated if any axis_steps_per_mm are changed by gcode
      */
-    static int24 position[NUM_AXIS];
+    static uint24 position[NUM_AXIS];
 
     /**
      * Speed of previous path line segment

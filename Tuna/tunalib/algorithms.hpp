@@ -2,28 +2,87 @@
 
 #include "initializer_list.h"
 
+#include <stdlib.h>
+
 // Get rid of any macros that someone already may have defined.
 #undef min
 #undef max
 #undef clamp
 #undef bit
+#undef abs
+#undef labs
 
 namespace Tuna
 {
-  template <typename T>
-  constexpr inline __forceinline __flatten T max(arg_type<T> a, arg_type<T> b)
+  namespace internal
   {
-    return (a >= b) ? a : b;
+    template <typename T, typename... Args>
+    constexpr inline __forceinline __flatten auto min_v(arg_type<T> cur_val, arg_type<T> arg, arg_type<Args> ... args)
+    {
+      if constexpr(sizeof...(args) == 0)
+      {
+        return (cur_val < arg) ? cur_val : arg;
+      }
+      else
+      {
+        return min_v((cur_val < arg) ? cur_val : arg, args...);
+      }
+    }
+
+    template <typename T, typename... Args>
+    constexpr inline __forceinline __flatten auto max_v(arg_type<T> cur_val, arg_type<T> arg, arg_type<Args> ... args)
+    {
+      if constexpr(sizeof...(args) == 0)
+      {
+        return (cur_val >= arg) ? cur_val : arg;
+      }
+      else
+      {
+        return max_v((cur_val >= arg) ? cur_val : arg, args...);
+      }
+    }
+  }
+  
+  template <typename T, typename... Args>
+  constexpr inline __forceinline __flatten auto min(arg_type<T> arg, arg_type<Args> ... args)
+  {
+    return internal::min_v(arg, args...);
+  }
+
+  template <typename T, typename... Args>
+  constexpr inline __forceinline __flatten auto max(arg_type<T> arg, arg_type<Args> ... args)
+  {
+    return internal::max_v(arg, args...);
   }
 
   template <typename T>
-  constexpr inline __forceinline __flatten T min(arg_type<T> a, arg_type<T> b)
+  constexpr inline __forceinline __flatten T abs(arg_type<T> arg)
   {
-    return (a < b) ? a : b;
+    if constexpr(type_trait<T>::is_unsigned)
+    {
+      return arg;
+    }
+    else
+    {
+      return (arg < T(0)) ? -arg : arg;
+    }
   }
 
   template <typename T>
-  constexpr inline __forceinline __flatten T clamp(arg_type<T> val, arg_type<T> _min, arg_type<T> _max)
+  constexpr inline __forceinline __flatten typename type_trait<T>::unsigned_type uabs(arg_type<T> arg)
+  {
+    if constexpr(type_trait<T>::is_unsigned)
+    {
+      return arg;
+    }
+    else
+    {
+      return (arg < T(0)) ? -arg : arg;
+    }
+  }
+
+  template <typename T>
+  constexpr inline __forceinline __flatten auto clamp(arg_type<T> val, arg_type<T> _min, arg_type<T> _max)
   {
     return min(max(val, _min), _max);
   }

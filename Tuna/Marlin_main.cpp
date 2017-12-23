@@ -2556,7 +2556,7 @@ inline void gcode_M428() {
 	LOOP_XYZ(i) {
 		if (axis_homed[i]) {
 			const float base = (current_position[i] > (soft_endstop_min[i] + soft_endstop_max[i]) * 0.5) ? base_home_pos((AxisEnum)i) : 0,
-				diff = base - RAW_POSITION(current_position[i], i);
+				diff = base - RAW_POSITION(current_position[i], AxisEnum(i));
 			if (WITHIN(diff, -20, 20)) {
 				set_home_offset((AxisEnum)i, diff);
 			}

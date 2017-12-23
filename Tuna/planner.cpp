@@ -129,7 +129,7 @@ float Planner::min_feedrate_mm_s,
 
 // private:
 
-int24 Planner::position[NUM_AXIS] = { 0 };
+uint24 Planner::position[NUM_AXIS] = { 0 };
 
 uint32 Planner::cutoff_long;
 
@@ -201,7 +201,7 @@ void Planner::calculate_trapezoid_for_block(block_t * __restrict const block, co
   if (plateau_steps < 0) {
     accelerate_steps = CEIL(intersection_distance(initial_rate, final_rate, accel, block->step_event_count));
     NOLESS(accelerate_steps, 0); // Check limits due to numerical round-off
-    accelerate_steps = min(accelerate_steps, block->step_event_count);//(We can cast here to unsigned, because the above line ensures that we are above zero)
+    accelerate_steps = min(uint32(accelerate_steps), uint32(block->step_event_count));//(We can cast here to unsigned, because the above line ensures that we are above zero)
     plateau_steps = 0;
   }
 
@@ -704,11 +704,21 @@ void Planner::_buffer_line(const float & __restrict a, const float & __restrict 
   // The target position of the tool in absolute steps
   // Calculate target position in absolute steps
   //this should be done after the wait, because otherwise a M92 code within the gcode disrupts this calculation somehow
-  const int24 target[XYZE] = {
-    LROUND(a * axis_steps_per_mm[X_AXIS]),
-    LROUND(b * axis_steps_per_mm[Y_AXIS]),
-    LROUND(c * axis_steps_per_mm[Z_AXIS]),
-    LROUND(e * axis_steps_per_mm[E_AXIS_N])
+
+  // TODO FIXME their code always presumes LROUND, which doesn't make sense
+  // if you can have negative positions.
+  // That being said, I'm just going to rework it somewhat as the target in our firmware is always > 0 anyways.
+
+  __assume(a >= 0.0f);
+  __assume(b >= 0.0f);
+  __assume(c >= 0.0f);
+  __assume(e >= 0.0f);
+
+  const uint24 target[XYZE] = {
+    round<uint24>(a * axis_steps_per_mm[X_AXIS]),
+    round<uint24>(b * axis_steps_per_mm[Y_AXIS]),
+    round<uint24>(c * axis_steps_per_mm[Z_AXIS]),
+    round<uint24>(e * axis_steps_per_mm[E_AXIS_N])
   };
 
   // When changing extruders recalculate steps corresponding to the E position
@@ -777,7 +787,7 @@ void Planner::_buffer_line(const float & __restrict a, const float & __restrict 
         SERIAL_ECHOLNPGM(MSG_ERR_COLD_EXTRUDE_STOP);
       }
       #if ENABLED(PREVENT_LENGTHY_EXTRUDE)
-        if (labs(de) > (int32)axis_steps_per_mm[E_AXIS_N] * (EXTRUDE_MAXLENGTH)) { // It's not important to get max. extrusion length in a precision < 1mm, so save some cycles and cast to int
+        if (abs(de) > (int32)axis_steps_per_mm[E_AXIS_N] * (EXTRUDE_MAXLENGTH)) { // It's not important to get max. extrusion length in a precision < 1mm, so save some cycles and cast to int
           position[E_AXIS] = target[E_AXIS]; // Behave as if the move really took place, but ignore E part
           de = 0; // no difference
           #if ENABLED(LIN_ADVANCE)
@@ -819,7 +829,7 @@ void Planner::_buffer_line(const float & __restrict a, const float & __restrict 
   if (de < 0) SBI(dm, E_AXIS);
 
   const float esteps_float = de * volumetric_multiplier[extruder] * flow_percentage[extruder] * 0.01;
-  const int32 esteps = abs(esteps_float) + 0.5;
+  const uint24 esteps = uint24(abs(esteps_float) + 0.5);
 
   // Calculate the buffer head after we push this byte
   const uint8_t next_buffer_head = next_block_index(block_buffer_head);
@@ -840,26 +850,26 @@ void Planner::_buffer_line(const float & __restrict a, const float & __restrict 
   // Number of steps for each axis
   // See http://www.corexy.com/theory.html
   #if CORE_IS_XY
-    block->steps[A_AXIS] = labs(da + db);
-    block->steps[B_AXIS] = labs(da - db);
-    block->steps[Z_AXIS] = labs(dc);
+    block->steps[A_AXIS] = uabs(da + db);
+    block->steps[B_AXIS] = uabs(da - db);
+    block->steps[Z_AXIS] = uabs(dc);
   #elif CORE_IS_XZ
-    block->steps[A_AXIS] = labs(da + dc);
-    block->steps[Y_AXIS] = labs(db);
-    block->steps[C_AXIS] = labs(da - dc);
+    block->steps[A_AXIS] = uabs(da + dc);
+    block->steps[Y_AXIS] = uabs(db);
+    block->steps[C_AXIS] = uabs(da - dc);
   #elif CORE_IS_YZ
-    block->steps[X_AXIS] = labs(da);
-    block->steps[B_AXIS] = labs(db + dc);
-    block->steps[C_AXIS] = labs(db - dc);
+    block->steps[X_AXIS] = uabs(da);
+    block->steps[B_AXIS] = uabs(db + dc);
+    block->steps[C_AXIS] = uabs(db - dc);
   #else
     // default non-h-bot planning
-    block->steps[X_AXIS] = labs(da);
-    block->steps[Y_AXIS] = labs(db);
-    block->steps[Z_AXIS] = labs(dc);
+    block->steps[X_AXIS] = uabs(da);
+    block->steps[Y_AXIS] = uabs(db);
+    block->steps[Z_AXIS] = uabs(dc);
   #endif
 
   block->steps[E_AXIS] = esteps;
-  block->step_event_count = MAX4(block->steps[X_AXIS], block->steps[Y_AXIS], block->steps[Z_AXIS], esteps);
+  block->step_event_count = max(block->steps[X_AXIS], block->steps[Y_AXIS], block->steps[Z_AXIS], esteps);
 
   // Bail if this is a zero-length block
   if (__unlikely(block->step_event_count < MIN_STEPS_PER_SEGMENT)) return;

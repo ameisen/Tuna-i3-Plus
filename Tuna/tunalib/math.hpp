@@ -24,4 +24,32 @@ namespace Tuna
 		return roundf(x);
 #endif
 	}
+
+  template <typename T>
+  constexpr inline __forceinline __flatten T round(arg_type<float> value)
+  {
+    if constexpr (is_same<T, float> || is_same<T, double>)
+    {
+      // We are doing float->float rounding.
+      return ::roundf(value);
+    }
+    else if constexpr(type_trait<T>::is_unsigned)
+    {
+      // We are doing float->unsigned rounding.
+      __assume(T(value) >= 0 && T(value + 0.5f) <= type_trait<T>::max);
+      __assume(value >= 0.0 && value <= type_trait<T>::max);
+      const auto result = lround(value);
+      __assume(result >= 0 && result <= type_trait<T>::max);
+      return result;
+    }
+    else
+    {
+      // We are doing float->signed rounding.
+      __assume(T(value) >= type_trait<T>::min && T(value + 0.5f) <= type_trait<T>::max);
+      __assume(value >= type_trait<T>::min && value <= type_trait<T>::max);
+      const auto result = lround(value);
+      __assume(result >= type_trait<T>::min && result <= type_trait<T>::max);
+      return result;
+    }
+  }
 }

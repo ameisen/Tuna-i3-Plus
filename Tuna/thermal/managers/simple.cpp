@@ -60,7 +60,7 @@ namespace
   using preferred_table_type = uint8;
   constexpr const uint8 integer_swing = 16;
   constexpr const uint8 integer_swing_bits = constant::log2<integer_swing>;
-  constexpr const uint8 relevant_fraction_bits = min(temp_t::fractional_bits, (sizeof(preferred_table_type) * 8_u8) - integer_swing_bits);
+  constexpr const uint8 relevant_fraction_bits = min(temp_t::fractional_bits, uint8((sizeof(preferred_table_type) * 8_u8) - integer_swing_bits));
   constexpr const uint8 relevant_total_bits = (relevant_fraction_bits + integer_swing_bits);
   constexpr const auto numTableEntries = make_uintsz<1_u64 << relevant_total_bits>;
   constexpr const auto test_max_time = 100000_ms24; // Otherwise, test goes this long.
@@ -490,7 +490,7 @@ uint8 __forceinline __flatten Simple::get_power(arg_type<temp_t> current, arg_ty
     {
       if (Temperature::get_temperature_trend() == Temperature::Trend::Down)
       {
-        out_temp = uint8(min(uint16(pwm_table[diff_idx.second]) * pwm_calibration.Scalar_, full));
+        out_temp = uint8(min(uint16(uint16(pwm_table[diff_idx.second]) * pwm_calibration.Scalar_), uint16(full)));
       }
       else
       {

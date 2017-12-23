@@ -410,10 +410,10 @@ namespace Tuna::lcd
 			case 0x3E: {//send pid/motor config to lcd OK
 
 				const uint16 axis_steps_mm[4] = {
-					uint16{ planner.axis_steps_per_mm[X_AXIS] * 10.0f },
-					uint16{ planner.axis_steps_per_mm[Y_AXIS] * 10.0f },
-					uint16{ planner.axis_steps_per_mm[Z_AXIS] * 10.0f },
-					uint16{ planner.axis_steps_per_mm[E_AXIS] * 10.0f },
+					round<uint16>(planner.axis_steps_per_mm[X_AXIS] * 10.0f),
+					round<uint16>(planner.axis_steps_per_mm[Y_AXIS] * 10.0f),
+					round<uint16>(planner.axis_steps_per_mm[Z_AXIS] * 10.0f),
+					round<uint16>(planner.axis_steps_per_mm[E_AXIS] * 10.0f),
 				};
 
         const uint16 Kp = 0;// uint16{ PID_PARAM(Kp) * 10.0f };
@@ -468,14 +468,14 @@ namespace Tuna::lcd
 				if ((bytesRead != 21) | (buffer[0] != 0x5A) | (buffer[1] != 0xA5)) {
 					break;
 				}
-				planner.axis_steps_per_mm[X_AXIS] = float{ ((uint16)buffer[7] * 256 + buffer[8]) } * 0.1f;
+				planner.axis_steps_per_mm[X_AXIS] = float( (uint16((uint16)buffer[7] * 256) + buffer[8]) ) * 0.1f;
 				//Serial.println(lcdBuff[7]);
 				//Serial.println(lcdBuff[8]);
 				//Serial.println(lcdBuff[9]);
 				//Serial.println(lcdBuff[10]);
-				planner.axis_steps_per_mm[Y_AXIS] = float{ ((uint16)buffer[9] * 256 + buffer[10]) } * 0.1f;
-				planner.axis_steps_per_mm[Z_AXIS] = float{ ((uint16)buffer[11] * 256 + buffer[12]) } * 0.1f;
-				planner.axis_steps_per_mm[E_AXIS] = float{ ((uint16)buffer[13] * 256 + buffer[14]) } * 0.1f;
+				planner.axis_steps_per_mm[Y_AXIS] = float( (uint16((uint16)buffer[9] * 256) + buffer[10]) ) * 0.1f;
+				planner.axis_steps_per_mm[Z_AXIS] = float( (uint16((uint16)buffer[11] * 256) + buffer[12]) ) * 0.1f;
+				planner.axis_steps_per_mm[E_AXIS] = float( (uint16((uint16)buffer[13] * 256) + buffer[14]) ) * 0.1f;
 
 				//PID_PARAM(Kp) = float{ ((uint16)buffer[15] * 256 + buffer[16]) } * 0.1f;
 				//PID_PARAM(Ki) = scalePID_i(float{ ((uint16)buffer[17] * 256 + buffer[18]) } * 0.1f);

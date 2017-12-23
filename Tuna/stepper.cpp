@@ -95,7 +95,7 @@ uint24 Stepper::step_events_completed = 0; // The number of step events executed
    */
   uint16_t __forceinline adv_rate(const int steps, const uint16_t timer, const uint8_t loops) {
     if (__likely(steps != 0)) {
-      const uint16_t rate = (timer * loops) / abs(steps);
+      const uint16_t rate = (timer * loops) / uabs(steps);
       //return constrain(rate, 1, ADV_NEVER - 1)
       return rate ? rate : 1;
     }

@@ -16,20 +16,22 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#include <tuna.h>
 #include <stdlib.h>
 
-extern "C" void __cxa_pure_virtual(void) __attribute__ ((__noreturn__));
-extern "C" void __cxa_deleted_virtual(void) __attribute__ ((__noreturn__));
+extern "C"[[noreturn]] void __forceinline __flatten __cxa_pure_virtual(void) __attribute__ ((__noreturn__));
+extern "C"[[noreturn]] void __forceinline __flatten __cxa_deleted_virtual(void) __attribute__ ((__noreturn__));
 
-void __cxa_pure_virtual(void) {
+[[noreturn]] void __forceinline __flatten __cxa_pure_virtual()
+{
   // We might want to write some diagnostics to uart in this case
   //std::terminate();
   abort();
 }
 
-void __cxa_deleted_virtual(void) {
+[[noreturn]] void __forceinline __flatten __cxa_deleted_virtual()
+{
   // We might want to write some diagnostics to uart in this case
   //std::terminate();
   abort();
 }
-
