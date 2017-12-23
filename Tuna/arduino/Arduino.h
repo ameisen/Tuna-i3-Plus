@@ -30,7 +30,7 @@
 #include <avr/interrupt.h>
 
 #ifdef __cplusplus
-extern "C"{
+//extern "C"{
 #endif
 
 #define HIGH 0x1
@@ -106,8 +106,6 @@ typedef uint8_t byte;
 void init(void);
 void initVariant(void);
 
-int atexit(void (*func)()) __attribute__((weak));
-
 void pinMode(uint8_t, uint8_t);
 void digitalWrite(uint8_t, uint8_t);
 int digitalRead(uint8_t);
@@ -116,8 +114,10 @@ void analogReference(uint8_t mode);
 void analogWrite(uint8_t, int);
 
 unsigned long millis(void);
-unsigned long micros(void);
 void delay(unsigned long);
+void delay(uint8_t);
+void delay(uint16_t);
+void delay(__uint24);
 void delayMicroseconds(unsigned int us);
 unsigned long pulseIn(uint8_t pin, uint8_t state, unsigned long timeout);
 unsigned long pulseInLong(uint8_t pin, uint8_t state, unsigned long timeout);
@@ -201,7 +201,7 @@ extern const uint8_t PROGMEM digital_pin_to_timer_PGM[];
 #define TIMER5C 18
 
 #ifdef __cplusplus
-} // extern "C"
+//} // extern "C"
 #endif
 
 #ifdef __cplusplus

@@ -174,7 +174,7 @@ volatile int24 Stepper::endstops_trigsteps[XYZ];
 // C1 B1 A1 is longIn1
 // D2 C2 B2 A2 is longIn2
 //
-inline uint16 __forceinline __flatten MultiU24X24toH16(int24 longIn1, int24 longIn2)
+inline uint16 __forceinline __flatten MultiU24X24toH16(arg_type<int24> longIn1, arg_type<int24> longIn2)
 {
   const uint64 oper1 = uint64(longIn1);
   __assume(oper1 <= type_trait<uint24>::max);
@@ -261,7 +261,9 @@ void Stepper::set_directions() {
  *  2000     1 KHz - sleep rate
  *  4000   500  Hz - init rate
  */
-ISR(TIMER1_COMPA_vect) {
+__signal(TIMER1_COMPA)
+{
+
   Stepper::advance_isr_scheduler();
 }
 
@@ -269,11 +271,8 @@ namespace
 {
   inline void __forceinline __flatten _enable_interrupts()
   {
-    Tuna::intrinsic::cli();
-    if (__unlikely(Temperature::in_temp_isr))
-      CBI(TIMSK0, OCIE0B);
-    else
-      SBI(TIMSK0, OCIE0B); ENABLE_STEPPER_DRIVER_INTERRUPT();
+    //Tuna::intrinsic::cli();
+    //SBI(TIMSK0, OCIE0B); ENABLE_STEPPER_DRIVER_INTERRUPT();
   }
 }
 
@@ -747,9 +746,9 @@ void __forceinline __flatten Stepper::isr() {
 
   void __forceinline __flatten Stepper::advance_isr_scheduler() {
     // Disable Timer0 ISRs and enable global ISR again to capture UART events (incoming chars)
-    CBI(TIMSK0, OCIE0B); // Temperature ISR
-    DISABLE_STEPPER_DRIVER_INTERRUPT();
-	Tuna::intrinsic::sei();
+    //CBI(TIMSK0, OCIE0B); // Temperature ISR
+    //DISABLE_STEPPER_DRIVER_INTERRUPT();
+	//Tuna::intrinsic::sei();
 
     // Run main stepping ISR if flagged
     if (!nextMainISR) isr();

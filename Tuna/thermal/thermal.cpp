@@ -453,7 +453,7 @@ void Temperature::init()
 	SBI(TIMSK0, OCIE0B);
 
 	// Wait for temperature measurement to settle
-	delay(250);
+	delay(250_u8);
 }
 
 /**
@@ -673,21 +673,10 @@ inline void __forceinline __flatten set_pin(bool state)
 *  - For PINS_DEBUGGING, monitor and report endstop pins
 *  - For ENDSTOP_INTERRUPTS_FEATURE check endstops if flagged
 */
-ISR(TIMER0_COMPB_vect) { Temperature::isr(); } __forceinline __flatten
-
-volatile bool Temperature::in_temp_isr = false;
+__signal(TIMER0_COMPB) { Temperature::isr(); }
 
 void __forceinline __flatten Temperature::isr()
 {
-	// The stepper ISR can interrupt this ISR. When it does it re-enables this ISR
-	// at the end of its run, potentially causing re-entry. This flag prevents it.
-	if (__unlikely(in_temp_isr)) return;
-	in_temp_isr = true;
-
-	// Allow UART and stepper ISRs
-	CBI(TIMSK0, OCIE0B); //Disable Temperature ISR
-	Tuna::intrinsic::sei();
-
 	static uint8 oversample_count = 0;
   static sensor_state adc_sensor_state = sensor_state::initialize_hotend;
 
@@ -715,13 +704,6 @@ void __forceinline __flatten Temperature::isr()
     case sensor_state::read_hotend:
     {
       local_raw_adc_hotend += ADC;
-
-      if (__unlikely((++oversample_count % OVERSAMPLENR) == 0))
-      {
-        // Update the raw values.
-        interrupt::set_adc_hotend(local_raw_adc_hotend);
-        local_raw_adc_hotend = 0;
-      }
     } break;
     case sensor_state::initialize_bed:
     {
@@ -731,11 +713,12 @@ void __forceinline __flatten Temperature::isr()
     {
       local_raw_adc_bed += ADC;
 
-      if (__unlikely((oversample_count % OVERSAMPLENR) == 0))
+      if (__unlikely((++oversample_count % OVERSAMPLENR) == 0))
       {
         // Update the raw values.
-        interrupt::set_adc_bed(local_raw_adc_bed);
-        local_raw_adc_bed = 0;
+        interrupt::set_adc(local_raw_adc_hotend, local_raw_adc_bed);
+        local_raw_adc_hotend = 0_u16;
+        local_raw_adc_bed = 0_u16;
       }
 
       adc_sensor_state = sensor_state::initialize_hotend;
@@ -743,8 +726,12 @@ void __forceinline __flatten Temperature::isr()
     }
   }
 
-  static bool current_extruder_state = false;
-  static bool current_bed_state = false;
+  static constexpr const uint8 skip_mask = 8; // Only run every Nth times this ISR is hit.
+  static uint8 skip_counter = 0;
+  if ((++skip_counter % skip_mask) != 0)
+  {
+    return;
+  }
 
   const uint8_t extruder_pwm = soft_pwm_amount.read_through();
   const uint8_t bed_pwm = []() -> uint8 {
@@ -824,20 +811,7 @@ void __forceinline __flatten Temperature::isr()
 
     ++pwm_counter;
 
-    if (__unlikely(current_extruder_state != new_extruder_state))
-    {
-      current_extruder_state = new_extruder_state;
-      set_pin<HEATER_0_PIN>(new_extruder_state);
-    }
-
-    if (__unlikely(current_bed_state != new_bed_state))
-    {
-      current_bed_state = new_bed_state;
-      set_pin<HEATER_BED_PIN>(new_bed_state);
-    }
+    set_pin<HEATER_0_PIN>(new_extruder_state);
+    set_pin<HEATER_BED_PIN>(new_bed_state);
   }
-
-	Tuna::intrinsic::cli();
-	in_temp_isr = false;
-	SBI(TIMSK0, OCIE0B); //re-enable Temperature ISR
 }

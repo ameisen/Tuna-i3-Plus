@@ -22,6 +22,10 @@
   Modified 3 December 2013 by Matthijs Kooijman
 */
 
+#if 0 // Tuna is not presently using Serial1 or Serial3
+
+#include "tuna.h"
+
 #include "Arduino.h"
 #include "HardwareSerial.h"
 #include "HardwareSerial_private.h"
@@ -37,9 +41,9 @@
 #if defined(HAVE_HWSERIAL1)
 
 #if defined(UART1_RX_vect)
-ISR(UART1_RX_vect)
+__signal(UART1_RX)
 #elif defined(USART1_RX_vect)
-ISR(USART1_RX_vect)
+__signal(USART1_RX)
 #else
 #error "Don't know what the Data Register Empty vector is called for Serial1"
 #endif
@@ -48,9 +52,9 @@ ISR(USART1_RX_vect)
 }
 
 #if defined(UART1_UDRE_vect)
-ISR(UART1_UDRE_vect)
+__signal(UART1_UDRE)
 #elif defined(USART1_UDRE_vect)
-ISR(USART1_UDRE_vect)
+__signal(USART1_UDRE)
 #else
 #error "Don't know what the Data Register Empty vector is called for Serial1"
 #endif
@@ -67,3 +71,5 @@ bool Serial1_available() {
 }
 
 #endif // HAVE_HWSERIAL1
+
+#endif

@@ -26,7 +26,7 @@
 void safe_delay(millis_t ms);
 
 #if ENABLED(EEPROM_SETTINGS)
-  void crc16(uint16_t *crc, const void * const data, uint16_t cnt);
+  void crc16(uint16_t * __restrict crc, const void * const __restrict data, uint16_t cnt);
 #endif
 
 #if ENABLED(ULTRA_LCD)

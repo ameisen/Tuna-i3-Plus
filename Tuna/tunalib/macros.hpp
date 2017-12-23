@@ -89,12 +89,6 @@
 // Forces the function to have all code within it to be inlined, if possible.
 #define __flatten __attribute__((flatten))
 
-// Marks the function as an interrupt handler.
-#define __interrupt __attribute__((interrupt))
-
-// Marks the function as a signal handler. Equivalent to __interrupt except on AVR, where 'sei' is not emitted.
-#define __signal __attribute__((signal))
-
 // Marks the function as being ineligible for inlining. Avoid using this.
 #define __no_inline __attribute__((noinline))
 
@@ -127,5 +121,10 @@
 # undef __memorybarrier
 # define __memorybarrier 0
 #endif //!__compiling
+
+// Marks the function as a signal handler. Equivalent to __interrupt except on AVR, where 'sei' is not emitted.
+#define __signal(name) extern "C" void __attribute__((signal, used, externally_visible)) __forceinline __flatten name ## _vect(void)
+// Marks the function as an interrupt handler.
+#define __interrupt(name) extern "C" void __attribute__((interrupt, used, externally_visible)) __forceinline __flatten name ## _vect(void)
 
 // TODO leaf, maybe

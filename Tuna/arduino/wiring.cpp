@@ -20,6 +20,8 @@
   Boston, MA  02111-1307  USA
 */
 
+#include "tuna.h"
+
 #include "wiring_private.h"
 
 // the prescaler is set so that timer0 ticks every 64 clock cycles, and the
@@ -40,9 +42,9 @@ volatile unsigned long timer0_millis = 0;
 static unsigned char timer0_fract = 0;
 
 #if defined(__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
-ISR(TIM0_OVF_vect)
+__signal(TIM0_OVF)
 #else
-ISR(TIMER0_OVF_vect)
+__signal(TIMER0_OVF)
 #endif
 {
 	// copy these to local variables so they can be stored in registers
@@ -52,9 +54,9 @@ ISR(TIMER0_OVF_vect)
 
 	m += MILLIS_INC;
 	f += FRACT_INC;
-	if (f >= FRACT_MAX) {
+	if (__unlikely(f >= FRACT_MAX)) {
 		f -= FRACT_MAX;
-		m += 1;
+		m += 1_u32;
 	}
 
 	timer0_fract = f;
@@ -64,43 +66,44 @@ ISR(TIMER0_OVF_vect)
 
 unsigned long millis()
 {
-	unsigned long m;
-	uint8_t oldSREG = SREG;
+  unsigned long m;
 
 	// disable interrupts while we read timer0_millis or we might get an
 	// inconsistent value (e.g. in the middle of a write to timer0_millis)
-	cli();
-	m = timer0_millis;
-	SREG = oldSREG;
+  {
+    Tuna::critical_section_not_isr crit_sec;
+    m = timer0_millis;
+  }
 
 	return m;
 }
 
 unsigned long micros() {
 	unsigned long m;
-	uint8_t oldSREG = SREG, t;
+  uint8_t t;
 	
-	cli();
-	m = timer0_overflow_count;
+  {
+    Tuna::critical_section_not_isr crit_sec;
+
+    m = timer0_overflow_count;
 #if defined(TCNT0)
-	t = TCNT0;
+    t = TCNT0;
 #elif defined(TCNT0L)
-	t = TCNT0L;
+    t = TCNT0L;
 #else
-	#error TIMER 0 not defined
+#error TIMER 0 not defined
 #endif
 
 #ifdef TIFR0
-	if ((TIFR0 & _BV(TOV0)) && (t < 255))
-		m++;
+    if ((TIFR0 & _BV(TOV0)) && (t < 255_u8))
+      m++;
 #else
-	if ((TIFR & _BV(TOV0)) && (t < 255))
-		m++;
+    if ((TIFR & _BV(TOV0)) && (t < 255_u8))
+      m++;
 #endif
-
-	SREG = oldSREG;
+  }
 	
-	return ((m << 8) + t) * (64 / clockCyclesPerMicrosecond());
+	return ((m << 8) + t) * (64_u32 / uint32(clockCyclesPerMicrosecond()));
 }
 
 void delay(unsigned long ms)
@@ -113,6 +116,42 @@ void delay(unsigned long ms)
 			start += 1000;
 		}
 	}
+}
+
+void delay(uint8_t ms)
+{
+  uint32_t start = micros();
+
+  while (ms > 0) {
+    while (ms > 0 && (micros() - start) >= 1000) {
+      ms--;
+      start += 1000;
+    }
+  }
+}
+
+void delay(uint16_t ms)
+{
+  uint32_t start = micros();
+
+  while (ms > 0) {
+    while (ms > 0 && (micros() - start) >= 1000) {
+      ms--;
+      start += 1000;
+    }
+  }
+}
+
+void delay(__uint24 ms)
+{
+  uint32_t start = micros();
+
+  while (ms > 0) {
+    while (ms > 0 && (micros() - start) >= 1000) {
+      ms--;
+      start += 1000;
+    }
+  }
 }
 
 /* Delay for the given number of microseconds.  Assumes a 1, 8, 12, 16, 20 or 24 MHz clock. */
@@ -230,7 +269,7 @@ void delayMicroseconds(unsigned int us)
 #endif
 
 	// busy wait
-	__asm__ __volatile__ (
+	__asm__ (
 		"1: sbiw %0,1" "\n\t" // 2 cycles
 		"brne 1b" : "=w" (us) : "0" (us) // 2 cycles
 	);
@@ -241,7 +280,7 @@ void init()
 {
 	// this needs to be called before setup() or some functions won't
 	// work there
-	sei();
+  Tuna::intrinsic::sei();
 	
 	// on the ATmega168, timer 0 is also used for fast hardware pwm
 	// (using phase-correct PWM would mean that timer 0 overflowed half as often

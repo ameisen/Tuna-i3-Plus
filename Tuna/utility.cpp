@@ -28,7 +28,7 @@
 void safe_delay(millis_t ms) {
   while (ms > 50) {
     ms -= 50;
-    delay(50);
+    delay(50_u8);
     Temperature::manage_heater();
   }
   delay(ms);
@@ -37,8 +37,8 @@ void safe_delay(millis_t ms) {
 
 #if ENABLED(EEPROM_SETTINGS)
 
-  void crc16(uint16_t *crc, const void * const data, uint16_t cnt) {
-    uint8_t *ptr = (uint8_t *)data;
+  void crc16(uint16_t * __restrict crc, const void * const __restrict data, uint16_t cnt) {
+    const uint8_t * __restrict ptr = (const uint8_t * __restrict)data;
     while (cnt--) {
       *crc = (uint16_t)(*crc ^ (uint16_t)(((uint16_t)*ptr++) << 8));
       for (uint8_t x = 0; x < 8; x++)

@@ -90,15 +90,15 @@ typedef uint8_t rx_buffer_index_t;
 #define SERIAL_7O2 0x3C
 #define SERIAL_8O2 0x3E
 
-class HardwareSerial : public Stream
+class HardwareSerial final : public Stream
 {
   protected:
-    volatile uint8_t * const _ubrrh;
-    volatile uint8_t * const _ubrrl;
-    volatile uint8_t * const _ucsra;
-    volatile uint8_t * const _ucsrb;
-    volatile uint8_t * const _ucsrc;
-    volatile uint8_t * const _udr;
+    volatile uint8_t * __restrict const _ubrrh;
+    volatile uint8_t * __restrict const _ubrrl;
+    volatile uint8_t * __restrict const _ucsra;
+    volatile uint8_t * __restrict const _ucsrb;
+    volatile uint8_t * __restrict const _ucsrc;
+    volatile uint8_t * __restrict const _udr;
     // Has any byte been written to the UART since begin()
     bool _written;
 
@@ -115,28 +115,28 @@ class HardwareSerial : public Stream
 
   public:
     inline HardwareSerial(
-      volatile uint8_t *ubrrh, volatile uint8_t *ubrrl,
-      volatile uint8_t *ucsra, volatile uint8_t *ucsrb,
-      volatile uint8_t *ucsrc, volatile uint8_t *udr);
-    void begin(unsigned long baud) { begin(baud, SERIAL_8N1); }
-    void begin(unsigned long, uint8_t);
-    void end();
-    virtual int available(void);
-    virtual int peek(void);
-    virtual int read(void);
-    virtual int availableForWrite(void);
-    virtual void flush(void);
-    virtual size_t write(uint8_t);
-    inline size_t write(unsigned long n) { return write((uint8_t)n); }
-    inline size_t write(long n) { return write((uint8_t)n); }
-    inline size_t write(unsigned int n) { return write((uint8_t)n); }
-    inline size_t write(int n) { return write((uint8_t)n); }
+      volatile uint8_t * __restrict ubrrh, volatile uint8_t * __restrict ubrrl,
+      volatile uint8_t * __restrict ucsra, volatile uint8_t * __restrict ucsrb,
+      volatile uint8_t * __restrict ucsrc, volatile uint8_t * __restrict udr);
+    void begin(__uint24 baud) __restrict { begin(baud, SERIAL_8N1); }
+    void begin(__uint24, uint8_t) __restrict;
+    void end() __restrict;
+    virtual int available(void) __restrict override final;
+    virtual int peek(void) const __restrict override final;
+    virtual int read(void) __restrict override final;
+    virtual unsigned int availableForWrite(void) __restrict override final;
+    virtual void flush(void) __restrict override final;
+    virtual uint8_t write(uint8_t) __restrict override final;
+    inline uint8_t write(unsigned long n) __restrict { return write((uint8_t)n); }
+    inline uint8_t write(long n) __restrict { return write((uint8_t)n); }
+    inline uint8_t write(unsigned int n) __restrict { return write((uint8_t)n); }
+    inline uint8_t write(int n) __restrict { return write((uint8_t)n); }
     using Print::write; // pull in write(str) and write(buf, size) from Print
-    operator bool() { return true; }
+    operator __const bool() const __restrict { return true; }
 
     // Interrupt handlers - Not intended to be called externally
-    inline void _rx_complete_irq(void);
-    void _tx_udr_empty_irq(void);
+    inline void _rx_complete_irq(void) __restrict;
+    void _tx_udr_empty_irq(void) __restrict;
 };
 
 #if defined(UBRRH) || defined(UBRR0H)

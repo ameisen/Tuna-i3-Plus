@@ -40,77 +40,110 @@ class Print
 {
   private:
     int write_error;
-    size_t printNumber(unsigned long, uint8_t);
-    size_t printFloat(double, uint8_t);
+    template <typename T>
+    uint8_t printNumber(T, uint8_t) __restrict;
+    uint8_t printFloat(double, uint8_t) __restrict;
   protected:
-    void setWriteError(int err = 1) { write_error = err; }
+    void setWriteError(int err = 1) __restrict { write_error = err; }
   public:
     Print() : write_error(0) {}
   
-    int getWriteError() { return write_error; }
-    void clearWriteError() { setWriteError(0); }
+    int getWriteError() const __restrict { return write_error; }
+    void clearWriteError() __restrict { setWriteError(0); }
   
-    virtual size_t write(uint8_t) = 0;
+    virtual uint8_t write(uint8_t) __restrict  = 0;
 
     template <size_t N>
-    size_t write(const char(&__restrict str)[N])
+    size_t write(const char(&__restrict str)[N]) __restrict
     {
-      return write((const uint8_t *)str, N - 1);
+      return write((const uint8_t * __restrict)str, N - 1);
     }
-    size_t write(const char *str)
+    size_t write(const char * __restrict str) __restrict
     {
-      return write((const uint8_t *)str, strlen(str));
+      return write((const uint8_t * __restrict)str, strlen(str));
     }
-    virtual size_t write(const uint8_t *buffer, size_t size);
-    size_t write(const char *buffer, size_t size) {
-      return write((const uint8_t *)buffer, size);
+    virtual size_t write(const uint8_t * __restrict buffer, size_t size) __restrict;
+    size_t write(const char * __restrict buffer, size_t size) __restrict {
+      return write((const uint8_t * __restrict)buffer, size);
     }
 
     // default to zero, meaning "a single write may block"
     // should be overriden by subclasses with buffering
-    virtual int availableForWrite() { return 0; }
+    virtual unsigned int availableForWrite() __restrict { return 0; }
 
-    size_t print(const __FlashStringHelper *);
+    size_t print(const __FlashStringHelper * __restrict) __restrict;
     template <size_t N>
-    size_t print(const char(&__restrict str)[N])
+    size_t print(const char(&__restrict str)[N]) __restrict
     {
       return write(str);
     }
-    size_t print(const char *str)
+    size_t print(const char * __restrict str) __restrict
     {
       return write(str);
     }
-    size_t print(char);
-    size_t print(unsigned char, int = DEC);
-    size_t print(int, int = DEC);
-    size_t print(unsigned int, int = DEC);
-    size_t print(long, int = DEC);
-    size_t print(unsigned long, int = DEC);
-    size_t print(double, int = 2);
-    size_t println(const __FlashStringHelper *);
+    size_t print(char * __restrict str) __restrict
+    {
+      return write((const char * __restrict)str);
+    }
+
+    uint8_t print(uint8_t, uint8_t = DEC) __restrict;
+    uint8_t print(uint16_t, uint8_t = DEC) __restrict;
+    uint8_t print(const __uint24 & __restrict, uint8_t = DEC) __restrict;
+    uint8_t print(const uint32_t & __restrict, uint8_t = DEC) __restrict;
+    uint8_t print(const uint64_t & __restrict, uint8_t = DEC) __restrict;
+    uint8_t print(int16_t __restrict, uint8_t = DEC) __restrict;
+    uint8_t print(const __int24 & __restrict, uint8_t = DEC) __restrict;
+    uint8_t print(const int32_t & __restrict, uint8_t = DEC) __restrict;
+    uint8_t print(const int64_t & __restrict, uint8_t = DEC) __restrict;
+
+    uint8_t print(char) __restrict;
+    uint8_t print(const double & __restrict, uint8_t = 2) __restrict;
+    uint8_t print(const float & __restrict a, uint8_t b = 2) __restrict
+    {
+      print(double(a), b);
+    }
+    size_t println(const __FlashStringHelper *) __restrict;
     template <size_t N>
-    size_t println(const char(&__restrict str)[N])
+    size_t println(const char(&__restrict str)[N]) __restrict
     {
       size_t n = print(str);
       n += println();
       return n;
     }
-    size_t println(const char *str)
+    size_t println(const char * __restrict str) __restrict
     {
       size_t n = print(str);
       n += println();
       return n;
     }
-    size_t println(char);
-    size_t println(unsigned char, int = DEC);
-    size_t println(int, int = DEC);
-    size_t println(unsigned int, int = DEC);
-    size_t println(long, int = DEC);
-    size_t println(unsigned long, int = DEC);
-    size_t println(double, int = 2);
-    size_t println(void);
+    size_t println(char * __restrict str) __restrict
+    {
+      size_t n = print(str);
+      n += println();
+      return n;
+    }
 
-    virtual void flush() { /* Empty implementation for backward compatibility */ }
+    uint8_t println(char) __restrict;
+
+    // integer types
+    uint8_t println(uint8_t, uint8_t = DEC) __restrict;
+    uint8_t println(uint16_t, uint8_t = DEC) __restrict;
+    uint8_t println(const __uint24 & __restrict, uint8_t = DEC) __restrict;
+    uint8_t println(const uint32_t & __restrict, uint8_t = DEC) __restrict;
+    uint8_t println(const uint64_t & __restrict, uint8_t = DEC) __restrict;
+    uint8_t println(int16_t, uint8_t = DEC) __restrict;
+    uint8_t println(const __int24 & __restrict, uint8_t = DEC) __restrict;
+    uint8_t println(const int32_t & __restrict, uint8_t = DEC) __restrict;
+    uint8_t println(const int64_t & __restrict, uint8_t = DEC) __restrict;
+
+    uint8_t println(const double & __restrict, uint8_t = 2) __restrict;
+    uint8_t println(const float & __restrict a, uint8_t b = 2) __restrict
+    {
+      return println(a, b);
+    }
+    uint8_t println(void) __restrict;
+
+    virtual void flush() __restrict { /* Empty implementation for backward compatibility */ }
 };
 
 #endif

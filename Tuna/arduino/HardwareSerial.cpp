@@ -22,6 +22,8 @@
   Modified 3 December 2013 by Matthijs Kooijman
 */
 
+#include "tuna.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -78,7 +80,7 @@ void serialEventRun(void)
 
 // Actual interrupt handlers //////////////////////////////////////////////////////////////
 
-void HardwareSerial::_tx_udr_empty_irq(void)
+void HardwareSerial::_tx_udr_empty_irq(void) __restrict
 {
   // If interrupts are enabled, there must be more data in the output
   // buffer. Send the next byte
@@ -100,7 +102,7 @@ void HardwareSerial::_tx_udr_empty_irq(void)
 
 // Public Methods //////////////////////////////////////////////////////////////
 
-void HardwareSerial::begin(unsigned long baud, byte config)
+void HardwareSerial::begin(__uint24 baud, byte config) __restrict
 {
   // Try u2x mode first
   uint16_t baud_setting = (F_CPU / 4 / baud - 1) / 2;
@@ -111,10 +113,13 @@ void HardwareSerial::begin(unsigned long baud, byte config)
   // on the 8U2 on the Uno and Mega 2560. Also, The baud_setting cannot
   // be > 4095, so switch back to non-u2x mode if the baud rate is too
   // low.
-  if (((F_CPU == 16000000UL) && (baud == 57600)) || (baud_setting >4095))
+  if constexpr (F_CPU == 16000000UL)
   {
-    *_ucsra = 0;
-    baud_setting = (F_CPU / 8 / baud - 1) / 2;
+    if (__unlikely(baud == 57600) || (baud_setting > 4095))
+    {
+      *_ucsra = 0;
+      baud_setting = (F_CPU / 8 / baud - 1) / 2;
+    }
   }
 
   // assign the baud_setting, a.k.a. ubrr (USART Baud Rate Register)
@@ -135,7 +140,7 @@ void HardwareSerial::begin(unsigned long baud, byte config)
   cbi(*_ucsrb, UDRIE0);
 }
 
-void HardwareSerial::end()
+void HardwareSerial::end() __restrict
 {
   // wait for transmission of outgoing data
   flush();
@@ -149,12 +154,12 @@ void HardwareSerial::end()
   _rx_buffer_head = _rx_buffer_tail;
 }
 
-int HardwareSerial::available(void)
+int HardwareSerial::available(void) __restrict
 {
   return ((unsigned int)(SERIAL_RX_BUFFER_SIZE + _rx_buffer_head - _rx_buffer_tail)) % SERIAL_RX_BUFFER_SIZE;
 }
 
-int HardwareSerial::peek(void)
+int HardwareSerial::peek(void) const __restrict
 {
   if (_rx_buffer_head == _rx_buffer_tail) {
     return -1;
@@ -163,7 +168,7 @@ int HardwareSerial::peek(void)
   }
 }
 
-int HardwareSerial::read(void)
+int HardwareSerial::read(void) __restrict
 {
   // if the head isn't ahead of the tail, we don't have any characters
   if (_rx_buffer_head == _rx_buffer_tail) {
@@ -175,7 +180,7 @@ int HardwareSerial::read(void)
   }
 }
 
-int HardwareSerial::availableForWrite(void)
+unsigned int HardwareSerial::availableForWrite(void) __restrict
 {
 #if (SERIAL_TX_BUFFER_SIZE>256)
   uint8_t oldSREG = SREG;
@@ -190,12 +195,12 @@ int HardwareSerial::availableForWrite(void)
   return tail - head - 1;
 }
 
-void HardwareSerial::flush()
+void HardwareSerial::flush() __restrict
 {
   // If we have never written a byte, no need to flush. This special
   // case is needed since there is no way to force the TXC (transmit
   // complete) bit to 1 during initialization
-  if (!_written)
+  if (__likely(!_written))
     return;
 
   while (bit_is_set(*_ucsrb, UDRIE0) || bit_is_clear(*_ucsra, TXC0)) {
@@ -210,7 +215,7 @@ void HardwareSerial::flush()
   // the hardware finished tranmission (TXC is set).
 }
 
-size_t HardwareSerial::write(uint8_t c)
+uint8_t HardwareSerial::write(uint8_t c) __restrict
 {
   _written = true;
   // If the buffer and the data register is empty, just write the byte
@@ -232,8 +237,10 @@ size_t HardwareSerial::write(uint8_t c)
       // register empty flag ourselves. If it is set, pretend an
       // interrupt has happened and call the handler to free up
       // space for us.
-      if(bit_is_set(*_ucsra, UDRE0))
-	_tx_udr_empty_irq();
+      if (bit_is_set(*_ucsra, UDRE0))
+      {
+        _tx_udr_empty_irq();
+      }
     } else {
       // nop, the interrupt handler will free up space for us
     }

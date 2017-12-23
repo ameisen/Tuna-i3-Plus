@@ -22,6 +22,8 @@
   Modified 3 December 2013 by Matthijs Kooijman
 */
 
+#include "tuna.h"
+
 #include "Arduino.h"
 #include "HardwareSerial.h"
 #include "HardwareSerial_private.h"
@@ -37,26 +39,26 @@
 #if defined(HAVE_HWSERIAL0)
 
 #if defined(USART_RX_vect)
-  ISR(USART_RX_vect)
+__signal(USART_RX)
 #elif defined(USART0_RX_vect)
-  ISR(USART0_RX_vect)
+__signal(USART0_RX)
 #elif defined(USART_RXC_vect)
-  ISR(USART_RXC_vect) // ATmega8
+__signal(USART_RXC) // ATmega8
 #else
-  #error "Don't know what the Data Received vector is called for Serial"
+#error "Don't know what the Data Received vector is called for Serial"
 #endif
-  {
-    Serial._rx_complete_irq();
-  }
+{
+  Serial._rx_complete_irq();
+}
 
 #if defined(UART0_UDRE_vect)
-ISR(UART0_UDRE_vect)
+__signal(UART0_UDRE)
 #elif defined(UART_UDRE_vect)
-ISR(UART_UDRE_vect)
+__signal(UART_UDRE)
 #elif defined(USART0_UDRE_vect)
-ISR(USART0_UDRE_vect)
+__signal(USART0_UDRE)
 #elif defined(USART_UDRE_vect)
-ISR(USART_UDRE_vect)
+__signal(USART_UDRE)
 #else
   #error "Don't know what the Data Register Empty vector is called for Serial"
 #endif

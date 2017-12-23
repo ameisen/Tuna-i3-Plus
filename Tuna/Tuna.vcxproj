@@ -192,9 +192,9 @@
     <ClCompile Include="arduino\main.cpp" />
     <ClCompile Include="arduino\Print.cpp" />
     <ClCompile Include="arduino\Stream.cpp" />
-    <ClCompile Include="arduino\wiring.c" />
-    <ClCompile Include="arduino\wiring_analog.c" />
-    <ClCompile Include="arduino\wiring_digital.c" />
+    <ClCompile Include="arduino\wiring.cpp" />
+    <ClCompile Include="arduino\wiring_analog.cpp" />
+    <ClCompile Include="arduino\wiring_digital.cpp" />
     <ClCompile Include="bi3_plus_lcd.cpp" />
     <ClCompile Include="cardreader.cpp" />
     <ClCompile Include="configuration_store.cpp" />

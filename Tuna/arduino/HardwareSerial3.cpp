@@ -22,6 +22,10 @@
   Modified 3 December 2013 by Matthijs Kooijman
 */
 
+#if 0 // Tuna is not presently using Serial1 or Serial3
+
+#include "tuna.h"
+
 #include "Arduino.h"
 #include "HardwareSerial.h"
 #include "HardwareSerial_private.h"
@@ -36,12 +40,12 @@
 
 #if defined(HAVE_HWSERIAL3)
 
-ISR(USART3_RX_vect)
+__signal(USART3_RX)
 {
   Serial3._rx_complete_irq();
 }
 
-ISR(USART3_UDRE_vect)
+__signal(USART3_UDRE)
 {
   Serial3._tx_udr_empty_irq();
 }
@@ -55,3 +59,5 @@ bool Serial3_available() {
 }
 
 #endif // HAVE_HWSERIAL3
+
+#endif

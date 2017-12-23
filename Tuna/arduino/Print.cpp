@@ -31,7 +31,7 @@
 // Public Methods //////////////////////////////////////////////////////////////
 
 /* default implementation: may be overridden */
-size_t Print::write(const uint8_t *buffer, size_t size)
+size_t Print::write(const uint8_t * __restrict buffer, size_t size) __restrict
 {
   size_t n = 0;
   while (size--) {
@@ -41,9 +41,9 @@ size_t Print::write(const uint8_t *buffer, size_t size)
   return n;
 }
 
-size_t Print::print(const __FlashStringHelper *ifsh)
+size_t Print::print(const __FlashStringHelper * __restrict ifsh) __restrict
 {
-  PGM_P p = reinterpret_cast<PGM_P>(ifsh);
+  PGM_P __restrict p = reinterpret_cast<PGM_P __restrict>(ifsh);
   size_t n = 0;
   while (1) {
     unsigned char c = pgm_read_byte(p++);
@@ -54,117 +54,163 @@ size_t Print::print(const __FlashStringHelper *ifsh)
   return n;
 }
 
-size_t Print::print(char c)
+uint8_t Print::print(char c) __restrict
 {
   return write(c);
 }
 
-size_t Print::print(unsigned char b, int base)
+uint8_t Print::print(const double & __restrict n, uint8_t digits) __restrict
 {
-  return print((unsigned long) b, base);
+  return printFloat(n, digits);
 }
 
-size_t Print::print(int n, int base)
-{
-  return print((long) n, base);
-}
-
-size_t Print::print(unsigned int n, int base)
-{
-  return print((unsigned long) n, base);
-}
-
-size_t Print::print(long n, int base)
-{
-  if (base == 0) {
-    return write(n);
-  } else if (base == 10) {
-    if (n < 0) {
-      int t = print('-');
-      n = -n;
-      return printNumber(n, 10) + t;
-    }
-    return printNumber(n, 10);
-  } else {
-    return printNumber(n, base);
-  }
-}
-
-size_t Print::print(unsigned long n, int base)
+uint8_t Print::print(uint8_t n, uint8_t base) __restrict
 {
   if (base == 0) return write(n);
   else return printNumber(n, base);
 }
 
-size_t Print::print(double n, int digits)
+uint8_t Print::print(uint16_t n, uint8_t base) __restrict
 {
-  return printFloat(n, digits);
+  if (base == 0) return write(n);
+  else return printNumber(n, base);
 }
 
-size_t Print::println(const __FlashStringHelper *ifsh)
+uint8_t Print::print(const __uint24 & __restrict n, uint8_t base) __restrict
+{
+  if (base == 0) return write(n);
+  else return printNumber(n, base);
+}
+
+uint8_t Print::print(const uint32_t & __restrict n, uint8_t base) __restrict
+{
+  if (base == 0) return write(n);
+  else return printNumber(n, base);
+}
+
+uint8_t Print::print(const uint64_t & __restrict n, uint8_t base) __restrict
+{
+  if (base == 0) return write(n);
+  else return printNumber(n, base);
+}
+
+uint8_t Print::print(int16_t n, uint8_t base) __restrict
+{
+  if (base == 0) return write(n);
+  else return printNumber(n, base);
+}
+
+uint8_t Print::print(const __int24 & __restrict n, uint8_t base) __restrict
+{
+  if (base == 0) return write(n);
+  else return printNumber(n, base);
+}
+
+uint8_t Print::print(const int32_t & __restrict n, uint8_t base) __restrict
+{
+  if (base == 0) return write(n);
+  else return printNumber(n, base);
+}
+
+uint8_t Print::print(const int64_t & __restrict n, uint8_t base) __restrict
+{
+  if (base == 0) return write(n);
+  else return printNumber(n, base);
+}
+
+size_t Print::println(const __FlashStringHelper * __restrict ifsh) __restrict
 {
   size_t n = print(ifsh);
   n += println();
   return n;
 }
 
-size_t Print::println(void)
+uint8_t Print::println(void) __restrict
 {
   return write("\r\n");
 }
 
-size_t Print::println(char c)
+uint8_t Print::println(char c) __restrict
 {
-  size_t n = print(c);
+  uint8_t n = print(c);
   n += println();
   return n;
 }
 
-size_t Print::println(unsigned char b, int base)
+uint8_t Print::println(const double & __restrict num, uint8_t digits) __restrict
 {
-  size_t n = print(b, base);
+  uint8_t n = print(num, digits);
   n += println();
   return n;
 }
 
-size_t Print::println(int num, int base)
+uint8_t Print::println(uint8_t num, uint8_t base) __restrict
 {
-  size_t n = print(num, base);
+  uint8_t n = print(num, base);
   n += println();
   return n;
 }
 
-size_t Print::println(unsigned int num, int base)
+uint8_t Print::println(uint16_t num, uint8_t base) __restrict
 {
-  size_t n = print(num, base);
+  uint8_t n = print(num, base);
   n += println();
   return n;
 }
 
-size_t Print::println(long num, int base)
+uint8_t Print::println(const __uint24 & __restrict num, uint8_t base) __restrict
 {
-  size_t n = print(num, base);
+  uint8_t n = print(num, base);
   n += println();
   return n;
 }
 
-size_t Print::println(unsigned long num, int base)
+uint8_t Print::println(const uint32_t & __restrict num, uint8_t base) __restrict
 {
-  size_t n = print(num, base);
+  uint8_t n = print(num, base);
   n += println();
   return n;
 }
 
-size_t Print::println(double num, int digits)
+uint8_t Print::println(const uint64_t & __restrict num, uint8_t base) __restrict
 {
-  size_t n = print(num, digits);
+  uint8_t n = print(num, base);
+  n += println();
+  return n;
+}
+
+uint8_t Print::println(int16_t num, uint8_t base) __restrict
+{
+  uint8_t n = print(num, base);
+  n += println();
+  return n;
+}
+
+uint8_t Print::println(const __int24 & __restrict num, uint8_t base) __restrict
+{
+  uint8_t n = print(num, base);
+  n += println();
+  return n;
+}
+
+uint8_t Print::println(const int32_t & __restrict num, uint8_t base) __restrict
+{
+  uint8_t n = print(num, base);
+  n += println();
+  return n;
+}
+
+uint8_t Print::println(const int64_t & __restrict num, uint8_t base) __restrict
+{
+  uint8_t n = print(num, base);
   n += println();
   return n;
 }
 
 // Private Methods /////////////////////////////////////////////////////////////
 
-size_t Print::printNumber(unsigned long n, uint8_t base)
+template <typename T>
+uint8_t Print::printNumber(T n, uint8_t base) __restrict
 {
   char buf[8 * sizeof(long) + 1]; // Assumes 8-bit chars plus zero byte.
   char *str = &buf[sizeof(buf) - 1];
@@ -184,9 +230,9 @@ size_t Print::printNumber(unsigned long n, uint8_t base)
   return write(str);
 }
 
-size_t Print::printFloat(double number, uint8_t digits) 
+uint8_t Print::printFloat(double number, uint8_t digits) __restrict
 { 
-  size_t n = 0;
+  uint8_t n = 0;
   
   if (isnan(number)) return print("nan");
   if (isinf(number)) return print("inf");

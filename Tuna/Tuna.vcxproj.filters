@@ -334,13 +334,7 @@
     <ClCompile Include="arduino\HardwareSerial0.cpp">
       <Filter>arduino</Filter>
     </ClCompile>
-    <ClCompile Include="arduino\HardwareSerial1.cpp">
-      <Filter>arduino</Filter>
-    </ClCompile>
     <ClCompile Include="arduino\HardwareSerial2.cpp">
-      <Filter>arduino</Filter>
-    </ClCompile>
-    <ClCompile Include="arduino\HardwareSerial3.cpp">
       <Filter>arduino</Filter>
     </ClCompile>
     <ClCompile Include="arduino\main.cpp">
@@ -352,16 +346,22 @@
     <ClCompile Include="arduino\Stream.cpp">
       <Filter>arduino</Filter>
     </ClCompile>
-    <ClCompile Include="arduino\wiring.c">
-      <Filter>arduino</Filter>
-    </ClCompile>
-    <ClCompile Include="arduino\wiring_analog.c">
-      <Filter>arduino</Filter>
-    </ClCompile>
-    <ClCompile Include="arduino\wiring_digital.c">
-      <Filter>arduino</Filter>
-    </ClCompile>
     <ClCompile Include="arduino\abi.cpp">
+      <Filter>arduino</Filter>
+    </ClCompile>
+    <ClCompile Include="arduino\HardwareSerial3.cpp">
+      <Filter>arduino</Filter>
+    </ClCompile>
+    <ClCompile Include="arduino\HardwareSerial1.cpp">
+      <Filter>arduino</Filter>
+    </ClCompile>
+    <ClCompile Include="arduino\wiring.cpp">
+      <Filter>arduino</Filter>
+    </ClCompile>
+    <ClCompile Include="arduino\wiring_analog.cpp">
+      <Filter>arduino</Filter>
+    </ClCompile>
+    <ClCompile Include="arduino\wiring_digital.cpp">
       <Filter>arduino</Filter>
     </ClCompile>
   </ItemGroup>

@@ -22,6 +22,8 @@
   Modified 3 December 2013 by Matthijs Kooijman
 */
 
+#include "tuna.h"
+
 #include "Arduino.h"
 #include "HardwareSerial.h"
 #include "HardwareSerial_private.h"
@@ -36,12 +38,12 @@
 
 #if defined(HAVE_HWSERIAL2)
 
-ISR(USART2_RX_vect)
+__signal(USART2_RX)
 {
   Serial2._rx_complete_irq();
 }
 
-ISR(USART2_UDRE_vect)
+__signal(USART2_UDRE)
 {
   Serial2._tx_udr_empty_irq();
 }

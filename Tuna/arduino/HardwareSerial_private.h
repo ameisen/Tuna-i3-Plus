@@ -98,13 +98,13 @@ HardwareSerial::HardwareSerial(
 
 // Actual interrupt handlers //////////////////////////////////////////////////////////////
 
-void HardwareSerial::_rx_complete_irq(void)
+void HardwareSerial::_rx_complete_irq(void) __restrict
 {
-  if (bit_is_clear(*_ucsra, UPE0)) {
+  if (__likely(bit_is_clear(*_ucsra, UPE0))) {
     // No Parity error, read byte and store it in the buffer if there is
     // room
     unsigned char c = *_udr;
-    rx_buffer_index_t i = (unsigned int)(_rx_buffer_head + 1) % SERIAL_RX_BUFFER_SIZE;
+    rx_buffer_index_t i = Tuna::uintsz<SERIAL_RX_BUFFER_SIZE>(_rx_buffer_head + 1_u8) % SERIAL_RX_BUFFER_SIZE;
 
     // if we should be storing the received character into the location
     // just before the tail (meaning that the head would advance to the
