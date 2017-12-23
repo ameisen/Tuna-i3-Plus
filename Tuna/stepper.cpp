@@ -109,60 +109,22 @@ int24 Stepper::acceleration_time, Stepper::deceleration_time;
 volatile int24 Stepper::count_position[NUM_AXIS] = { 0 };
 volatile signed char Stepper::count_direction[NUM_AXIS] = { 1, 1, 1, 1 };
 
-#if ENABLED(MIXING_EXTRUDER)
-  long Stepper::counter_m[MIXING_STEPPERS];
-#endif
-
 unsigned short Stepper::acc_step_rate; // needed for deceleration start point
 uint8_t Stepper::step_loops, Stepper::step_loops_nominal;
 unsigned short Stepper::OCR1A_nominal;
 
 volatile int24 Stepper::endstops_trigsteps[XYZ];
 
-#if ENABLED(X_DUAL_STEPPER_DRIVERS)
-  #define X_APPLY_DIR(v,Q) do{ X_DIR_WRITE(v); X2_DIR_WRITE((v) != INVERT_X2_VS_X_DIR); }while(0)
-  #define X_APPLY_STEP(v,Q) do{ X_STEP_WRITE(v); X2_STEP_WRITE(v); }while(0)
-#elif ENABLED(DUAL_X_CARRIAGE)
-  #define X_APPLY_DIR(v,ALWAYS) \
-    if (extruder_duplication_enabled || ALWAYS) { \
-      X_DIR_WRITE(v); \
-      X2_DIR_WRITE(v); \
-    } \
-    else { \
-      if (current_block->active_extruder) X2_DIR_WRITE(v); else X_DIR_WRITE(v); \
-    }
-  #define X_APPLY_STEP(v,ALWAYS) \
-    if (extruder_duplication_enabled || ALWAYS) { \
-      X_STEP_WRITE(v); \
-      X2_STEP_WRITE(v); \
-    } \
-    else { \
-      if (current_block->active_extruder) X2_STEP_WRITE(v); else X_STEP_WRITE(v); \
-    }
-#else
-  #define X_APPLY_DIR(v,Q) X_DIR_WRITE(v)
-  #define X_APPLY_STEP(v,Q) X_STEP_WRITE(v)
-#endif
+#define X_APPLY_DIR(v,Q) X_DIR_WRITE(v)
+#define X_APPLY_STEP(v,Q) X_STEP_WRITE(v)
 
-#if ENABLED(Y_DUAL_STEPPER_DRIVERS)
-  #define Y_APPLY_DIR(v,Q) do{ Y_DIR_WRITE(v); Y2_DIR_WRITE((v) != INVERT_Y2_VS_Y_DIR); }while(0)
-  #define Y_APPLY_STEP(v,Q) do{ Y_STEP_WRITE(v); Y2_STEP_WRITE(v); }while(0)
-#else
-  #define Y_APPLY_DIR(v,Q) Y_DIR_WRITE(v)
-  #define Y_APPLY_STEP(v,Q) Y_STEP_WRITE(v)
-#endif
+#define Y_APPLY_DIR(v,Q) Y_DIR_WRITE(v)
+#define Y_APPLY_STEP(v,Q) Y_STEP_WRITE(v)
 
-#if ENABLED(Z_DUAL_STEPPER_DRIVERS)
-  #define Z_APPLY_DIR(v,Q) do{ Z_DIR_WRITE(v); Z2_DIR_WRITE(v); }while(0)
-  #define Z_APPLY_STEP(v,Q) do{ Z_STEP_WRITE(v); Z2_STEP_WRITE(v); }while(0)
-#else
-  #define Z_APPLY_DIR(v,Q) Z_DIR_WRITE(v)
-  #define Z_APPLY_STEP(v,Q) Z_STEP_WRITE(v)
-#endif
+#define Z_APPLY_DIR(v,Q) Z_DIR_WRITE(v)
+#define Z_APPLY_STEP(v,Q) Z_STEP_WRITE(v)
 
-#if DISABLED(MIXING_EXTRUDER)
-  #define E_APPLY_STEP(v,Q) E_STEP_WRITE(v)
-#endif
+#define E_APPLY_STEP(v,Q) E_STEP_WRITE(v)
 
 // intRes = longIn1 * longIn2 >> 24
 // uses:
@@ -232,15 +194,9 @@ void Stepper::set_directions() {
       count_direction[AXIS ##_AXIS] = 1; \
     }
 
-  #if HAS_X_DIR
-    SET_STEP_DIR(X); // A
-  #endif
-  #if HAS_Y_DIR
-    SET_STEP_DIR(Y); // B
-  #endif
-  #if HAS_Z_DIR
-    SET_STEP_DIR(Z); // C
-  #endif
+  SET_STEP_DIR(X); // A
+  SET_STEP_DIR(Y); // B
+  SET_STEP_DIR(Z); // C
 }
 
 #if ENABLED(ENDSTOP_INTERRUPTS_FEATURE)
@@ -263,17 +219,7 @@ void Stepper::set_directions() {
  */
 __signal(TIMER1_COMPA)
 {
-
   Stepper::advance_isr_scheduler();
-}
-
-namespace
-{
-  inline void __forceinline __flatten _enable_interrupts()
-  {
-    //Tuna::intrinsic::cli();
-    //SBI(TIMSK0, OCIE0B); ENABLE_STEPPER_DRIVER_INTERRUPT();
-  }
 }
 
 void __forceinline __flatten Stepper::isr() {
@@ -313,7 +259,6 @@ void __forceinline __flatten Stepper::isr() {
 
     NOLESS(OCR1A, TCNT1 + 16);
 
-    _enable_interrupts(); // re-enable ISRs
     return;
     }
 
@@ -325,7 +270,6 @@ void __forceinline __flatten Stepper::isr() {
       if (!cleaning_buffer_counter && (SD_FINISHED_STEPPERRELEASE)) enqueue_and_echo_commands(SD_FINISHED_RELEASECOMMAND);
     #endif
     _NEXT_ISR(200); // Run at max speed - 10 KHz
-    _enable_interrupts(); // re-enable ISRs
     return;
   }
 
@@ -364,7 +308,6 @@ void __forceinline __flatten Stepper::isr() {
     }
     else {
       _NEXT_ISR(2000); // Run at slow speed - 1 KHz
-      _enable_interrupts(); // re-enable ISRs
       return;
     }
   }
@@ -377,42 +320,23 @@ void __forceinline __flatten Stepper::isr() {
   __assume(current_block->active_extruder == 0);
 
   // Update endstops state, if enabled
-  #if ENABLED(ENDSTOP_INTERRUPTS_FEATURE)
-    if (e_hit && ENDSTOPS_ENABLED) {
-      endstops.update();
-      e_hit--;
-    }
-  #else
-  if (__unlikely(ENDSTOPS_ENABLED)) endstops.update();
-  #endif
+  if (__unlikely(ENDSTOPS_ENABLED))
+  {
+    endstops.update();
+  }
 
   // Take multiple steps per interrupt (For high speed moves)
   bool all_steps_done = false;
   for (uint8_t i = step_loops; __likely(i--);) {
     #if ENABLED(LIN_ADVANCE)
-
       counter[E_AXIS] += current_block->steps[E_AXIS];
       if (counter[E_AXIS] > 0) {
         counter[E_AXIS] -= current_block->step_event_count;
-        #if DISABLED(MIXING_EXTRUDER)
-          // Don't step E here for mixing extruder
-          __assume(count_direction[E_AXIS] == -1 || count_direction[E_AXIS] == 1);
-          count_position[E_AXIS] += count_direction[E_AXIS];
-          __unlikely(motor_direction(E_AXIS)) ? --e_steps[TOOL_E_INDEX] : ++e_steps[TOOL_E_INDEX];
-        #endif
+        // Don't step E here for mixing extruder
+        __assume(count_direction[E_AXIS] == -1 || count_direction[E_AXIS] == 1);
+        count_position[E_AXIS] += count_direction[E_AXIS];
+        __unlikely(motor_direction(E_AXIS)) ? --e_steps[TOOL_E_INDEX] : ++e_steps[TOOL_E_INDEX];
       }
-
-      #if ENABLED(MIXING_EXTRUDER)
-        // Step mixing steppers proportionally
-        const bool dir = motor_direction(E_AXIS);
-        MIXING_STEPPERS_LOOP(j) {
-          counter_m[j] += current_block->steps[E_AXIS];
-          if (counter_m[j] > 0) {
-            counter_m[j] -= current_block->mix_event_count[j];
-            dir ? --e_steps[j] : ++e_steps[j];
-          }
-        }
-      #endif
     #endif // LIN_ADVANCE
 
     #define _COUNTER(AXIS) counter[_AXIS(AXIS)]
@@ -445,36 +369,12 @@ void __forceinline __flatten Stepper::isr() {
      * Delays under 20 cycles (1.25µs) will be very accurate, using NOPs.
      * Longer delays use a loop. The resolution is 8 cycles.
      */
-    #if HAS_X_STEP
-      #define _CYCLE_APPROX_1 5
-    #else
-      #define _CYCLE_APPROX_1 0
-    #endif
-    #if ENABLED(X_DUAL_STEPPER_DRIVERS)
-      #define _CYCLE_APPROX_2 _CYCLE_APPROX_1 + 4
-    #else
-      #define _CYCLE_APPROX_2 _CYCLE_APPROX_1
-    #endif
-    #if HAS_Y_STEP
-      #define _CYCLE_APPROX_3 _CYCLE_APPROX_2 + 5
-    #else
-      #define _CYCLE_APPROX_3 _CYCLE_APPROX_2
-    #endif
-    #if ENABLED(Y_DUAL_STEPPER_DRIVERS)
-      #define _CYCLE_APPROX_4 _CYCLE_APPROX_3 + 4
-    #else
-      #define _CYCLE_APPROX_4 _CYCLE_APPROX_3
-    #endif
-    #if HAS_Z_STEP
-      #define _CYCLE_APPROX_5 _CYCLE_APPROX_4 + 5
-    #else
-      #define _CYCLE_APPROX_5 _CYCLE_APPROX_4
-    #endif
-    #if ENABLED(Z_DUAL_STEPPER_DRIVERS)
-      #define _CYCLE_APPROX_6 _CYCLE_APPROX_5 + 4
-    #else
-      #define _CYCLE_APPROX_6 _CYCLE_APPROX_5
-    #endif
+    #define _CYCLE_APPROX_1 5
+    #define _CYCLE_APPROX_2 _CYCLE_APPROX_1
+    #define _CYCLE_APPROX_3 _CYCLE_APPROX_2 + 5
+    #define _CYCLE_APPROX_4 _CYCLE_APPROX_3
+    #define _CYCLE_APPROX_5 _CYCLE_APPROX_4 + 5
+    #define _CYCLE_APPROX_6 _CYCLE_APPROX_5
     #define _CYCLE_APPROX_7 _CYCLE_APPROX_6
 
     #define CYCLES_EATEN_XYZE _CYCLE_APPROX_7
@@ -492,15 +392,9 @@ void __forceinline __flatten Stepper::isr() {
       uint32 pulse_start = TCNT0;
     #endif
 
-    #if HAS_X_STEP
-      PULSE_START(X);
-    #endif
-    #if HAS_Y_STEP
-      PULSE_START(Y);
-    #endif
-    #if HAS_Z_STEP
-      PULSE_START(Z);
-    #endif
+    PULSE_START(X);
+    PULSE_START(Y);
+    PULSE_START(Z);
 
     // For minimum pulse time wait before stopping pulses
     #if EXTRA_CYCLES_XYZE > 20
@@ -510,15 +404,9 @@ void __forceinline __flatten Stepper::isr() {
       DELAY_NOPS(EXTRA_CYCLES_XYZE);
     #endif
 
-    #if HAS_X_STEP
-      PULSE_STOP(X);
-    #endif
-    #if HAS_Y_STEP
-      PULSE_STOP(Y);
-    #endif
-    #if HAS_Z_STEP
-      PULSE_STOP(Z);
-    #endif
+    PULSE_STOP(X);
+    PULSE_STOP(Y);
+    PULSE_STOP(Z);
 
     if (++step_events_completed >= current_block->step_event_count) {
       all_steps_done = true;
@@ -538,19 +426,16 @@ void __forceinline __flatten Stepper::isr() {
     if (current_block->use_advance_lead) {
       const int delta_adv_steps = current_estep_rate[TOOL_E_INDEX] - current_adv_steps[TOOL_E_INDEX];
       current_adv_steps[TOOL_E_INDEX] += delta_adv_steps;
-      #if ENABLED(MIXING_EXTRUDER)
-        // Mixing extruders apply advance lead proportionally
-        MIXING_STEPPERS_LOOP(j)
-          e_steps[j] += delta_adv_steps * current_block->step_event_count / current_block->mix_event_count[j];
-      #else
-        // For most extruders, advance the single E stepper
-        e_steps[TOOL_E_INDEX] += delta_adv_steps;
-      #endif
+      // For most extruders, advance the single E stepper
+      e_steps[TOOL_E_INDEX] += delta_adv_steps;
    }
   #endif
 
   // If we have esteps to execute, fire the next advance_isr "now"
-  if (e_steps[TOOL_E_INDEX]) nextAdvanceISR = 0;
+    if (e_steps[TOOL_E_INDEX])
+    {
+      nextAdvanceISR = 0;
+    }
 
   // Calculate new timer value
   if (step_events_completed <= current_block->accelerate_until) {
@@ -575,12 +460,7 @@ void __forceinline __flatten Stepper::isr() {
     #if ENABLED(LIN_ADVANCE)
 
       if (current_block->use_advance_lead) {
-        #if ENABLED(MIXING_EXTRUDER)
-          MIXING_STEPPERS_LOOP(j)
-            current_estep_rate[j] = ((uint32)acc_step_rate * current_block->abs_adv_steps_multiplier8 * current_block->step_event_count / current_block->mix_event_count[j]) >> 17;
-        #else
-          current_estep_rate[TOOL_E_INDEX] = ((uint32)acc_step_rate * current_block->abs_adv_steps_multiplier8) >> 17;
-        #endif
+        current_estep_rate[TOOL_E_INDEX] = ((uint32)acc_step_rate * current_block->abs_adv_steps_multiplier8) >> 17;
       }
     #endif // LIN_ADVANCE
 
@@ -609,12 +489,7 @@ void __forceinline __flatten Stepper::isr() {
     #if ENABLED(LIN_ADVANCE)
 
       if (current_block->use_advance_lead) {
-        #if ENABLED(MIXING_EXTRUDER)
-          MIXING_STEPPERS_LOOP(j)
-            current_estep_rate[j] = ((uint32)step_rate * current_block->abs_adv_steps_multiplier8 * current_block->step_event_count / current_block->mix_event_count[j]) >> 17;
-        #else
-          current_estep_rate[TOOL_E_INDEX] = ((uint32)step_rate * current_block->abs_adv_steps_multiplier8) >> 17;
-        #endif
+        current_estep_rate[TOOL_E_INDEX] = ((uint32)step_rate * current_block->abs_adv_steps_multiplier8) >> 17;
       }
     #endif // LIN_ADVANCE
 
@@ -659,14 +534,8 @@ void __forceinline __flatten Stepper::isr() {
 
     nextAdvanceISR = eISR_Rate;
 
-    #if ENABLED(MK2_MULTIPLEXER)
-      // Even-numbered steppers are reversed
-      #define SET_E_STEP_DIR(INDEX) \
-        if (e_steps[INDEX]) E## INDEX ##_DIR_WRITE(e_steps[INDEX] < 0 ? !INVERT_E## INDEX ##_DIR ^ TEST(INDEX, 0) : INVERT_E## INDEX ##_DIR ^ TEST(INDEX, 0))
-    #else
-      #define SET_E_STEP_DIR(INDEX) \
-        if (e_steps[INDEX]) E## INDEX ##_DIR_WRITE(e_steps[INDEX] < 0 ? INVERT_E## INDEX ##_DIR : !INVERT_E## INDEX ##_DIR)
-    #endif
+    #define SET_E_STEP_DIR(INDEX) \
+      if (e_steps[INDEX]) E## INDEX ##_DIR_WRITE(e_steps[INDEX] < 0 ? INVERT_E## INDEX ##_DIR : !INVERT_E## INDEX ##_DIR)
 
     #define START_E_PULSE(INDEX) \
       if (e_steps[INDEX]) E## INDEX ##_STEP_WRITE(!INVERT_E_STEP_PIN)
@@ -678,18 +547,6 @@ void __forceinline __flatten Stepper::isr() {
       }
 
     SET_E_STEP_DIR(0);
-    #if E_STEPPERS > 1
-      SET_E_STEP_DIR(1);
-      #if E_STEPPERS > 2
-        SET_E_STEP_DIR(2);
-        #if E_STEPPERS > 3
-          SET_E_STEP_DIR(3);
-          #if E_STEPPERS > 4
-            SET_E_STEP_DIR(4);
-          #endif
-        #endif
-      #endif
-    #endif
 
     // Step all E steppers that have steps
     for (uint8_t i = step_loops; i--;) {
@@ -699,18 +556,6 @@ void __forceinline __flatten Stepper::isr() {
       #endif
 
       START_E_PULSE(0);
-      #if E_STEPPERS > 1
-        START_E_PULSE(1);
-        #if E_STEPPERS > 2
-          START_E_PULSE(2);
-          #if E_STEPPERS > 3
-            START_E_PULSE(3);
-            #if E_STEPPERS > 4
-              START_E_PULSE(4);
-            #endif
-          #endif
-        #endif
-      #endif
 
       // For minimum pulse time wait before stopping pulses
       #if EXTRA_CYCLES_E > 20
@@ -721,18 +566,6 @@ void __forceinline __flatten Stepper::isr() {
       #endif
 
       STOP_E_PULSE(0);
-      #if E_STEPPERS > 1
-        STOP_E_PULSE(1);
-        #if E_STEPPERS > 2
-          STOP_E_PULSE(2);
-          #if E_STEPPERS > 3
-            STOP_E_PULSE(3);
-            #if E_STEPPERS > 4
-              STOP_E_PULSE(4);
-            #endif
-          #endif
-        #endif
-      #endif
 
       // For minimum pulse time wait before looping
       #if EXTRA_CYCLES_E > 20
@@ -745,11 +578,6 @@ void __forceinline __flatten Stepper::isr() {
   }
 
   void __forceinline __flatten Stepper::advance_isr_scheduler() {
-    // Disable Timer0 ISRs and enable global ISR again to capture UART events (incoming chars)
-    //CBI(TIMSK0, OCIE0B); // Temperature ISR
-    //DISABLE_STEPPER_DRIVER_INTERRUPT();
-	//Tuna::intrinsic::sei();
-
     // Run main stepping ISR if flagged
     if (!nextMainISR) isr();
 
@@ -777,9 +605,6 @@ void __forceinline __flatten Stepper::isr() {
 
     // Don't run the ISR faster than possible
     NOLESS(OCR1A, TCNT1 + 16);
-
-    // Restore original ISR settings
-    _enable_interrupts();
   }
 
 #endif // LIN_ADVANCE
