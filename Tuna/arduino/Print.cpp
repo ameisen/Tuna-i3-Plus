@@ -54,16 +54,6 @@ size_t Print::print(const __FlashStringHelper *ifsh)
   return n;
 }
 
-size_t Print::print(const String &s)
-{
-  return write(s.c_str(), s.length());
-}
-
-size_t Print::print(const char str[])
-{
-  return write(str);
-}
-
 size_t Print::print(char c)
 {
   return write(c);
@@ -118,28 +108,9 @@ size_t Print::println(const __FlashStringHelper *ifsh)
   return n;
 }
 
-size_t Print::print(const Printable& x)
-{
-  return x.printTo(*this);
-}
-
 size_t Print::println(void)
 {
   return write("\r\n");
-}
-
-size_t Print::println(const String &s)
-{
-  size_t n = print(s);
-  n += println();
-  return n;
-}
-
-size_t Print::println(const char c[])
-{
-  size_t n = print(c);
-  n += println();
-  return n;
 }
 
 size_t Print::println(char c)
@@ -187,13 +158,6 @@ size_t Print::println(unsigned long num, int base)
 size_t Print::println(double num, int digits)
 {
   size_t n = print(num, digits);
-  n += println();
-  return n;
-}
-
-size_t Print::println(const Printable& x)
-{
-  size_t n = print(x);
   n += println();
   return n;
 }

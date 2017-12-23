@@ -22,6 +22,8 @@
 
 #include <tuna.h>
 
+#include <ctype.h>
+
 #include "cardreader.h"
 
 #include "bi3_plus_lcd.h"

@@ -211,7 +211,7 @@ public:
   // Reduce to fewer bits
   static int16_t __forceinline value_int() { return (int16_t)value_long(); }
   static uint16_t __forceinline value_ushort() { return (uint16_t)value_long(); }
-  inline static uint8_t value_byte() { return (uint8_t)constrain(value_long(), 0, 255); }
+  inline static uint8_t value_byte() { return (uint8_t)clamp(value_long(), 0_i32, 255_i32); }
 
   // Bool is true with no value or non-zero
   inline static bool value_bool() { return !has_value() || value_byte(); }
