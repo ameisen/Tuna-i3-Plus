@@ -96,6 +96,7 @@ class Stepper final {
     static int24 acceleration_time, deceleration_time;
     //unsigned long accelerate_until, decelerate_after, acceleration_rate, initial_rate, final_rate, nominal_rate;
     static uint16/*24*/ acc_step_rate; // needed for deceleration start point
+    static uint8_t step_loops, step_loops_nominal;
     static unsigned short OCR1A_nominal;
 
     static volatile int24 endstops_trigsteps[XYZ];
@@ -242,7 +243,50 @@ class Stepper final {
 
       NOMORE(step_rate, MAX_STEP_FREQUENCY);
 
-      return min(2'000'000_u24 / step_rate, uint24(type_trait<uint16>::max));
+      //step_rate = min(step_rate, 159999_u24);
+
+      /*if (step_rate > 80000) { // If steprate > 40kHz >> step 8 times
+        step_rate >>= 4;
+        step_loops = 16;
+      }
+      else */if (step_rate > 40000) { // If steprate > 40kHz >> step 8 times
+        step_rate >>= 3;
+        step_loops = 8;
+      }
+      else if (step_rate > 20000) { // If steprate > 20kHz >> step 4 times
+        step_rate >>= 2;
+        step_loops = 4;
+      }
+      else if (step_rate > 10000) { // If steprate > 10kHz >> step 2 times
+        step_rate >>= 1;
+        step_loops = 2;
+      }
+      else {
+        step_loops = 1;
+      }
+
+      __assume(step_rate <= 10000);
+
+      step_rate -= min(step_rate, uint16(F_CPU / 500000)); // Correct for minimal speed
+      if (step_rate >= (8_u16 * 256_i16)) { // higher step rate
+        const uint8 * __restrict foo = (const uint8 * __restrict)&step_rate;
+        unsigned short table_address = (unsigned short)&speed_lookuptable_fast[foo[1]][0];
+        unsigned char tmp_step_rate = foo[0];
+        unsigned short gain = (unsigned short)pgm_read_word_near(table_address + 2_u8);
+        timer = (unsigned short)pgm_read_word_near(table_address) - MultiU16X8toH8(tmp_step_rate, gain);
+      }
+      else { // lower step rates
+        unsigned short table_address = (unsigned short)&speed_lookuptable_slow[0][0];
+        table_address += ((step_rate) >> 1) & 0xFFFC_u16;
+        timer = (unsigned short)pgm_read_word_near(table_address);
+        timer -= (((unsigned short)pgm_read_word_near(table_address + 2) * (uint8(step_rate) & 0x07)) >> 3);
+      }
+      if (__unlikely(timer < 100)) { // (20kHz - this should never happen)
+        timer = 100;
+        MYSERIAL.print(MSG_STEPPER_TOO_HIGH);
+        MYSERIAL.println(uint16(step_rate));
+      }
+      return timer;
     }
 
     // Initialize the trapezoid generator from the current block.
@@ -273,6 +317,7 @@ class Stepper final {
       // step_rate to timer interval
       OCR1A_nominal = calc_timer(current_block->nominal_rate);
       // make a note of the number of step loops required at nominal speed
+      step_loops_nominal = step_loops;
       acc_step_rate = current_block->initial_rate;
       acceleration_time = calc_timer(acc_step_rate);
       _NEXT_ISR(acceleration_time);
