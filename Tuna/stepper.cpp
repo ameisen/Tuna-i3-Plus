@@ -93,9 +93,9 @@ uint24 Stepper::step_events_completed = 0; // The number of step events executed
    * This fix isn't perfect and may lose steps - but better than locking up completely
    * in future the planner should slow down if advance stepping rate would be too high
    */
-  uint16_t __forceinline adv_rate(const int steps, const uint16_t timer, const uint8_t loops) {
+  uint16_t __forceinline adv_rate(const int steps, const uint16_t timer) {
     if (__likely(steps != 0)) {
-      const uint16_t rate = (timer * loops) / uabs(steps);
+      const uint16_t rate = (timer) / uabs(steps);
       //return constrain(rate, 1, ADV_NEVER - 1)
       return rate ? rate : 1;
     }
@@ -110,7 +110,6 @@ volatile int24 Stepper::count_position[NUM_AXIS] = { 0 };
 volatile signed char Stepper::count_direction[NUM_AXIS] = { 1, 1, 1, 1 };
 
 unsigned short Stepper::acc_step_rate; // needed for deceleration start point
-uint8_t Stepper::step_loops, Stepper::step_loops_nominal;
 unsigned short Stepper::OCR1A_nominal;
 
 volatile int24 Stepper::endstops_trigsteps[XYZ];
@@ -339,9 +338,9 @@ template <bool endstops_enabled> void __forceinline __flatten Stepper::isr() {
     endstops.update();
   }
 
-  // Take multiple steps per interrupt (For high speed moves)
+  // Step
   bool all_steps_done = false;
-  for (uint8_t i = step_loops; __likely(i--);) {
+  {
     #if ENABLED(LIN_ADVANCE)
       counter[E_AXIS] += current_block->steps[E_AXIS];
       if (counter[E_AXIS] > 0) {
@@ -422,17 +421,19 @@ template <bool endstops_enabled> void __forceinline __flatten Stepper::isr() {
     PULSE_STOP(Y);
     PULSE_STOP(Z);
 
-    if (++step_events_completed >= current_block->step_event_count) {
+    if (__unlikely(++step_events_completed >= current_block->step_event_count))
+    {
       all_steps_done = true;
-      break;
     }
-
-    // For minimum pulse time wait after stopping pulses also
-    #if EXTRA_CYCLES_XYZE > 20
+    else
+    {
+      // For minimum pulse time wait after stopping pulses also
+#if EXTRA_CYCLES_XYZE > 20
       if (i) while (EXTRA_CYCLES_XYZE > (uint32)(TCNT0 - pulse_start) * (INT0_PRESCALER)) { /* nada */ }
-    #elif EXTRA_CYCLES_XYZE > 0
+#elif EXTRA_CYCLES_XYZE > 0
       if (i) DELAY_NOPS(EXTRA_CYCLES_XYZE);
-    #endif
+#endif
+    }
 
   } // steps_loop
 
@@ -478,7 +479,7 @@ template <bool endstops_enabled> void __forceinline __flatten Stepper::isr() {
       }
     #endif // LIN_ADVANCE
 
-    eISR_Rate = adv_rate(e_steps[TOOL_E_INDEX], timer, step_loops);
+    eISR_Rate = adv_rate(e_steps[TOOL_E_INDEX], timer);
   }
   else if (step_events_completed > current_block->decelerate_after) {
     uint16_t step_rate = MultiU24X24toH16(deceleration_time, current_block->acceleration_rate);
@@ -508,7 +509,7 @@ template <bool endstops_enabled> void __forceinline __flatten Stepper::isr() {
     #endif // LIN_ADVANCE
 
     #if ENABLED(LIN_ADVANCE)
-      eISR_Rate = adv_rate(e_steps[TOOL_E_INDEX], timer, step_loops);
+      eISR_Rate = adv_rate(e_steps[TOOL_E_INDEX], timer);
     #endif
   }
   else {
@@ -519,15 +520,12 @@ template <bool endstops_enabled> void __forceinline __flatten Stepper::isr() {
       if (current_block->use_advance_lead)
         current_estep_rate[TOOL_E_INDEX] = final_estep_rate;
 
-      eISR_Rate = adv_rate(e_steps[TOOL_E_INDEX], OCR1A_nominal, step_loops_nominal);
+      eISR_Rate = adv_rate(e_steps[TOOL_E_INDEX], OCR1A_nominal);
 
     #endif
 
     split(OCR1A_nominal);  // split step into multiple ISRs if larger than  ENDSTOP_NOMINAL_OCR_VAL
     _NEXT_ISR(ocr_val);
-
-    // ensure we're running at the correct step rate, even if we just came off an acceleration
-    step_loops = step_loops_nominal;
   }
 
   // If current block is finished, reset pointer
@@ -564,7 +562,7 @@ template <bool endstops_enabled> void __forceinline __flatten Stepper::isr() {
     SET_E_STEP_DIR(0);
 
     // Step all E steppers that have steps
-    for (uint8_t i = step_loops; i--;) {
+    {
 
       #if EXTRA_CYCLES_E > 20
         uint32 pulse_start = TCNT0;
