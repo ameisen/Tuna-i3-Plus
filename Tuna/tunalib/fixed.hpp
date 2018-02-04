@@ -255,6 +255,11 @@ namespace Tuna
 			return m_Value <= T(T(val) << fractional_bits );
 		}
 
+    constexpr operator bool() const __restrict
+    {
+      return m_Value != 0;
+    }
+
 		constexpr fixed & __restrict operator *= (arg_type<fixed> val) __restrict
 		{
 			const T y = val.m_Value;

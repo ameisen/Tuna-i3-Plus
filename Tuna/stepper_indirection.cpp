@@ -31,6 +31,8 @@
  * Copyright (c) 2015 Dominik Wenger
  */
 
+#include "tuna.h"
+
 #include "stepper_indirection.h"
 
 #include "MarlinConfig.h"

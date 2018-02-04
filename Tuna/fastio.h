@@ -32,6 +32,9 @@
 #include <avr/io.h>
 #include "macros.h"
 
+template <uint8 bits>
+static constexpr const auto _bv = make_uintsz<1_u16 << bits>;
+
 #define AVR_AT90USB1286_FAMILY (defined(__AVR_AT90USB1287__) || defined(__AVR_AT90USB1286__) || defined(__AVR_AT90USB1286P__) || defined(__AVR_AT90USB646__) || defined(__AVR_AT90USB646P__)  || defined(__AVR_AT90USB647__))
 #define AVR_ATmega1284_FAMILY (defined(__AVR_ATmega644__) || defined(__AVR_ATmega644P__) || defined(__AVR_ATmega644PA__) || defined(__AVR_ATmega1284P__))
 #define AVR_ATmega2560_FAMILY (defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__))
@@ -68,20 +71,20 @@
  * Why double up on these macros? see http://gcc.gnu.org/onlinedocs/cpp/Stringification.html
  */
 
-#define _READ(IO) ((bool)(DIO ## IO ## _RPORT & _BV(DIO ## IO ## _PIN)))
+#define _READ(IO) ((bool)(DIO ## IO ## _RPORT & _bv<DIO ## IO ## _PIN>))
 
 // On some boards pins > 0x100 are used. These are not converted to atomic actions. A critical section is needed.
 
-#define _WRITE_NC(IO, v)  do { if (v) {DIO ##  IO ## _WPORT |= _BV(DIO ## IO ## _PIN); } else {DIO ##  IO ## _WPORT &= ~_BV(DIO ## IO ## _PIN); }; } while (0)
+#define _WRITE_NC(IO, v)  do { if (v) {DIO ##  IO ## _WPORT |= _bv<DIO ## IO ## _PIN>; } else {DIO ##  IO ## _WPORT &= ~_bv<DIO ## IO ## _PIN>; }; } while (0)
 
 #define _WRITE_C(IO, v)   do { if (v) { \
                                          CRITICAL_SECTION_START; \
-                                         {DIO ##  IO ## _WPORT |= _BV(DIO ## IO ## _PIN); } \
+                                         {DIO ##  IO ## _WPORT |= _bv<DIO ## IO ## _PIN>; } \
                                          CRITICAL_SECTION_END; \
                                        } \
                                        else { \
                                          CRITICAL_SECTION_START; \
-                                         {DIO ##  IO ## _WPORT &= ~_BV(DIO ## IO ## _PIN); } \
+                                         {DIO ##  IO ## _WPORT &= ~_bv<DIO ## IO ## _PIN>; } \
                                          CRITICAL_SECTION_END; \
                                        } \
                                      } \
@@ -89,13 +92,13 @@
 
 #define _WRITE(IO, v) do { if (&(DIO ## IO ## _RPORT) >= (uint8_t *)0x100) {_WRITE_C(IO, v); } else {_WRITE_NC(IO, v); }; } while (0)
 
-#define _TOGGLE(IO) do {DIO ## IO ## _RPORT ^= _BV(DIO ## IO ## _PIN); } while (0)
+#define _TOGGLE(IO) do {DIO ## IO ## _RPORT ^= _bv<DIO ## IO ## _PIN>; } while (0)
 
-#define _SET_INPUT(IO) do {DIO ## IO ## _DDR &= ~_BV(DIO ## IO ## _PIN); } while (0)
-#define _SET_OUTPUT(IO) do {DIO ## IO ## _DDR |= _BV(DIO ## IO ## _PIN); } while (0)
+#define _SET_INPUT(IO) do {DIO ## IO ## _DDR &= ~_bv<DIO ## IO ## _PIN>; } while (0)
+#define _SET_OUTPUT(IO) do {DIO ## IO ## _DDR |= _bv<DIO ## IO ## _PIN>; } while (0)
 
-#define _GET_INPUT(IO) ((DIO ## IO ## _DDR & _BV(DIO ## IO ## _PIN)) == 0)
-#define _GET_OUTPUT(IO) ((DIO ## IO ## _DDR & _BV(DIO ## IO ## _PIN)) != 0)
+#define _GET_INPUT(IO) ((DIO ## IO ## _DDR & _bv<DIO ## IO ## _PIN>) == 0)
+#define _GET_OUTPUT(IO) ((DIO ## IO ## _DDR & _bv<DIO ## IO ## _PIN>) != 0)
 #define _GET_TIMER(IO) (DIO ## IO ## _PWM)
 
 #define READ(IO) _READ(IO)
@@ -175,22 +178,22 @@ typedef enum : uint8_t {
 #define GET_COMA(T)  GET_COM(T,A)
 #define GET_COMB(T)  GET_COM(T,B)
 #define GET_COMC(T)  GET_COM(T,C)
-#define GET_ICNC(T)  (!!(TCCR##T##B & _BV(ICNC##T)))
-#define GET_ICES(T)  (!!(TCCR##T##B & _BV(ICES##T)))
-#define GET_FOC(T,Q) (!!(TCCR##T##C & _BV(FOC##T##Q)))
+#define GET_ICNC(T)  (!!(TCCR##T##B & _bv<ICNC##T>))
+#define GET_ICES(T)  (!!(TCCR##T##B & _bv<ICES##T>))
+#define GET_FOC(T,Q) (!!(TCCR##T##C & _bv<FOC##T##Q>))
 #define GET_FOCA(T)  GET_FOC(T,A)
 #define GET_FOCB(T)  GET_FOC(T,B)
 #define GET_FOCC(T)  GET_FOC(T,C)
 
 // Set Wave Generation Mode bits
 #define _SET_WGM(T,V) do{ \
-    TCCR##T##A = (TCCR##T##A & ~(0x3 << WGM##T##0)) | (( int(V)       & 0x3) << WGM##T##0); \
-    TCCR##T##B = (TCCR##T##B & ~(0x3 << WGM##T##2)) | (((int(V) >> 2) & 0x3) << WGM##T##2); \
+    TCCR##T##A = (TCCR##T##A & ~(0x3_u16 << WGM##T##0)) | (( uint16(V)       & 0x3_u8) << WGM##T##0); \
+    TCCR##T##B = (TCCR##T##B & ~(0x3_u16 << WGM##T##2)) | (((uint16(V) >> 2) & 0x3_u8) << WGM##T##2); \
   }while(0)
 #define SET_WGM(T,V) _SET_WGM(T,WGM_##V)
 
 // Set Clock Select bits
-#define _SET_CS(T,V) (TCCR##T##B = (TCCR##T##B & ~(0x7 << CS##T##0)) | ((int(V) & 0x7) << CS##T##0))
+#define _SET_CS(T,V) (TCCR##T##B = (TCCR##T##B & ~(0x7_u16 << CS##T##0)) | ((uint16(V) & 0x7_u8) << CS##T##0))
 #define _SET_CS0(V) _SET_CS(0,V)
 #define _SET_CS1(V) _SET_CS(1,V)
 #ifdef TCCR2
@@ -214,7 +217,7 @@ typedef enum : uint8_t {
 #define SET_CS(T,V) SET_CS##T(V)
 
 // Set Compare Mode bits
-#define _SET_COM(T,Q,V) (TCCR##T##Q = (TCCR##T##Q & ~(0x3 << COM##T##Q##0)) | (int(V) << COM##T##Q##0))
+#define _SET_COM(T,Q,V) (TCCR##T##Q = (TCCR##T##Q & ~(0x3_u16 << COM##T##Q##0)) | (uint16(V) << COM##T##Q##0))
 #define SET_COM(T,Q,V) _SET_COM(T,Q,COM_##V)
 #define SET_COMA(T,V) SET_COM(T,A,V)
 #define SET_COMB(T,V) SET_COM(T,B,V)
@@ -222,13 +225,13 @@ typedef enum : uint8_t {
 #define SET_COMS(T,V1,V2,V3) do{ SET_COMA(T,V1); SET_COMB(T,V2); SET_COMC(T,V3); }while(0)
 
 // Set Noise Canceler bit
-#define SET_ICNC(T,V) (TCCR##T##B = (V) ? TCCR##T##B | _BV(ICNC##T) : TCCR##T##B & ~_BV(ICNC##T))
+#define SET_ICNC(T,V) (TCCR##T##B = (V) ? TCCR##T##B | _bv<ICNC##T> : TCCR##T##B & ~_bv<ICNC##T>)
 
 // Set Input Capture Edge Select bit
-#define SET_ICES(T,V) (TCCR##T##B = (V) ? TCCR##T##B | _BV(ICES##T) : TCCR##T##B & ~_BV(ICES##T))
+#define SET_ICES(T,V) (TCCR##T##B = (V) ? TCCR##T##B | _bv<ICES##T> : TCCR##T##B & ~_bv<ICES##T>)
 
 // Set Force Output Compare bit
-#define SET_FOC(T,Q,V) (TCCR##T##C = (V) ? TCCR##T##C | _BV(FOC##T##Q) : TCCR##T##C & ~_BV(FOC##T##Q))
+#define SET_FOC(T,Q,V) (TCCR##T##C = (V) ? TCCR##T##C | _bv<FOC##T##Q> : TCCR##T##C & ~_bv<FOC##T##Q>)
 #define SET_FOCA(T,V) SET_FOC(T,A,V)
 #define SET_FOCB(T,V) SET_FOC(T,B,V)
 #define SET_FOCC(T,V) SET_FOC(T,C,V)

@@ -266,6 +266,9 @@ CardReader card;
 
 bool Running = true;
 
+// Are advanced config options in units per minute or units per second?
+bool advanced_units_per_second = true;
+
 //uint8_t marlin_debug_flags = DEBUG_NONE;
 
 /**
@@ -1996,6 +1999,37 @@ inline void gcode_M110() {
 }
 
 /**
+* M900: Set and/or Get advance K factor and WH/D ratio
+*
+*  K<factor>                  Set advance K factor
+*  R<ratio>                   Set ratio directly (overrides WH/D)
+*  W<width> H<height> D<diam> Set ratio from WH/D
+*/
+inline void gcode_M900() {
+  stepper.synchronize();
+
+  const float newK = parser.floatval('K', -1);
+  if (newK >= 0) planner.extruder_advance_k = newK;
+
+  float newR = parser.floatval('R', -1);
+  if (newR < 0) {
+    const float newD = parser.floatval('D', -1),
+      newW = parser.floatval('W', -1),
+      newH = parser.floatval('H', -1);
+    if (newD >= 0 && newW >= 0 && newH >= 0)
+      newR = newD ? (newW * newH) / (sq(newD * 0.5) * M_PI) : 0;
+  }
+  if (newR >= 0) planner.advance_ed_ratio = newR;
+
+  SERIAL_ECHO_START();
+  SERIAL_ECHOPAIR("Advance K=", planner.extruder_advance_k);
+  SERIAL_ECHOPGM(" E/D=");
+  const float ratio = planner.advance_ed_ratio;
+  if (ratio) SERIAL_ECHO(ratio); else SERIAL_ECHOPGM("Auto");
+  SERIAL_EOL();
+}
+
+/**
  * M111: Set the debug level
  */
 inline void gcode_M111() {
@@ -2274,13 +2308,21 @@ inline void gcode_M201() {
 	LOOP_XYZE(i) {
 		if (parser.seen(axis_codes[i])) {
 			const uint8_t a = i + (i == E_AXIS ? TARGET_EXTRUDER : 0);
-			planner.max_acceleration_mm_per_s2[a] = parser.value_axis_units((AxisEnum)a);
+      float result = parser.value_axis_units(AxisEnum(a));
+			planner.max_acceleration_mm_per_s2[a] = parser.value_axis_units(AxisEnum(a));
 		}
 	}
 	// steps per sq second need to be updated to agree with the units per sq second (as they are what is used in the planner)
 	planner.reset_acceleration_rates();
 }
 
+inline void gcode_M298() {
+  advanced_units_per_second = true;
+}
+
+inline void gcode_M299() {
+  advanced_units_per_second = false;
+}
 
 /**
  * M203: Set maximum feedrate that your machine can sustain (M203 X200 Y200 Z300 E10000) in units/sec
@@ -2294,7 +2336,12 @@ inline void gcode_M203() {
 	LOOP_XYZE(i)
 		if (parser.seen(axis_codes[i])) {
 			const uint8_t a = i + (i == E_AXIS ? TARGET_EXTRUDER : 0);
-			planner.max_feedrate_mm_s[a] = parser.value_axis_units((AxisEnum)a);
+      float result = parser.value_axis_units(AxisEnum(a));
+      if (!advanced_units_per_second)
+      {
+        result /= 60;
+      }
+      planner.max_feedrate_mm_s[a] = result;
 		}
 }
 
@@ -2949,6 +2996,12 @@ void process_next_command() {
 		gcode_M206();
 		break;
 
+  case 298:
+    gcode_M298();
+    break;
+  case 299:
+    gcode_M299();
+    break;
 
 
 	case 211: // M211: Enable, Disable, and/or Report software endstops
@@ -3000,6 +3053,10 @@ void process_next_command() {
 	case 503: // M503: print settings currently in memory
 		gcode_M503();
 		break;
+
+  case 900: // M900: Set advance K factor.
+    gcode_M900();
+    break;
 
 	case 907: // M907: Set digital trimpot motor current using axis codes.
 		gcode_M907();
@@ -3578,4 +3635,3 @@ void loop() {
 	endstops.report_state();
 	idle();
 }
-

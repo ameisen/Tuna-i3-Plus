@@ -502,7 +502,7 @@
  * Override with M92
  *                                      X, Y, Z, E0 [, E1[, E2[, E3[, E4]]]]
  */
-#define DEFAULT_AXIS_STEPS_PER_UNIT   { 100, 100, 533.0 + (1.0 / 3.0), 114.13 }
+#define DEFAULT_AXIS_STEPS_PER_UNIT   { 160, 100, 400, 88.78 }
 
 /**
  * Default Max Feed Rate (mm/s)
@@ -722,8 +722,8 @@ constexpr const uint8_t DEFAULT_PREHEAT_PRESETS[3][2] = { // TODO fixme
 // @section machine
 
 // Invert the stepper direction. Change (or reverse the motor connector) if an axis goes the wrong way.
-#define INVERT_X_DIR true
-#define INVERT_Y_DIR true
+#define INVERT_X_DIR false
+#define INVERT_Y_DIR false
 #define INVERT_Z_DIR false
 
 // Enable this option for Toshiba stepper drivers
@@ -756,8 +756,8 @@ constexpr const uint8_t DEFAULT_PREHEAT_PRESETS[3][2] = { // TODO fixme
 #define Y_MIN_POS 0
 #define Z_MIN_POS 0
 #define X_MAX_POS 200
-#define Y_MAX_POS 200
-#define Z_MAX_POS 170
+#define Y_MAX_POS 194 //200
+#define Z_MAX_POS 150
 
 // If enabled, axes won't move below MIN_POS in response to movement commands.
 #define MIN_SOFTWARE_ENDSTOPS

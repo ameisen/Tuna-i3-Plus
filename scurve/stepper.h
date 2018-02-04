@@ -93,7 +93,6 @@ class Stepper final {
       #define _NEXT_ISR(T) OCR1A = T
     #endif // ADVANCE or LIN_ADVANCE
 
-    static int24 acceleration_time, deceleration_time;
     //unsigned long accelerate_until, decelerate_after, acceleration_rate, initial_rate, final_rate, nominal_rate;
     static uint16/*24*/ acc_step_rate; // needed for deceleration start point
     static uint8_t step_loops, step_loops_nominal;
@@ -138,11 +137,11 @@ class Stepper final {
     // Interrupt Service Routines
     //
 
-    template <bool endstops_enabled> static void __forceinline __flatten isr();
+    static void __forceinline __flatten isr();
 
     #if ENABLED(LIN_ADVANCE)
-    template <bool endstops_enabled> static void __forceinline __flatten advance_isr();
-    template <bool endstops_enabled> static void __forceinline __flatten advance_isr_scheduler();
+      static void __forceinline __flatten advance_isr();
+      static void __forceinline __flatten advance_isr_scheduler();
     #endif
 
     //
@@ -265,26 +264,24 @@ class Stepper final {
         step_loops = 1;
       }
 
-      __assume(step_rate <= 10000);
-
-      step_rate -= min(step_rate, uint16(F_CPU / 500000)); // Correct for minimal speed
-      if (step_rate >= (8_u16 * 256_i16)) { // higher step rate
-        const uint8 * __restrict foo = (const uint8 * __restrict)&step_rate;
-        unsigned short table_address = (unsigned short)&speed_lookuptable_fast[foo[1]][0];
-        unsigned char tmp_step_rate = foo[0];
-        unsigned short gain = (unsigned short)pgm_read_word_near(table_address + 2_u8);
+      NOLESS(step_rate, F_CPU / 500000);
+      step_rate -= F_CPU / 500000; // Correct for minimal speed
+      if (step_rate >= (8 * 256)) { // higher step rate
+        unsigned short table_address = (unsigned short)&speed_lookuptable_fast[(unsigned char)(step_rate >> 8)][0];
+        unsigned char tmp_step_rate = (step_rate & 0x00FF);
+        unsigned short gain = (unsigned short)pgm_read_word_near(table_address + 2);
         timer = (unsigned short)pgm_read_word_near(table_address) - MultiU16X8toH8(tmp_step_rate, gain);
       }
       else { // lower step rates
         unsigned short table_address = (unsigned short)&speed_lookuptable_slow[0][0];
-        table_address += ((step_rate) >> 1) & 0xFFFC_u16;
+        table_address += ((step_rate) >> 1) & 0xFFFC;
         timer = (unsigned short)pgm_read_word_near(table_address);
-        timer -= (((unsigned short)pgm_read_word_near(table_address + 2) * (uint8(step_rate) & 0x07)) >> 3);
+        timer -= (((unsigned short)pgm_read_word_near(table_address + 2) * (unsigned char)(step_rate & 0x0007)) >> 3);
       }
-      if (__unlikely(timer < 100)) { // (20kHz - this should never happen)
+      if (timer < 100) { // (20kHz - this should never happen)
         timer = 100;
         MYSERIAL.print(MSG_STEPPER_TOO_HIGH);
-        MYSERIAL.println(uint16(step_rate));
+        MYSERIAL.println(uint32(step_rate));
       }
       return timer;
     }
@@ -313,14 +310,12 @@ class Stepper final {
         set_directions();
       }
 
-      deceleration_time = 0;
       // step_rate to timer interval
       OCR1A_nominal = calc_timer(current_block->nominal_rate);
       // make a note of the number of step loops required at nominal speed
       step_loops_nominal = step_loops;
       acc_step_rate = current_block->initial_rate;
-      acceleration_time = calc_timer(acc_step_rate);
-      _NEXT_ISR(acceleration_time);
+      _NEXT_ISR(calc_timer(acc_step_rate));
 
       #if ENABLED(LIN_ADVANCE)
         if (current_block->use_advance_lead) {

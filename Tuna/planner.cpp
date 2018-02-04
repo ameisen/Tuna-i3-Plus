@@ -182,9 +182,10 @@ void Planner::init() {
  * Calculate trapezoid parameters, multiplying the entry- and exit-speeds
  * by the provided factors.
  */
-void Planner::calculate_trapezoid_for_block(block_t * __restrict const block, const float & __restrict entry_factor, const float & __restrict exit_factor) {
-  uint32 initial_rate = CEIL(block->nominal_rate * entry_factor),
-           final_rate = CEIL(block->nominal_rate * exit_factor); // (steps per second)
+void Planner::calculate_trapezoid_for_block(block_t * __restrict const block, const float & __restrict entry_speed, const float & __restrict next_entry_speed) {
+  //float nominal_recip = 1.0f / nominal_speed;
+  uint32 initial_rate = CEIL(entry_speed),
+           final_rate = CEIL(next_entry_speed); // (steps per second)
 
   // Limit minimal step rate (Otherwise the timer will overflow.)
   NOLESS(initial_rate, MINIMAL_STEP_RATE);
@@ -337,9 +338,88 @@ void Planner::recalculate_trapezoids() {
     if (current) {
       // Recalculate if current block entry or exit junction speed has changed.
       if (TEST(current->flag, BLOCK_BIT_RECALCULATE) || TEST(next->flag, BLOCK_BIT_RECALCULATE)) {
-        // NOTE: Entry and exit factors always > 0 by all previous logic operations.
-        float nom = current->nominal_speed;
-        calculate_trapezoid_for_block(current, current->entry_speed / nom, next->entry_speed / nom);
+        const float old_entry_speed = next->entry_speed;
+        const uint8 direction_bits_delta = next->direction_bits ^ current->direction_bits;
+
+        constexpr const bool NEW_SPEEDER = false;
+        constexpr const bool ALLOW_INVERSE_DIRECTION_SMOOTHING = true;
+        constexpr const bool SCALE_AXIAL_VELOCITIES = true;
+
+        if constexpr(NEW_SPEEDER)
+        {
+          if (ALLOW_INVERSE_DIRECTION_SMOOTHING || !direction_bits_delta)
+          {
+            const float velocity_scalar = next->nominal_rate / current->nominal_rate;
+
+            const float current_adjusted_steps[3] = {
+              current->steps[0] * steps_to_mm[X_AXIS],
+              current->steps[1] * steps_to_mm[Y_AXIS],
+              current->steps[2] * steps_to_mm[Z_AXIS],
+            };
+            // Treat them as a vector, and normalize them. We then use the components as multipliers to break down
+            // the velocity.
+            const float current_vector_length = sqrt(square(current_adjusted_steps[0]) + square(current_adjusted_steps[1]) + square(current_adjusted_steps[2]));
+            float current_vector_length_recip = 0.0f;
+            if (current_vector_length)
+            {
+              current_vector_length_recip = 1.0f / current_vector_length;
+            }
+            const float current_frac[3] = {
+              current_adjusted_steps[0] * current_vector_length_recip,
+              current_adjusted_steps[1] * current_vector_length_recip,
+              current_adjusted_steps[2] * current_vector_length_recip
+            };
+            // We should recalculate entry_speed for next as well while we are here.
+            const float current_axis_velocity[3] = {
+              (current->nominal_speed * current_frac[0]),
+              (current->nominal_speed * current_frac[1]),
+              (current->nominal_speed * current_frac[2])
+            };
+
+
+            const float current_mult[3] = {
+              (SCALE_AXIAL_VELOCITIES) ? (current_frac[0] * velocity_scalar) : (current_frac[0] == 0.0f) ? 0.0f : 1.0f,
+              (SCALE_AXIAL_VELOCITIES) ? (current_frac[1] * velocity_scalar) : (current_frac[1] == 0.0f) ? 0.0f : 1.0f,
+              (SCALE_AXIAL_VELOCITIES) ? (current_frac[2] * velocity_scalar) : (current_frac[2] == 0.0f) ? 0.0f : 1.0f
+            };
+
+
+
+            const float next_adjusted_steps[3] = {
+              (next->steps[0] * steps_to_mm[X_AXIS]) * current_mult[0],
+              (next->steps[1] * steps_to_mm[Y_AXIS]) * current_mult[1],
+              (next->steps[2] * steps_to_mm[Z_AXIS]) * current_mult[2],
+            };
+            // Treat them as a vector, and normalize them. We then use the components as multipliers to break down
+            // the velocity.
+            const float next_vector_length = sqrt(square(next_adjusted_steps[0]) + square(next_adjusted_steps[1]) + square(next_adjusted_steps[2]));
+            float next_vector_length_recip = 0.0f;
+            if (next_vector_length)
+            {
+              next_vector_length_recip = 1.0f / next_vector_length;
+            }
+            const float next_frac[3] = {
+              next_adjusted_steps[0] * next_vector_length_recip,
+              next_adjusted_steps[1] * next_vector_length_recip,
+              next_adjusted_steps[2] * next_vector_length_recip
+            };
+            // We should recalculate entry_speed for next as well while we are here.
+            const float next_axis_velocity[3] = {
+              TEST(direction_bits_delta, X_AXIS) ? 0 : (next->nominal_speed * next_frac[0]),
+              TEST(direction_bits_delta, Y_AXIS) ? 0 : (next->nominal_speed * next_frac[1]),
+              TEST(direction_bits_delta, Z_AXIS) ? 0 : (next->nominal_speed * next_frac[2])
+            };
+
+            const float new_velocity = sqrt(square(next_axis_velocity[0]) + square(next_axis_velocity[1]) + square(next_axis_velocity[2]));
+            next->entry_speed = max(0.0f, new_velocity);
+          }
+          else
+          {
+            next->entry_speed = 0.0f;
+          }
+        }
+
+        calculate_trapezoid_for_block(current, current->entry_speed, next->entry_speed);
         CBI(current->flag, BLOCK_BIT_RECALCULATE); // Reset current only to ensure next trapezoid is computed
       }
     }
@@ -347,8 +427,7 @@ void Planner::recalculate_trapezoids() {
   }
   // Last/newest block in buffer. Exit speed is set with MINIMUM_PLANNER_SPEED. Always recalculated.
   if (next) {
-    float nom = next->nominal_speed;
-    calculate_trapezoid_for_block(next, next->entry_speed / nom, (MINIMUM_PLANNER_SPEED) / nom);
+    calculate_trapezoid_for_block(next, next->entry_speed, 0.0f);
     CBI(next->flag, BLOCK_BIT_RECALCULATE);
   }
 }
@@ -1276,7 +1355,7 @@ void Planner::_buffer_line(const float & __restrict a, const float & __restrict 
        it takes into account the nonlinearities of both the junction angle and junction velocity.
      */
 
-    vmax_junction = MINIMUM_PLANNER_SPEED; // Set default max junction speed
+    vmax_junction = 0.0f; // Set default max junction speed
 
     // Skip first block or when previous_nominal_speed is used as a flag for homing and offset cycles.
     if (block_buffer_head != block_buffer_tail && previous_nominal_speed > 0.0) {
@@ -1379,8 +1458,10 @@ void Planner::_buffer_line(const float & __restrict a, const float & __restrict 
   block->max_entry_speed = vmax_junction;
 
   // Initialize block entry speed. Compute based on deceleration to user-defined MINIMUM_PLANNER_SPEED.
-  const float v_allowable = max_allowable_speed(-block->acceleration, MINIMUM_PLANNER_SPEED, block->millimeters);
-  block->entry_speed = min(vmax_junction, v_allowable);
+  const float v_allowable = max_allowable_speed(-block->acceleration, 0.0f, block->millimeters);
+  // If stepper ISR is disabled, this indicates buffer_segment wants to add a split block.
+  // In this case start with the max. allowed speed to avoid an interrupted first move.
+  block->entry_speed = TEST(TIMSK1, OCIE1A) ? 0.0f : min(vmax_junction, v_allowable);
 
   // Initialize planner efficiency flags
   // Set flag if block will always reach maximum junction speed regardless of entry/exit speeds.
@@ -1390,7 +1471,7 @@ void Planner::_buffer_line(const float & __restrict a, const float & __restrict 
   // block nominal speed limits both the current and next maximum junction speeds. Hence, in both
   // the reverse and forward planners, the corresponding block junction speed will always be at the
   // the maximum junction speed and may always be ignored for any speed reduction checks.
-  block->flag |= BLOCK_FLAG_RECALCULATE | (block->nominal_speed <= v_allowable ? BLOCK_FLAG_NOMINAL_LENGTH : 0);
+  block->flag |= block->nominal_speed <= v_allowable ? BLOCK_FLAG_RECALCULATE | BLOCK_FLAG_NOMINAL_LENGTH : BLOCK_FLAG_RECALCULATE;
 
   // Update previous path unit_vector and nominal speed
   COPY(previous_speed, current_speed);
@@ -1427,8 +1508,6 @@ void Planner::_buffer_line(const float & __restrict a, const float & __restrict 
         * axis_steps_per_mm[E_AXIS_N] * 256.0
       );
   #endif // LIN_ADVANCE
-
-  calculate_trapezoid_for_block(block, block->entry_speed / block->nominal_speed, safe_speed / block->nominal_speed);
 
   // Move buffer head
   block_buffer_head = next_buffer_head;

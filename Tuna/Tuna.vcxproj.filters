@@ -228,9 +228,6 @@
     <ClInclude Include="tunalib\flash.hpp">
       <Filter>tunalib</Filter>
     </ClInclude>
-    <ClInclude Include="tunalib\algorithm_impl.hpp">
-      <Filter>tunalib</Filter>
-    </ClInclude>
     <ClInclude Include="tunalib\serial.hpp">
       <Filter>tunalib</Filter>
     </ClInclude>
@@ -257,6 +254,9 @@
     </ClInclude>
     <ClInclude Include="arduino\Arduino.h">
       <Filter>arduino</Filter>
+    </ClInclude>
+    <ClInclude Include="tunalib\algorithm_impl.hpp">
+      <Filter>tunalib</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

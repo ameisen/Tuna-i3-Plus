@@ -281,9 +281,9 @@ namespace Tuna::Thermistor
   template <uint16 delta, uint16 max, uint16 b, uint16 a>
   constexpr inline uint16 __forceinline __flatten interpolate()
   {
-    uint32 a_lambda = (uint32(a) * uint32(delta));
-    uint32 b_lambda = (uint32(b) * uint32(max - delta));
-    return (a_lambda + b_lambda) / max;
+    uint32 a_lambda = (uint32(a) * delta);
+    uint32 b_lambda = (uint32(b) * uint16(max - delta));
+    return uint16((uint64(a_lambda) + b_lambda) / max);
   }
 
   template <uint16 temperature, bool first = true, uint8 cur_idx = 0, uint8 best_le = low_temp_idx>
@@ -370,15 +370,21 @@ namespace Tuna::Thermistor
     uint8_t R = max_idx;
     do
     {
-      uint8_t m = (L + R) / 2;
+      uint8_t m = uint8_t(L + R) / 2;
+      __assume(m >= min_idx && m <= max_idx);
+      __assume(m >= L && m <= R);
       adc_t A = as<adc_t>(temp_table[m].Adc);
       if (A < adc)
       {
+        __assume(L >= min_idx && L <= max_idx);
         L = m + 1;
+        __assume(L >= min_idx && L <= max_idx);
       }
       else if (A > adc)
       {
+        __assume(R >= min_idx && R <= max_idx);
         R = m - 1;
+        __assume(R >= min_idx && R <= max_idx);
       }
       else
       {

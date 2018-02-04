@@ -371,11 +371,6 @@
 // Not working O
 //#define XY_FREQUENCY_LIMIT  15
 
-// Minimum planner junction speed. Sets the default minimum speed the planner plans for at the end
-// of the buffer and all stops. This should not be much greater than zero and should only be changed
-// if unwanted behavior is observed on a user's machine when running at very slow speeds.
-#define MINIMUM_PLANNER_SPEED 0.05// (mm/sec)
-
 // Microstep setting (Only functional when stepper driver microstep pins are connected to MCU.
 #define MICROSTEP_MODES {16,16,16,16,16} // [1,2,4,8,16]
 
@@ -586,7 +581,7 @@
 #define LIN_ADVANCE
 
 #if ENABLED(LIN_ADVANCE)
-  #define LIN_ADVANCE_K 40
+  #define LIN_ADVANCE_K 42.5
 
   /**
    * Some Slicers produce Gcode with randomly jumping extrusion widths occasionally.

@@ -111,6 +111,9 @@ namespace Tuna
   template <typename T = void, typename U>
   constexpr inline __forceinline __flatten auto as(arg_type<U> value);
 
+  template <typename T, typename U>
+  constexpr inline __forceinline __flatten auto bitwise_as(arg_type<U> value);
+
   namespace _internal
   {
     template <typename T>
@@ -210,4 +213,8 @@ namespace Tuna
 
     return value;
   }
+
+  // TODO add more helpers to constrain the range, which can reduce the type-size of lambda_t.
+  template <typename T, typename U>
+  constexpr U linear_interpolate(arg_type<T> value, arg_type<T> min, arg_type<T> max, arg_type<U> res_min, arg_type<U> res_max);
 }

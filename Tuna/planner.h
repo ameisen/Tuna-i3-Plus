@@ -381,6 +381,16 @@ class Planner final {
     static block_t * __restrict get_current_block() {
       if (blocks_queued()) {
         block_t * __restrict block = &block_buffer[block_buffer_tail];
+
+        // If the trapezoid of this block has to be recalculated, it's not save to execute it.
+        if (movesplanned() > 1) {
+          block_t * next = &block_buffer[next_block_index(block_buffer_tail)];
+          if (TEST(block->flag, BLOCK_BIT_RECALCULATE) || TEST(next->flag, BLOCK_BIT_RECALCULATE))
+            return nullptr;
+        }
+        else if (TEST(block->flag, BLOCK_BIT_RECALCULATE))
+          return nullptr;
+
         #if ENABLED(ULTRA_LCD)
           block_buffer_runtime_us -= block->segment_time; //We can't be sure how long an active block will take, so don't count it.
         #endif
@@ -464,7 +474,7 @@ class Planner final {
       return SQRT(sq(target_velocity) - 2 * accel * distance);
     }
 
-    static void calculate_trapezoid_for_block(block_t * __restrict const block, const float & __restrict entry_factor, const float & __restrict exit_factor);
+    static void calculate_trapezoid_for_block(block_t * __restrict const block, const float & __restrict entry_speed, const float & __restrict next_entry_speed);
 
     static void reverse_pass_kernel(block_t * __restrict const current, const block_t * __restrict next);
     static void forward_pass_kernel(const block_t * __restrict previous, block_t * __restrict const current);

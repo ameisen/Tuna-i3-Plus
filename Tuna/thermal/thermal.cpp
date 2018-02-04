@@ -675,10 +675,42 @@ inline void __forceinline __flatten set_pin(bool state)
 */
 __signal(TIMER0_COMPB) { Temperature::isr(); }
 
+template <typename T, uint8 count>
+class running_average final
+{
+  static constexpr const uint64 max_value = uint64(type_trait<T>::max) * count;
+  using mul_t = uintsz<max_value>;
+
+  mul_t value_ = 0;
+
+public:
+  constexpr running_average(arg_type<T> def_value) : value_(def_value) {}
+  constexpr running_average() = default;
+
+  operator T () const __restrict
+  {
+    __assume(value_ <= max_value);
+    return T(value_ / count);
+  }
+
+  running_average & operator += (arg_type<T> new_value) __restrict
+  {
+    __assume(value_ <= max_value);
+    mul_t cur_value = value_;
+    cur_value -= T(*this);
+    cur_value += new_value;
+    value_ = cur_value;
+
+    return *this;
+  }
+};
+
 void __forceinline __flatten Temperature::isr()
 {
 	static uint8 oversample_count = 0;
   static sensor_state adc_sensor_state = sensor_state::initialize_hotend;
+
+  static constexpr const uint8 temp_avg_count = 32;
 
   // ADC read/handle
   {
@@ -692,8 +724,9 @@ void __forceinline __flatten Temperature::isr()
     * This gives each ADC 0.9765ms to charge up.
     */
 
-    static uint16 local_raw_adc_hotend = 0_u16;
-    static uint16 local_raw_adc_bed = 0_u16;
+    // TODO add a max value expected.
+    static running_average<uint16, 32> local_raw_adc_hotend;
+    static running_average<uint16, 32> local_raw_adc_bed;
 
     switch (adc_sensor_state++)
     {
@@ -703,7 +736,7 @@ void __forceinline __flatten Temperature::isr()
     } break;
     case sensor_state::read_hotend:
     {
-      local_raw_adc_hotend += ADC;
+      local_raw_adc_hotend += (uint16(ADC) * OVERSAMPLENR);
     } break;
     case sensor_state::initialize_bed:
     {
@@ -711,14 +744,11 @@ void __forceinline __flatten Temperature::isr()
     } break;
     case sensor_state::read_bed:
     {
-      local_raw_adc_bed += ADC;
+      local_raw_adc_bed += (uint16(ADC) * OVERSAMPLENR);
 
-      if (__unlikely((++oversample_count % OVERSAMPLENR) == 0))
       {
         // Update the raw values.
-        interrupt::set_adc(local_raw_adc_hotend, local_raw_adc_bed);
-        local_raw_adc_hotend = 0_u16;
-        local_raw_adc_bed = 0_u16;
+        interrupt::set_adc(uint16(local_raw_adc_hotend), uint16(local_raw_adc_bed));
       }
 
       adc_sensor_state = sensor_state::initialize_hotend;

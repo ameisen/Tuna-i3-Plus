@@ -72,7 +72,7 @@
   /**
    * MAX_STEP_FREQUENCY differs for TOSHIBA
    */
-  #define MAX_STEP_FREQUENCY 40000 // Max step frequency for Ultimaker (5000 pps / half step)
+  #define MAX_STEP_FREQUENCY 65535 // Max step frequency for Ultimaker (5000 pps / half step)
 
   // MS1 MS2 Stepper Driver Microstepping mode table
   #define MICROSTEP1 LOW,LOW
