@@ -111,7 +111,7 @@ struct block_t final
            final_rate,                      // The minimal rate at exit
            acceleration_steps_per_s2;       // acceleration steps/sec^2
 
-  uint24 plateau_rate;
+  //uint24 plateau_rate;
 
   #if FAN_COUNT > 0
     uint8 fan_speed[FAN_COUNT];
@@ -242,18 +242,18 @@ class Planner final {
      * Static (class) Methods
      */
 
-    static void reset_acceleration_rates();
-    static void refresh_positioning();
+    static __forceinline __flatten void reset_acceleration_rates();
+    static __forceinline void refresh_positioning();
 
     // Manage fans, paste pressure, etc.
-    static void check_axes_activity();
+    static __forceinline __flatten void check_axes_activity();
 
     /**
      * Number of moves currently in the planner
      */
-    static uint8_t movesplanned() { return BLOCK_MOD(block_buffer_head - block_buffer_tail + BLOCK_BUFFER_SIZE); }
+    static __forceinline __flatten uint8_t movesplanned() { return BLOCK_MOD(block_buffer_head - block_buffer_tail + BLOCK_BUFFER_SIZE); }
 
-    static bool is_full() { return (block_buffer_tail == BLOCK_MOD(block_buffer_head + 1)); }
+    static __forceinline __flatten bool is_full() { return (block_buffer_tail == BLOCK_MOD(block_buffer_head + 1)); }
 
     #if PLANNER_LEVELING
 
@@ -288,9 +288,10 @@ class Planner final {
      *  fr_mm_s   - (target) speed of the move (mm/s)
      *  extruder  - target extruder
      */
-    static void _buffer_line(const float & __restrict a, const float & __restrict b, const float & __restrict c, const float & __restrict e, float fr_mm_s, const uint8_t extruder);
+    // TODO validate I actually want this to be forceinline. This makes the binary waaaaay bigger.
+    static void __forceinline _buffer_line(const float & __restrict a, const float & __restrict b, const float & __restrict c, const float & __restrict e, float fr_mm_s, const uint8_t extruder);
 
-    static void _set_position_mm(const float & __restrict a, const float & __restrict b, const float & __restrict c, const float & __restrict e);
+    static void __forceinline _set_position_mm(const float & __restrict a, const float & __restrict b, const float & __restrict c, const float & __restrict e);
 
     /**
      * Add a new linear movement to the buffer.
@@ -304,7 +305,7 @@ class Planner final {
      *  fr_mm_s      - (target) speed of the move (mm/s)
      *  extruder     - target extruder
      */
-    static void __forceinline buffer_line(ARG_X, ARG_Y, ARG_Z, const float & __restrict e, const float & __restrict fr_mm_s, const uint8_t extruder) {
+    static void __forceinline __flatten buffer_line(ARG_X, ARG_Y, ARG_Z, const float & __restrict e, const float & __restrict fr_mm_s, const uint8_t extruder) {
       #if PLANNER_LEVELING && IS_CARTESIAN
         apply_leveling(lx, ly, lz);
       #endif
@@ -320,7 +321,7 @@ class Planner final {
      *  fr_mm_s  - (target) speed of the move (mm/s)
      *  extruder - target extruder
      */
-    static void __forceinline buffer_line_kinematic(const float ltarget[XYZE], const float & __restrict fr_mm_s, const uint8_t extruder) {
+    static void __forceinline __flatten buffer_line_kinematic(const float ltarget[XYZE], const float & __restrict fr_mm_s, const uint8_t extruder) {
       #if PLANNER_LEVELING
         float lpos[XYZ] = { ltarget[X_AXIS], ltarget[Y_AXIS], ltarget[Z_AXIS] };
         apply_leveling(lpos);
@@ -344,21 +345,21 @@ class Planner final {
      *
      * Clears previous speed values.
      */
-    static void __forceinline set_position_mm(ARG_X, ARG_Y, ARG_Z, const float & __restrict e) {
+    static void __forceinline __flatten set_position_mm(ARG_X, ARG_Y, ARG_Z, const float & __restrict e) {
       #if PLANNER_LEVELING && IS_CARTESIAN
         apply_leveling(lx, ly, lz);
       #endif
       _set_position_mm(lx, ly, lz, e);
     }
-    static void set_position_mm_kinematic(const float position[NUM_AXIS]);
-    static void set_position_mm(const AxisEnum axis, const float & __restrict v);
-    static void __forceinline set_z_position_mm(const float & __restrict z) { set_position_mm(AxisEnum::Z_AXIS, z); }
-    static void __forceinline set_e_position_mm(const float & __restrict e) { set_position_mm(AxisEnum::E_AXIS, e); }
+    static void __forceinline __flatten set_position_mm_kinematic(const float position[NUM_AXIS]);
+    static void __forceinline __flatten set_position_mm(const AxisEnum axis, const float & __restrict v);
+    static void __forceinline __flatten set_z_position_mm(const float & __restrict z) { set_position_mm(AxisEnum::Z_AXIS, z); }
+    static void __forceinline __flatten set_e_position_mm(const float & __restrict e) { set_position_mm(AxisEnum::E_AXIS, e); }
 
     /**
      * Sync from the stepper positions. (e.g., after an interrupted move)
      */
-    static void sync_from_steppers();
+    static __forceinline __flatten void sync_from_steppers();
 
     /**
      * Does the buffer have any blocks queued?
@@ -369,7 +370,7 @@ class Planner final {
      * "Discards" the block and "releases" the memory.
      * Called when the current block is no longer needed.
      */
-    static void discard_current_block() {
+    static __forceinline __flatten void discard_current_block() {
       if (blocks_queued())
         block_buffer_tail = BLOCK_MOD(block_buffer_tail + 1);
     }
@@ -378,7 +379,7 @@ class Planner final {
      * The current block. nullptr if the buffer is empty.
      * This also marks the block as busy.
      */
-    static block_t * __restrict get_current_block() {
+    static __forceinline __flatten block_t * __restrict get_current_block() {
       if (blocks_queued()) {
         block_t * __restrict block = &block_buffer[block_buffer_tail];
 
@@ -405,29 +406,6 @@ class Planner final {
       }
     }
 
-    #if ENABLED(ULTRA_LCD)
-
-      static uint16_t block_buffer_runtime() {
-        CRITICAL_SECTION_START
-          millis_t bbru = block_buffer_runtime_us;
-        CRITICAL_SECTION_END
-        // To translate µs to ms a division by 1000 would be required.
-        // We introduce 2.4% error here by dividing by 1024.
-        // Doesn't matter because block_buffer_runtime_us is already too small an estimation.
-        bbru >>= 10;
-        // limit to about a minute.
-        NOMORE(bbru, 0xFFFFul);
-        return bbru;
-      }
-
-      static void clear_block_buffer_runtime(){
-        CRITICAL_SECTION_START
-          block_buffer_runtime_us = 0;
-        CRITICAL_SECTION_END
-      }
-
-    #endif
-
     #if ENABLED(AUTOTEMP)
       static float autotemp_min, autotemp_max, autotemp_factor;
       static bool autotemp_enabled;
@@ -440,14 +418,14 @@ class Planner final {
     /**
      * Get the index of the next / previous block in the ring buffer
      */
-    static int8_t next_block_index(int8_t block_index) { return BLOCK_MOD(block_index + 1); }
-    static int8_t prev_block_index(int8_t block_index) { return BLOCK_MOD(block_index - 1); }
+    static __forceinline __flatten int8_t next_block_index(int8_t block_index) { return BLOCK_MOD(block_index + 1); }
+    static __forceinline __flatten int8_t prev_block_index(int8_t block_index) { return BLOCK_MOD(block_index - 1); }
 
     /**
      * Calculate the distance (not time) it takes to accelerate
      * from initial_rate to target_rate using the given acceleration:
      */
-    static float estimate_acceleration_distance(const float & __restrict initial_rate, const float & __restrict target_rate, const float & __restrict accel) {
+    static __forceinline __flatten float estimate_acceleration_distance(const float & __restrict initial_rate, const float & __restrict target_rate, const float & __restrict accel) {
       if (accel == 0) return 0; // accel was 0, set acceleration distance to 0
       return (sq(target_rate) - sq(initial_rate)) / (accel * 2);
     }
@@ -460,7 +438,7 @@ class Planner final {
      * This is used to compute the intersection point between acceleration and deceleration
      * in cases where the "trapezoid" has no plateau (i.e., never reaches maximum speed)
      */
-    static float intersection_distance(const float & __restrict initial_rate, const float & __restrict final_rate, const float & __restrict accel, const float & __restrict distance) {
+    static __forceinline __flatten float intersection_distance(const float & __restrict initial_rate, const float & __restrict final_rate, const float & __restrict accel, const float & __restrict distance) {
       if (accel == 0) return 0; // accel was 0, set intersection distance to 0
       return (accel * 2 * distance - sq(initial_rate) + sq(final_rate)) / (accel * 4);
     }
@@ -470,21 +448,21 @@ class Planner final {
      * to reach 'target_velocity' using 'acceleration' within a given
      * 'distance'.
      */
-    static float max_allowable_speed(const float & __restrict accel, const float & __restrict target_velocity, const float & __restrict distance) {
+    static __forceinline __flatten float max_allowable_speed(const float & __restrict accel, const float & __restrict target_velocity, const float & __restrict distance) {
       return SQRT(sq(target_velocity) - 2 * accel * distance);
     }
 
-    static void calculate_trapezoid_for_block(block_t * __restrict const block, const float & __restrict entry_speed, const float & __restrict next_entry_speed);
+    static void __forceinline __flatten calculate_trapezoid_for_block(block_t * __restrict const block, const float & __restrict entry_speed, const float & __restrict next_entry_speed);
 
-    static void reverse_pass_kernel(block_t * __restrict const current, const block_t * __restrict next);
-    static void forward_pass_kernel(const block_t * __restrict previous, block_t * __restrict const current);
+    static void __forceinline __flatten reverse_pass_kernel(block_t * __restrict const current, const block_t * __restrict next);
+    static void __forceinline __flatten forward_pass_kernel(const block_t * __restrict previous, block_t * __restrict const current);
 
-    static void reverse_pass();
-    static void forward_pass();
+    static void __forceinline __flatten reverse_pass();
+    static void __forceinline __flatten forward_pass();
 
-    static void recalculate_trapezoids();
+    static void __forceinline __flatten recalculate_trapezoids();
 
-    static void recalculate();
+    static void __forceinline __flatten recalculate();
 
 };
 

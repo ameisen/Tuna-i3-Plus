@@ -52,19 +52,6 @@
 class Stepper;
 extern Stepper stepper;
 
-// intRes = intIn1 * intIn2 >> 16
-// uses:
-// r26 to store 0
-// r27 to store the byte 1 of the 24 bit result
-
-inline uint8 __forceinline __flatten __const MultiU16X8toH8(uint8 charIn1, uint16 intIn2)
-{
-  // It is faster to use uint24, shift by 8, and let the compiler do it.
-  // Also note that the upper value is always going to be expressable as a single byte.
-  __assume((charIn1 * intIn2) <= 0xFFFF);
-  return (charIn1 * intIn2) >> 8_u8;
-}
-
 class Stepper final {
 
   public:
@@ -148,24 +135,24 @@ class Stepper final {
     //
     // Block until all buffered steps are executed
     //
-    static void synchronize();
+    static void __forceinline synchronize();
 
     //
     // Set the current position in steps
     //
-    static void set_position(const int24 &a, const int24 &b, const int24 &c, const int24 &e);
+    static void __forceinline set_position(const int24 &a, const int24 &b, const int24 &c, const int24 &e);
     static void __forceinline __flatten set_position(const AxisEnum &a, const int24 &v);
     static void __forceinline __flatten set_e_position(const int24 &e);
 
     //
     // Set direction bits for all steppers
     //
-    static void set_directions();
+    static void __forceinline __flatten set_directions();
 
     //
     // Get the position of a stepper, in steps
     //
-    static int24 position(AxisEnum axis);
+    static int24 __forceinline __flatten position(AxisEnum axis);
 
     //
     // Report the positions of the steppers, in steps
@@ -245,11 +232,7 @@ class Stepper final {
 
       //step_rate = min(step_rate, 159999_u24);
 
-      /*if (step_rate > 80000) { // If steprate > 40kHz >> step 8 times
-        step_rate >>= 4;
-        step_loops = 16;
-      }
-      else */if (step_rate > 40000) { // If steprate > 40kHz >> step 8 times
+      if (step_rate > 40000) { // If steprate > 40kHz >> step 8 times
         step_rate >>= 3;
         step_loops = 8;
       }
@@ -265,28 +248,20 @@ class Stepper final {
         step_loops = 1;
       }
 
-      __assume(step_rate <= 10000);
+      //while (step_rate > 20'000)
+      //{
+      //  step_rate >>= 1;
+      //  ++step_loops;
+      //}
 
-      step_rate -= min(step_rate, uint16(F_CPU / 500000)); // Correct for minimal speed
-      if (step_rate >= (8_u16 * 256_i16)) { // higher step rate
-        const uint8 * __restrict foo = (const uint8 * __restrict)&step_rate;
-        unsigned short table_address = (unsigned short)&speed_lookuptable_fast[foo[1]][0];
-        unsigned char tmp_step_rate = foo[0];
-        unsigned short gain = (unsigned short)pgm_read_word_near(table_address + 2_u8);
-        timer = (unsigned short)pgm_read_word_near(table_address) - MultiU16X8toH8(tmp_step_rate, gain);
-      }
-      else { // lower step rates
-        unsigned short table_address = (unsigned short)&speed_lookuptable_slow[0][0];
-        table_address += ((step_rate) >> 1) & 0xFFFC_u16;
-        timer = (unsigned short)pgm_read_word_near(table_address);
-        timer -= (((unsigned short)pgm_read_word_near(table_address + 2) * (uint8(step_rate) & 0x07)) >> 3);
-      }
-      if (__unlikely(timer < 100)) { // (20kHz - this should never happen)
-        timer = 100;
-        MYSERIAL.print(MSG_STEPPER_TOO_HIGH);
-        MYSERIAL.println(uint16(step_rate));
-      }
-      return timer;
+      __assume(step_rate <= 20000);
+
+      // With a max value of 65535, this gives us a minimum step rate of 2,000,000 / X = 65535, 
+      // which is ~30.518Hz. The counters are 16-bit, so it's not trivially possible to go lower than
+      // this, though it can be done by requiring multiple ISR hits per step. I doubt that this is useful,
+      // however. This would imply a speed of something like 0.3mm/sec on a 100 steps-per-mm stepper, which
+      // would be incredibly slow. I imagine it is a speed that could only pop up during ramp-up/down.
+      return min(2'000'000_u24 / step_rate, uint24(type_trait<uint16>::max));
     }
 
     // Initialize the trapezoid generator from the current block.

@@ -182,7 +182,7 @@ void __forceinline __flatten Stepper::wake_up() {
  *   COREXZ: X_AXIS=A_AXIS and Z_AXIS=C_AXIS
  *   COREYZ: Y_AXIS=B_AXIS and Z_AXIS=C_AXIS
  */
-void Stepper::set_directions() {
+void __forceinline __flatten Stepper::set_directions() {
 
   #define SET_STEP_DIR(AXIS) \
     if (motor_direction(AXIS ##_AXIS)) { \
@@ -422,17 +422,18 @@ template <bool endstops_enabled> void __forceinline __flatten Stepper::isr() {
     PULSE_STOP(Y);
     PULSE_STOP(Z);
 
-    if (++step_events_completed >= current_block->step_event_count) {
+    if (__unlikely(++step_events_completed >= current_block->step_event_count))
+    {
       all_steps_done = true;
       break;
     }
 
-    // For minimum pulse time wait after stopping pulses also
-    #if EXTRA_CYCLES_XYZE > 20
+      // For minimum pulse time wait after stopping pulses also
+#if EXTRA_CYCLES_XYZE > 20
       if (i) while (EXTRA_CYCLES_XYZE > (uint32)(TCNT0 - pulse_start) * (INT0_PRESCALER)) { /* nada */ }
-    #elif EXTRA_CYCLES_XYZE > 0
+#elif EXTRA_CYCLES_XYZE > 0
       if (i) DELAY_NOPS(EXTRA_CYCLES_XYZE);
-    #endif
+#endif
 
   } // steps_loop
 
@@ -821,7 +822,7 @@ void Stepper::init() {
 /**
  * Block until all buffered steps are executed
  */
-void Stepper::synchronize() { while (planner.blocks_queued()) idle(); }
+void __forceinline Stepper::synchronize() { while (planner.blocks_queued()) idle(); }
 
 /**
  * Set the stepper positions directly in steps
@@ -832,7 +833,7 @@ void Stepper::synchronize() { while (planner.blocks_queued()) idle(); }
  * This allows get_axis_position_mm to correctly
  * derive the current XYZ position later on.
  */
-void Stepper::set_position(const int24 &a, const int24 &b, const int24 &c, const int24 &e) {
+void __forceinline Stepper::set_position(const int24 &a, const int24 &b, const int24 &c, const int24 &e) {
 
   synchronize(); // Bad to set stepper counts in the middle of a move
 
@@ -880,7 +881,7 @@ void __forceinline __flatten Stepper::set_e_position(const int24 &e) {
 /**
  * Get a stepper's position in steps.
  */
-int24 Stepper::position(AxisEnum axis) {
+int24 __forceinline __flatten Stepper::position(AxisEnum axis) {
   CRITICAL_SECTION_START;
   const int24 count_pos = count_position[axis];
   CRITICAL_SECTION_END;

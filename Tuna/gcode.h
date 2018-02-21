@@ -99,7 +99,7 @@ public:
   #endif
 
   // Reset is done before parsing
-  static void reset();
+  static void __forceinline __flatten reset();
 
   // Index so that 'X' falls on index 24
   #define PARAM_IND(N)  ((N) >> 3)
@@ -111,7 +111,7 @@ public:
   #if ENABLED(FASTER_GCODE_PARSER)
 
     // Set the flag and pointer for a parameter
-    static void set(const char c, char * const ptr
+    static void __forceinline __flatten set(const char c, char * const ptr
       #if ENABLED(DEBUG_GCODE_PARSER)
         , const bool debug=false
       #endif
@@ -132,7 +132,7 @@ public:
     // Code seen bit was set. If not found, value_ptr is unchanged.
     // This allows "if (seen('A')||seen('B'))" to use the last-found value.
     // This is volatile because its side-effects are important
-    static volatile bool seen(const char c) {
+    static volatile bool __forceinline __flatten seen(const char c) {
       const uint8_t ind = LETTER_OFF(c);
       if (ind >= COUNT(param)) return false; // Only A-Z
       const bool b = TEST(codebits[PARAM_IND(ind)], PARAM_BIT(ind));
@@ -140,7 +140,7 @@ public:
       return b;
     }
 
-    static bool seen_any() { return codebits[3] || codebits[2] || codebits[1] || codebits[0]; }
+    static bool __forceinline __flatten seen_any() { return codebits[3] || codebits[2] || codebits[1] || codebits[0]; }
 
     #define SEEN_TEST(L) TEST(codebits[LETTER_IND(L)], LETTER_BIT(L))
 
@@ -163,22 +163,22 @@ public:
   #endif // !FASTER_GCODE_PARSER
 
   // Seen any axis parameter
-  static bool seen_axis() {
+  static bool __forceinline __flatten seen_axis() {
     return SEEN_TEST('X') || SEEN_TEST('Y') || SEEN_TEST('Z') || SEEN_TEST('E');
   }
 
   // Populate all fields by parsing a single line of GCode
   // This uses 54 bytes of SRAM to speed up seen/value
-  static void parse(char * p);
+  static void __forceinline __flatten parse(char * p);
 
   // The code value pointer was set
-  static bool __forceinline has_value() { return value_ptr != nullptr; }
+  static bool __forceinline __flatten has_value() { return value_ptr != nullptr; }
 
   // Seen a parameter with a value
-  inline static bool seenval(const char c) { return seen(c) && has_value(); }
+  inline static bool __forceinline __flatten seenval(const char c) { return seen(c) && has_value(); }
 
   // Float removes 'E' to prevent scientific notation interpretation
-  inline static float value_float() {
+  inline static float __forceinline __flatten value_float() {
     if (value_ptr) {
       char *e = value_ptr;
       for (;;) {
@@ -311,7 +311,7 @@ public:
   void unknown_command_error();
 
   // Provide simple value accessors with default option
-  static float    __forceinline floatval(const char c, const float dval=0.0)   { return seenval(c) ? value_float()        : dval; }
+  static float    __forceinline __flatten floatval(const char c, const float dval=0.0)   { return seenval(c) ? value_float()        : dval; }
   static bool     __forceinline boolval(const char c, const bool dval=false)   { return seen(c)    ? value_bool()         : dval; }
   static uint8_t  __forceinline byteval(const char c, const uint8_t dval=0)    { return seenval(c) ? value_byte()         : dval; }
   static int16_t  __forceinline intval(const char c, const int16_t dval=0)     { return seenval(c) ? value_int()          : dval; }

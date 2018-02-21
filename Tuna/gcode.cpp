@@ -67,7 +67,7 @@ GCodeParser parser;
  * Since each param is set/cleared on seen codes,
  * this may be optimized by commenting out ZERO(param)
  */
-void GCodeParser::reset() {
+void __forceinline __flatten GCodeParser::reset() {
   string_arg = nullptr;                    // No whole line argument
   command_letter = '?';                 // No command letter
   codenum = 0;                          // No command code
@@ -82,7 +82,7 @@ void GCodeParser::reset() {
 
 // Populate all fields by parsing a single line of GCode
 // 58 bytes of SRAM are used to speed up seen/value
-void GCodeParser::parse(char *p) {
+void __forceinline __flatten GCodeParser::parse(char *p) {
 
   reset(); // No codes to report
 

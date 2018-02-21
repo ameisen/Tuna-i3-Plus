@@ -256,7 +256,7 @@ class SdBaseFile {
   bool dirEntry(dir_t* dir);
   static void dirName(const dir_t& dir, char* name);
   bool exists(const char* name);
-  int16_t fgets(char* str, int16_t num, char* delim = 0);
+  int16_t __forceinline __flatten fgets(char* str, int16_t num, char* delim = 0);
   /** \return The total number of bytes in a file or directory. */
   uint32 fileSize() const {return fileSize_;}
   /** \return The first cluster number for a file or directory. */
@@ -285,12 +285,12 @@ class SdBaseFile {
   bool open(const char* path, uint8_t oflag = O_READ);
   bool openNext(SdBaseFile* dirFile, uint8_t oflag);
   bool openRoot(SdVolume* vol);
-  int peek();
+  int __forceinline __flatten peek();
   static void printFatDate(uint16_t fatDate);
   static void printFatTime(uint16_t fatTime);
   bool printName();
-  int16_t read();
-  int16_t read(void* buf, uint16_t nbyte);
+  int16_t __forceinline read();
+  int16_t __forceinline __flatten read(void* buf, uint16_t nbyte);
   int8_t readDir(dir_t* dir, char* longFilename);
   static bool remove(SdBaseFile* dirFile, const char* path);
   bool remove();

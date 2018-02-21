@@ -376,6 +376,12 @@ volatile bool wait_for_heatup = true;
 
 const char axis_codes[XYZE] = { 'X', 'Y', 'Z', 'E' };
 
+void retract(const bool retracting
+#if EXTRUDERS > 1
+  , bool swapping = false
+#endif
+);
+
 // Number of characters read in the current line of serial input
 static int serial_count = 0;
 
@@ -386,6 +392,24 @@ static millis_t stepper_inactive_time = (DEFAULT_STEPPER_DEACTIVE_TIME) * 1000UL
 
 // Print Job Timer
 PrintCounter print_job_timer = PrintCounter();
+
+#if ENABLED(FWRETRACT)                      // Initialized by settings.load()...
+bool autoretract_enabled,                 // M209 S - Autoretract switch
+retracted[EXTRUDERS] = { false };    // Which extruders are currently retracted
+float retract_length,                     // M207 S - G10 Retract length
+retract_feedrate_mm_s,              // M207 F - G10 Retract feedrate
+retract_zlift,                      // M207 Z - G10 Retract hop size
+retract_recover_length,             // M208 S - G11 Recover length
+retract_recover_feedrate_mm_s,      // M208 F - G11 Recover feedrate
+swap_retract_length,                // M207 W - G10 Swap Retract length
+swap_retract_recover_length,        // M208 W - G11 Swap Recover length
+swap_retract_recover_feedrate_mm_s; // M208 R - G11 Swap Recover feedrate
+# if EXTRUDERS > 1
+bool retracted_swap[EXTRUDERS] = { false }; // Which extruders are swap-retracted
+# else
+constexpr bool retracted_swap[1] = { false };
+# endif
+#endif // FWRETRACT
 
 // Buzzer - I2C on the LCD or a BEEPER_PIN
 #define BUZZ(d,f) {}
@@ -402,8 +426,8 @@ MarlinBusyState busy_state = NOT_BUSY;
 static millis_t next_busy_signal_ms = 0;
 uint8_t host_keepalive_interval = DEFAULT_KEEPALIVE_INTERVAL;
 
-float __forceinline pgm_read_any(const float *p) { return pgm_read_float_near(p); }
-signed char __forceinline pgm_read_any(const signed char *p) { return pgm_read_byte_near(p); }
+float __forceinline __flatten pgm_read_any(const float *p) { return pgm_read_float_near(p); }
+signed char __forceinline __flatten pgm_read_any(const signed char *p) { return pgm_read_byte_near(p); }
 
 #define XYZ_CONSTS_FROM_CONFIG(type, array, CONFIG) \
   static const __flashmem type array##_P[XYZ] = { X_##CONFIG, Y_##CONFIG, Z_##CONFIG }; \
@@ -423,23 +447,22 @@ XYZ_CONSTS_FROM_CONFIG(signed char, home_dir, HOME_DIR);
  * ***************************************************************************
  */
 
-void stop();
+void __forceinline __flatten stop();
 
-void get_available_commands();
-void process_next_command();
-void prepare_move_to_destination();
+void __forceinline __flatten get_available_commands();
+void __forceinline __flatten process_next_command();
+void __forceinline __flatten prepare_move_to_destination();
 
-void get_cartesian_from_steppers();
-void set_current_from_steppers_for_axis(const AxisEnum axis);
-void set_current_from_steppers();
+void __forceinline __flatten get_cartesian_from_steppers();
+void __forceinline __flatten set_current_from_steppers_for_axis(const AxisEnum axis);
+void __forceinline __flatten set_current_from_steppers();
 
 //void plan_arc(float target[XYZE], float* offset, uint8_t clockwise);
 
-void plan_cubic_move(const float offset[4]);
+void __forceinline __flatten plan_cubic_move(const float offset[4]);
 
-void tool_change(const uint8_t tmp_extruder, const float fr_mm_s = 0.0, bool no_move = false);
-void report_current_position();
-void report_current_position_detail();
+void __forceinline __flatten tool_change(const uint8_t tmp_extruder, const float fr_mm_s = 0.0, bool no_move = false);
+void __forceinline __flatten report_current_position();
 
 /**
  * sync_plan_position
@@ -447,21 +470,21 @@ void report_current_position_detail();
  * Set the planner/stepper positions directly from current_position with
  * no kinematic translation. Used for homing axes and cartesian/core syncing.
  */
-void sync_plan_position() {
+void __forceinline __flatten sync_plan_position() {
 	planner.set_position_mm(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
 }
-inline void sync_plan_position_e() { planner.set_e_position_mm(current_position[E_AXIS]); }
+inline void __forceinline __flatten sync_plan_position_e() { planner.set_e_position_mm(current_position[E_AXIS]); }
 
 #define SYNC_PLAN_POSITION_KINEMATIC() sync_plan_position()
 
 #include "SdFatUtil.h"
-int freeMemory() { return SdFatUtil::FreeRam(); }
+int __forceinline __flatten freeMemory() { return SdFatUtil::FreeRam(); }
 
 /**
  * Inject the next "immediate" command, when possible, onto the front of the queue.
  * Return true if any immediate commands remain to inject.
  */
-static bool drain_injected_commands_P() {
+static __forceinline __flatten bool drain_injected_commands_P() {
 	if (injected_commands_P) {
 		size_t i = 0;
 		char c, cmd[30];
@@ -488,7 +511,7 @@ void enqueue_and_echo_commands(const Tuna::flash_string & __restrict pgcode) {
 /**
  * Clear the Marlin command queue
  */
-void clear_command_queue() {
+void __forceinline __flatten clear_command_queue() {
 	cmd_queue_index_r = cmd_queue_index_w;
 	commands_in_queue = 0;
 }
@@ -496,7 +519,7 @@ void clear_command_queue() {
 /**
  * Once a new command is in the ring buffer, call this to commit it
  */
-inline void _commit_command(bool say_ok) {
+inline void __forceinline __flatten _commit_command(bool say_ok) {
 	send_ok[cmd_queue_index_w] = say_ok;
   if (__unlikely(++cmd_queue_index_w >= BUFSIZE))
   {
@@ -510,7 +533,7 @@ inline void _commit_command(bool say_ok) {
  * Return true if the command was successfully added.
  * Return false for a full buffer, or if the 'command' is a comment.
  */
-inline bool _enqueuecommand(const char* cmd, bool say_ok = false) {
+inline bool __forceinline __flatten _enqueuecommand(const char* cmd, bool say_ok = false) {
   if (__unlikely(*cmd == ';') || __unlikely(commands_in_queue >= BUFSIZE))
   {
     return false;
@@ -534,16 +557,16 @@ bool enqueue_and_echo_command(const char* cmd, bool say_ok/*=false*/) {
 	return false;
 }
 
-void setup_killpin() {
+void __forceinline __flatten setup_killpin() {
 }
 
-void setup_powerhold() {
+void __forceinline __flatten setup_powerhold() {
 }
 
-void suicide() {
+void __forceinline __flatten suicide() {
 }
 
-void servo_init() {
+void __forceinline __flatten servo_init() {
 }
 
 void gcode_line_error(const char* err, bool doFlush = true) {
@@ -689,7 +712,7 @@ inline void get_serial_commands() {
  * or until the end of the file is reached. The special character '#'
  * can also interrupt buffering.
  */
-inline void get_sdcard_commands() {
+inline void __forceinline __flatten get_sdcard_commands() {
 	static bool stop_buffering = false,
 		sd_comment_mode = false;
 
@@ -763,7 +786,7 @@ inline void get_sdcard_commands() {
  *  - The active serial input (usually USB)
  *  - The SD card file being actively printed
  */
-void get_available_commands() {
+void __forceinline __flatten get_available_commands() {
 
 	// if any immediate commands remain, don't get other commands yet
 	if (__unlikely(drain_injected_commands_P())) return;
@@ -778,7 +801,8 @@ void get_available_commands() {
  *
  * Returns TRUE if the target is invalid
  */
-bool get_target_extruder_from_command(const uint16_t code) {
+bool __forceinline __flatten get_target_extruder_from_command(const uint16_t code) {
+#if EXTRUDERS > 1
 	if (__unlikely(parser.seenval('T'))) {
 		const int8_t e = parser.value_byte();
 		if (e >= EXTRUDERS) {
@@ -792,6 +816,9 @@ bool get_target_extruder_from_command(const uint16_t code) {
 	}
 	else
 		target_extruder = active_extruder;
+#else
+  target_extruder = active_extruder;
+#endif
 
 	return false;
 }
@@ -805,7 +832,7 @@ bool get_target_extruder_from_command(const uint16_t code) {
  * the software endstop positions must be refreshed to remain
  * at the same positions relative to the machine.
  */
-void update_software_endstops(const AxisEnum axis) {
+void __forceinline __flatten update_software_endstops(const AxisEnum axis) {
 	const float offs = 0.0
 		+ home_offset[axis]
 		+ position_shift[axis]
@@ -862,7 +889,7 @@ static void set_axis_is_at_home(const AxisEnum axis) {
 /**
  * Some planner shorthand inline functions
  */
-inline float get_homing_bump_feedrate(const AxisEnum axis) {
+inline float __forceinline __flatten get_homing_bump_feedrate(const AxisEnum axis) {
 	static const uint8_t homing_bump_divisor[] __flashmem = HOMING_BUMP_DIVISOR;
 	uint8_t hbd = pgm_read_byte(&homing_bump_divisor[axis]);
 	if (__unlikely(hbd < 1)) {
@@ -877,7 +904,7 @@ inline float get_homing_bump_feedrate(const AxisEnum axis) {
  * Move the planner to the current position from wherever it last moved
  * (or from wherever it has been told it is located).
  */
-inline void line_to_current_position() {
+inline void __forceinline __flatten line_to_current_position() {
 	planner.buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], feedrate_mm_s, active_extruder);
 }
 
@@ -885,13 +912,13 @@ inline void line_to_current_position() {
  * Move the planner to the position stored in the destination array, which is
  * used by G0/G1/G2/G3/G5 and many other functions to set a destination.
  */
-inline void line_to_destination(const float fr_mm_s) {
+inline void __forceinline __flatten line_to_destination(const float fr_mm_s) {
 	planner.buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], fr_mm_s, active_extruder);
 }
-inline void line_to_destination() { line_to_destination(feedrate_mm_s); }
+inline void __forceinline __flatten line_to_destination() { line_to_destination(feedrate_mm_s); }
 
-void set_current_to_destination() { COPY(current_position, destination); }
-void set_destination_to_current() { COPY(destination, current_position); }
+void __forceinline __flatten set_current_to_destination() { COPY(current_position, destination); }
+void __forceinline __flatten set_destination_to_current() { COPY(destination, current_position); }
 
 /**
  *  Plan a move to (X, Y, Z) and set the current_position
@@ -1054,7 +1081,7 @@ static void quick_home_xy() {
   *  - Set the feedrate, if included
   */
 template <MovementType dimensional_move_type = MovementType::Linear, MovementMode move_mode = MovementMode::Modal, MovementMode extruder_move_mode = MovementMode::Modal>
-void gcode_get_destination() {
+void __forceinline __flatten gcode_get_destination() {
   float max_feedrate = type_trait<float>::max;
 
   constexpr const bool param_feed = (dimensional_move_type == MovementType::Linear);
@@ -1145,7 +1172,7 @@ bool gcode_get_destination_e_absolute()
  * Output a "busy" message at regular intervals
  * while the machine is not accepting commands.
  */
-void host_keepalive() {
+void __forceinline __flatten host_keepalive() {
 	const millis_t ms = millis();
 	if (host_keepalive_interval && busy_state != NOT_BUSY) {
 		if (PENDING(ms, next_busy_signal_ms)) return;
@@ -1180,7 +1207,7 @@ void host_keepalive() {
   */
 
 template <MovementType move_type, MovementMode dimensional_move_mode = MovementMode::Modal, MovementMode extruder_move_mode = MovementMode::Modal>
-inline void linear_move()
+inline void __forceinline __flatten linear_move()
 {
   if (__unlikely(!is_running()))
   {
@@ -1189,8 +1216,48 @@ inline void linear_move()
 
   gcode_get_destination<move_type, dimensional_move_mode, extruder_move_mode>(); // For X Y Z E F
 
+#if ENABLED(FWRETRACT)
+  if (MIN_AUTORETRACT <= MAX_AUTORETRACT) {
+    // When M209 Autoretract is enabled, convert E-only moves to firmware retract/recover moves
+    if (autoretract_enabled && parser.seen('E') && !(parser.seen('X') || parser.seen('Y') || parser.seen('Z'))) {
+      const float echange = destination[E_AXIS] - current_position[E_AXIS];
+      // Is this a retract or recover move?
+      if (WITHIN(FABS(echange), MIN_AUTORETRACT, MAX_AUTORETRACT) && retracted[active_extruder] == (echange > 0.0)) {
+        current_position[E_AXIS] = destination[E_AXIS]; // Hide a G1-based retract/recover from calculations
+        sync_plan_position_e();                         // AND from the planner
+        retract(echange < 0.0);                  // Firmware-based retract/recover (double-retract ignored)
+        return;
+      }
+    }
+  }
+#endif // FWRETRACT
+
   prepare_move_to_destination();
 }
+
+#if ENABLED(FWRETRACT)
+
+/**
+* G10 - Retract filament according to settings of M207
+*/
+inline void gcode_G10() {
+#if EXTRUDERS > 1
+  const bool rs = parser.boolval('S');
+  retracted_swap[active_extruder] = rs; // Use 'S' for swap, default to false
+#endif
+  retract(true
+#if EXTRUDERS > 1
+    , rs
+#endif
+  );
+}
+
+/**
+* G11 - Recover filament according to settings of M208
+*/
+inline void __forceinline __flatten gcode_G11() { retract(false); }
+
+#endif // FWRETRACT
 
 /**
  * G2: Clockwise Arc
@@ -1463,12 +1530,60 @@ inline void gcode_G93() {
 /**
  * M17: Enable power on all stepper motors
  */
-inline void gcode_M17() {
+inline void __forceinline __flatten gcode_M17() {
 	LCD_MESSAGEPGM(MSG_NO_MOVE);
 	enable_all_steppers();
 }
 
 #define RUNPLAN(RATE_MM_S) line_to_destination(RATE_MM_S)
+
+#if ENABLED(FWRETRACT)
+
+/**
+* M207: Set firmware retraction values
+*
+*   S[+units]    retract_length
+*   W[+units]    swap_retract_length (multi-extruder)
+*   F[units/min] retract_feedrate_mm_s
+*   Z[units]     retract_zlift
+*/
+inline void gcode_M207() {
+  if (parser.seen('S')) retract_length = parser.value_axis_units(E_AXIS);
+  if (parser.seen('F')) retract_feedrate_mm_s = MMM_TO_MMS(parser.value_axis_units(E_AXIS));
+  if (parser.seen('Z')) retract_zlift = parser.value_linear_units();
+  if (parser.seen('W')) swap_retract_length = parser.value_axis_units(E_AXIS);
+}
+
+/**
+* M208: Set firmware un-retraction values
+*
+*   S[+units]    retract_recover_length (in addition to M207 S*)
+*   W[+units]    swap_retract_recover_length (multi-extruder)
+*   F[units/min] retract_recover_feedrate_mm_s
+*   R[units/min] swap_retract_recover_feedrate_mm_s
+*/
+inline void gcode_M208() {
+  if (parser.seen('S')) retract_recover_length = parser.value_axis_units(E_AXIS);
+  if (parser.seen('F')) retract_recover_feedrate_mm_s = MMM_TO_MMS(parser.value_axis_units(E_AXIS));
+  if (parser.seen('R')) swap_retract_recover_feedrate_mm_s = MMM_TO_MMS(parser.value_axis_units(E_AXIS));
+  if (parser.seen('W')) swap_retract_recover_length = parser.value_axis_units(E_AXIS);
+}
+
+/**
+* M209: Enable automatic retract (M209 S1)
+*   For slicers that don't support G10/11, reversed extrude-only
+*   moves will be classified as retraction.
+*/
+inline void gcode_M209() {
+  if (MIN_AUTORETRACT <= MAX_AUTORETRACT) {
+    if (parser.seen('S')) {
+      autoretract_enabled = parser.value_bool();
+      for (uint8_t i = 0; i < EXTRUDERS; i++) retracted[i] = false;
+    }
+  }
+}
+
+#endif // FWRETRACT
 
 /**
  * M20: List SD card to serial output
@@ -1482,22 +1597,22 @@ inline void gcode_M20() {
 /**
  * M21: Init SD Card
  */
-inline void gcode_M21() { card.initsd(); }
+inline void __forceinline __flatten gcode_M21() { card.initsd(); }
 
 /**
  * M22: Release SD Card
  */
-inline void gcode_M22() { card.release(); }
+inline void __forceinline __flatten gcode_M22() { card.release(); }
 
 /**
  * M23: Open a file
  */
-inline void gcode_M23() { card.openFile(parser.string_arg, true); }
+inline void __forceinline __flatten gcode_M23() { card.openFile(parser.string_arg, true); }
 
 /**
  * M24: Start or Resume SD Print
  */
-inline void gcode_M24() {
+inline void __forceinline __flatten gcode_M24() {
 	card.startFileprint();
 	print_job_timer.start();
 }
@@ -1513,7 +1628,7 @@ inline void gcode_M25() {
 /**
  * M26: Set SD Card file index
  */
-inline void gcode_M26() {
+inline void __forceinline __flatten gcode_M26() {
 	if (card.cardOK && parser.seenval('S'))
 		card.setIndex(parser.value_long());
 }
@@ -1526,13 +1641,13 @@ inline void gcode_M27() { card.getStatus(); }
 /**
  * M28: Start SD Write
  */
-inline void gcode_M28() { card.openFile(parser.string_arg, false); }
+inline void __forceinline __flatten gcode_M28() { card.openFile(parser.string_arg, false); }
 
 /**
  * M29: Stop SD Write
  * Processed in write to file routine above
  */
-inline void gcode_M29() {
+inline void __forceinline __flatten gcode_M29() {
 	// card.saving = false;
 }
 
@@ -1672,7 +1787,7 @@ inline void gcode_M78() {
 /**
  * M104: Set hot end temperature
  */
-inline void gcode_M104() {
+inline void __forceinline __flatten gcode_M104() {
 	if (__unlikely(get_target_extruder_from_command(104))) return;
 	if (__unlikely(DEBUGGING(DRYRUN))) return;
 
@@ -2105,17 +2220,17 @@ inline void gcode_M81() {
 /**
  * M82: Set E codes absolute (default)
  */
-inline void gcode_M82() { axis_relative_modes[E_AXIS] = false; }
+inline void __forceinline __flatten gcode_M82() { axis_relative_modes[E_AXIS] = false; }
 
 /**
  * M83: Set E codes relative while in Absolute Coordinates (G90) mode
  */
-inline void gcode_M83() { axis_relative_modes[E_AXIS] = true; }
+inline void __forceinline __flatten gcode_M83() { axis_relative_modes[E_AXIS] = true; }
 
 /**
  * M18, M84: Disable stepper motors
  */
-inline void gcode_M18_M84() {
+inline void __forceinline __flatten gcode_M18_M84() {
 	if (parser.seenval('S')) {
 		stepper_inactive_time = parser.value_millis_from_seconds();
 	}
@@ -2180,7 +2295,7 @@ inline void gcode_M92() {
 /**
  * Output the current position to serial
  */
-void report_current_position() {
+void __forceinline __flatten report_current_position() {
 	SERIAL_PROTOCOLPGM("X:");
 	SERIAL_PROTOCOL(current_position[X_AXIS]);
 	SERIAL_PROTOCOLPGM(" Y:");
@@ -2710,7 +2825,7 @@ inline void invalid_extruder_error(const uint8_t e) {
  * Perform a tool-change, which may result in moving the
  * previous tool out of the way and the new tool into place.
  */
-void tool_change(const uint8_t tmp_extruder, const float fr_mm_s/*=0.0*/, bool no_move/*=false*/) {
+void __forceinline __flatten tool_change(const uint8_t tmp_extruder, const float fr_mm_s/*=0.0*/, bool no_move/*=false*/) {
 	if (tmp_extruder >= EXTRUDERS)
 		return invalid_extruder_error(tmp_extruder);
 
@@ -2738,7 +2853,7 @@ inline void gcode_T(uint8_t tmp_extruder) {
  * Process a single command and dispatch it to its handler
  * This is called from the main loop()
  */
-void process_next_command() {
+void __forceinline __flatten process_next_command() {
 	char * const current_command = command_queue[cmd_queue_index_r];
 
 	if (__unlikely(DEBUGGING(ECHO))) {
@@ -2762,6 +2877,16 @@ void process_next_command() {
 	case 1:
 		linear_move<MovementType::Linear>();
 		break;
+
+#if ENABLED(FWRETRACT)
+  case 10: // G10: retract
+    gcode_G10();
+    break;
+  case 11: // G11: retract_recover
+    gcode_G11();
+    break;
+#endif // FWRETRACT
+
 
 		// G2, G3
 	//case 2: // G2  - CW ARC
@@ -2824,6 +2949,18 @@ void process_next_command() {
 			  break;
 
 	case 'M': switch (parser.codenum) {
+#if ENABLED(FWRETRACT)
+  case 207: // M207: Set Retract Length, Feedrate, and Z lift
+    gcode_M207();
+    break;
+  case 208: // M208: Set Recover (unretract) Additional Length and Feedrate
+    gcode_M208();
+    break;
+  case 209: // M209: Turn Automatic Retract Detection on/off
+    if (MIN_AUTORETRACT <= MAX_AUTORETRACT) gcode_M209();
+    break;
+#endif // FWRETRACT
+
 	case 17: // M17: Enable all stepper motors
 		gcode_M17();
 		break;
@@ -3154,7 +3291,7 @@ void clamp_to_software_endstops(float target[XYZ]) {
  * unapply_leveling to obtain the "ideal" coordinates
  * suitable for current_position, etc.
  */
-void get_cartesian_from_steppers() {
+void __forceinline __flatten get_cartesian_from_steppers() {
 	cartes[X_AXIS] = stepper.get_axis_position_mm(X_AXIS);
 	cartes[Y_AXIS] = stepper.get_axis_position_mm(Y_AXIS);
 	cartes[Z_AXIS] = stepper.get_axis_position_mm(Z_AXIS);
@@ -3165,7 +3302,7 @@ void get_cartesian_from_steppers() {
  * the stepper positions, removing any leveling that
  * may have been applied.
  */
-void set_current_from_steppers_for_axis(const AxisEnum axis)
+void __forceinline __flatten set_current_from_steppers_for_axis(const AxisEnum axis)
 {
 	get_cartesian_from_steppers();
 	current_position[axis] = cartes[axis];
@@ -3176,7 +3313,7 @@ void set_current_from_steppers_for_axis(const AxisEnum axis)
 * the stepper positions, removing any leveling that
 * may have been applied.
 */
-void set_current_from_steppers()
+void __forceinline __flatten set_current_from_steppers()
 {
   get_cartesian_from_steppers();
   COPY(current_position, cartes);
@@ -3200,13 +3337,136 @@ bool prepare_move_to_destination_cartesian()
 	return false;
 }
 
+#if ENABLED(FWRETRACT)
+
+/**
+* Retract or recover according to firmware settings
+*
+* This function handles retract/recover moves for G10 and G11,
+* plus auto-retract moves sent from G0/G1 when E-only moves are done.
+*
+* To simplify the logic, doubled retract/recover moves are ignored.
+*
+* Note: Z lift is done transparently to the planner. Aborting
+*       a print between G10 and G11 may corrupt the Z position.
+*
+* Note: Auto-retract will apply the set Z hop in addition to any Z hop
+*       included in the G-code. Use M207 Z0 to to prevent double hop.
+*/
+void retract(const bool retracting
+#if EXTRUDERS > 1
+  , bool swapping = false
+#endif
+) {
+
+  static float hop_amount = 0.0;  // Total amount lifted, for use in recover
+
+                                  // Prevent two retracts or recovers in a row
+  if (retracted[active_extruder] == retracting) return;
+
+  // Prevent two swap-retract or recovers in a row
+#if EXTRUDERS > 1
+  // Allow G10 S1 only after G10
+  if (swapping && retracted_swap[active_extruder] == retracting) return;
+  // G11 priority to recover the long retract if activated
+  if (!retracting) swapping = retracted_swap[active_extruder];
+#else
+  const bool swapping = false;
+#endif
+
+  /* // debugging
+  SERIAL_ECHOLNPAIR("retracting ", retracting);
+  SERIAL_ECHOLNPAIR("swapping ", swapping);
+  SERIAL_ECHOLNPAIR("active extruder ", active_extruder);
+  for (uint8_t i = 0; i < EXTRUDERS; ++i) {
+  SERIAL_ECHOPAIR("retracted[", i);
+  SERIAL_ECHOLNPAIR("] ", retracted[i]);
+  SERIAL_ECHOPAIR("retracted_swap[", i);
+  SERIAL_ECHOLNPAIR("] ", retracted_swap[i]);
+  }
+  SERIAL_ECHOLNPAIR("current_position[z] ", current_position[Z_AXIS]);
+  SERIAL_ECHOLNPAIR("hop_amount ", hop_amount);
+  //*/
+
+  const bool has_zhop = retract_zlift > 0.01;     // Is there a hop set?
+  const float old_feedrate_mm_s = feedrate_mm_s;
+
+  // The current position will be the destination for E and Z moves
+  set_destination_from_current();
+  stepper.synchronize();  // Wait for buffered moves to complete
+
+  const float renormalize = 1.0;// / planner.e_factor[active_extruder];
+
+  if (retracting) {
+    // Retract by moving from a faux E position back to the current E position
+    feedrate_mm_s = retract_feedrate_mm_s;
+    current_position[E_AXIS] += (swapping ? swap_retract_length : retract_length) * renormalize;
+    sync_plan_position_e();
+    prepare_move_to_destination();
+
+    // Is a Z hop set, and has the hop not yet been done?
+    if (has_zhop && !hop_amount) {
+      hop_amount += retract_zlift;                        // Carriage is raised for retraction hop
+      feedrate_mm_s = planner.max_feedrate_mm_s[Z_AXIS];  // Z feedrate to max
+      current_position[Z_AXIS] -= retract_zlift;          // Pretend current pos is lower. Next move raises Z.
+      SYNC_PLAN_POSITION_KINEMATIC();                     // Set the planner to the new position
+      prepare_move_to_destination();                      // Raise up to the old current pos
+      feedrate_mm_s = retract_feedrate_mm_s;              // Restore feedrate
+    }
+  }
+  else {
+    // If a hop was done and Z hasn't changed, undo the Z hop
+    if (hop_amount) {
+      current_position[Z_AXIS] += retract_zlift;          // Pretend current pos is lower. Next move raises Z.
+      SYNC_PLAN_POSITION_KINEMATIC();                     // Set the planner to the new position
+      feedrate_mm_s = planner.max_feedrate_mm_s[Z_AXIS];  // Z feedrate to max
+      prepare_move_to_destination();                      // Raise up to the old current pos
+      hop_amount = 0.0;                                   // Clear hop
+    }
+
+    // A retract multiplier has been added here to get faster swap recovery
+    feedrate_mm_s = swapping ? swap_retract_recover_feedrate_mm_s : retract_recover_feedrate_mm_s;
+
+    const float move_e = swapping ? swap_retract_length + swap_retract_recover_length : retract_length + retract_recover_length;
+    current_position[E_AXIS] -= move_e * renormalize;
+    sync_plan_position_e();
+    prepare_move_to_destination();                        // Recover E
+  }
+
+  feedrate_mm_s = old_feedrate_mm_s;                      // Restore original feedrate
+
+  retracted[active_extruder] = retracting;                // Active extruder now retracted / recovered
+
+                                                          // If swap retract/recover update the retracted_swap flag too
+#if EXTRUDERS > 1
+  if (swapping) retracted_swap[active_extruder] = retracting;
+#endif
+
+  /* // debugging
+  SERIAL_ECHOLNPAIR("retracting ", retracting);
+  SERIAL_ECHOLNPAIR("swapping ", swapping);
+  SERIAL_ECHOLNPAIR("active_extruder ", active_extruder);
+  for (uint8_t i = 0; i < EXTRUDERS; ++i) {
+  SERIAL_ECHOPAIR("retracted[", i);
+  SERIAL_ECHOLNPAIR("] ", retracted[i]);
+  SERIAL_ECHOPAIR("retracted_swap[", i);
+  SERIAL_ECHOLNPAIR("] ", retracted_swap[i]);
+  }
+  SERIAL_ECHOLNPAIR("current_position[z] ", current_position[Z_AXIS]);
+  SERIAL_ECHOLNPAIR("hop_amount ", hop_amount);
+  //*/
+
+}
+
+#endif // FWRETRACT
+
 /**
  * Prepare a single move and get ready for the next one
  *
  * This may result in several calls to planner.buffer_line to
  * do smaller moves for DELTA, SCARA, mesh moves, etc.
  */
-void prepare_move_to_destination() {
+void __forceinline __flatten prepare_move_to_destination() {
 	clamp_to_software_endstops(destination);
 	refresh_cmd_timeout();
 
@@ -3371,7 +3631,7 @@ void plan_arc(
 }
 #endif
 
-void plan_cubic_move(const float offset[4]) {
+void __forceinline __flatten plan_cubic_move(const float offset[4]) {
 	cubic_b_spline(current_position, destination, offset, MMS_SCALED(feedrate_mm_s), active_extruder);
 
 	// As far as the parser is concerned, the position is now == destination. In reality the
@@ -3501,7 +3761,7 @@ void kill(const char* lcd_msg) {
  * Turn off heaters and stop the print in progress
  * After a stop the machine may be resumed with M999
  */
-void stop() {
+void __forceinline __flatten stop() {
 	Temperature::disable_all_heaters(); // 'unpause' taken care of in here
 
 	if (__likely(is_running())) {

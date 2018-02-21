@@ -251,6 +251,9 @@ extern float feedrate_mm_s;
 
 extern float current_position[NUM_AXIS];
 
+inline void set_current_from_destination() { COPY(current_position, destination); }
+inline void set_destination_from_current() { COPY(destination, current_position); }
+
 // Workspace offsets
 #if HAS_WORKSPACE_OFFSET
   #if HAS_HOME_OFFSET

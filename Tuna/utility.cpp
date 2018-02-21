@@ -25,7 +25,7 @@
 #include "utility.h"
 #include "thermal/thermal.hpp"
 
-void safe_delay(millis_t ms) {
+void __forceinline safe_delay(millis_t ms) {
   while (ms > 50) {
     ms -= 50;
     delay(50_u8);

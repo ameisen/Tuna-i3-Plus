@@ -73,7 +73,7 @@ class SdVolume final {
    * recorder to do raw write to the SD card.  Not for normal apps.
    * \return A pointer to the cache buffer or zero if an error occurs.
    */
-  cache_t* cacheClear() {
+  cache_t* __forceinline __flatten cacheClear() {
     if (!cacheFlush()) return 0;
     cacheBlockNumber_ = 0XFFFFFFFF;
     return &cacheBuffer_;
@@ -192,12 +192,12 @@ class SdVolume final {
     return fatPut(cluster, 0x0FFFFFFF);
   }
   bool freeChain(uint32 cluster);
-  bool isEOC(uint32 cluster) const {
+  bool __forceinline __flatten isEOC(uint32 cluster) const {
     if (FAT12_SUPPORT && fatType_ == 12) return  cluster >= FAT12EOC_MIN;
     if (fatType_ == 16) return cluster >= FAT16EOC_MIN;
     return  cluster >= FAT32EOC_MIN;
   }
-  bool readBlock(uint32 block, uint8_t* dst) {
+  bool __forceinline __flatten readBlock(uint32 block, uint8_t* dst) {
     return sdCard_->readBlock(block, dst);
   }
   bool writeBlock(uint32 block, const uint8_t* dst) {

@@ -152,7 +152,7 @@ class PrintCounter final : public Stopwatch {
      * @details This function should be called at loop, it will take care of
      * periodically save the statistical data to EEPROM and do time keeping.
      */
-    void tick();
+    void __forceinline __flatten tick();
 
     /**
      * The following functions are being overridden

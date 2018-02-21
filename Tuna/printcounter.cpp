@@ -146,7 +146,7 @@ void PrintCounter::showStats() {
   SERIAL_EOL();
 }
 
-void PrintCounter::tick() {
+void __forceinline __flatten PrintCounter::tick() {
   if (!this->isRunning()) return;
 
   static uint32 update_last = millis(),

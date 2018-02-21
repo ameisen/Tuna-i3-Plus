@@ -254,7 +254,7 @@ bool SdBaseFile::exists(const char* name) {
  * \return For success fgets() returns the length of the string in \a str.
  * If no data is read, fgets() returns zero for EOF or -1 if an error occurred.
  **/
-int16_t SdBaseFile::fgets(char* str, int16_t num, char* delim) {
+int16_t __forceinline __flatten SdBaseFile::fgets(char* str, int16_t num, char* delim) {
   char ch;
   int16_t n = 0;
   int16_t r = -1;
@@ -932,7 +932,7 @@ fail:
  *
  * \return The byte if no error and not at eof else -1;
  */
-int SdBaseFile::peek() {
+int __forceinline __flatten SdBaseFile::peek() {
   filepos_t pos;
   getpos(&pos);
   int c = read();
@@ -1031,7 +1031,7 @@ bool SdBaseFile::printName() {
  * \return For success read returns the next byte in the file as an int.
  * If an error occurs or end of file is reached -1 is returned.
  */
-int16_t SdBaseFile::read() {
+int16_t __forceinline SdBaseFile::read() {
   uint8_t b;
   return read(&b, 1) == 1 ? b : -1;
 }
@@ -1049,7 +1049,7 @@ int16_t SdBaseFile::read() {
  * read() called before a file has been opened, corrupt file system
  * or an I/O error occurred.
  */
-int16_t SdBaseFile::read(void* buf, uint16_t nbyte) {
+int16_t __forceinline __flatten SdBaseFile::read(void* buf, uint16_t nbyte) {
   uint8_t* dst = reinterpret_cast<uint8_t*>(buf);
   uint16_t offset;
   uint16_t toRead;

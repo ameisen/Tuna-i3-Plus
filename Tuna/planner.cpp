@@ -182,7 +182,7 @@ void Planner::init() {
  * Calculate trapezoid parameters, multiplying the entry- and exit-speeds
  * by the provided factors.
  */
-void Planner::calculate_trapezoid_for_block(block_t * __restrict const block, const float & __restrict entry_speed, const float & __restrict next_entry_speed) {
+void __forceinline __flatten Planner::calculate_trapezoid_for_block(block_t * __restrict const block, const float & __restrict entry_speed, const float & __restrict next_entry_speed) {
   //float nominal_recip = 1.0f / nominal_speed;
   uint32 initial_rate = CEIL(entry_speed),
            final_rate = CEIL(next_entry_speed); // (steps per second)
@@ -217,6 +217,7 @@ void Planner::calculate_trapezoid_for_block(block_t * __restrict const block, co
       out->final_rate = final_rate;
       out->acceleration_rate = int24(accel * 16777216.0 / ((F_CPU) * 0.125)); // * 8.388608
 
+      /*
       float initial_component = float(out->accelerate_until) / float(out->step_event_count);
       float final_component = float(out->step_event_count - out->decelerate_after) / float(out->step_event_count);
 
@@ -228,6 +229,7 @@ void Planner::calculate_trapezoid_for_block(block_t * __restrict const block, co
       {
         out->plateau_rate = uint24((out->nominal_rate - (float(out->final_rate * final_component)) - (float(out->initial_rate) * initial_component)) + 0.5);
       }
+      */
     }
   }
 }
@@ -242,7 +244,7 @@ void Planner::calculate_trapezoid_for_block(block_t * __restrict const block, co
 
 
 // The kernel called by recalculate() when scanning the plan from last to first entry.
-void Planner::reverse_pass_kernel(block_t * __restrict const current, const block_t * __restrict next) {
+void __forceinline __flatten Planner::reverse_pass_kernel(block_t * __restrict const current, const block_t * __restrict next) {
   if (!current || !next) return;
   // If entry speed is already at the maximum entry speed, no need to recheck. Block is cruising.
   // If not, block in state of acceleration or deceleration. Reset entry speed to maximum and
@@ -262,32 +264,27 @@ void Planner::reverse_pass_kernel(block_t * __restrict const current, const bloc
  * recalculate() needs to go over the current plan twice.
  * Once in reverse and once forward. This implements the reverse pass.
  */
-void Planner::reverse_pass() {
+void __forceinline __flatten Planner::reverse_pass() {
 
   if (movesplanned() > 3) {
+    const uint8_t endnr = BLOCK_MOD(block_buffer_tail + 2); // tail is running. tail+1 shouldn't be altered because it's connected to the running block.
+                                                            // tail+2 because the index is not yet advanced when checked
+    uint8_t blocknr = prev_block_index(block_buffer_head);
+    block_t* __restrict current = &block_buffer[blocknr];
 
-    block_t * __restrict block[3] = { nullptr, nullptr, nullptr };
-
-    // Make a local copy of block_buffer_tail, because the interrupt can alter it
-    // Is a critical section REALLY needed for a single byte change?
-    //CRITICAL_SECTION_START;
-    uint8_t tail = block_buffer_tail;
-    //CRITICAL_SECTION_END
-
-    uint8_t b = BLOCK_MOD(block_buffer_head - 3);
-    while (b != tail) {
-      if (block[0] && TEST(block[0]->flag, BLOCK_BIT_START_FROM_FULL_HALT)) break;
-      b = prev_block_index(b);
-      block[2] = block[1];
-      block[1] = block[0];
-      block[0] = as<block_t * __restrict>(&block_buffer[b]);
-      reverse_pass_kernel(block[1], block[2]);
-    }
+    do {
+      const block_t * __restrict const next = current;
+      blocknr = prev_block_index(blocknr);
+      current = &block_buffer[blocknr];
+      if (TEST(current->flag, BLOCK_BIT_START_FROM_FULL_HALT)) // Up to this every block is already optimized.
+        break;
+      reverse_pass_kernel(current, next);
+    } while (blocknr != endnr);
   }
 }
 
 // The kernel called by recalculate() when scanning the plan from first to last entry.
-void Planner::forward_pass_kernel(const block_t * __restrict previous, block_t * __restrict const current) {
+void __forceinline __flatten Planner::forward_pass_kernel(const block_t * __restrict previous, block_t * __restrict const current) {
   if (!previous) return;
 
   // If the previous block is an acceleration block, but it is not long enough to complete the
@@ -311,7 +308,7 @@ void Planner::forward_pass_kernel(const block_t * __restrict previous, block_t *
  * recalculate() needs to go over the current plan twice.
  * Once in reverse and once forward. This implements the forward pass.
  */
-void Planner::forward_pass() {
+void __forceinline __flatten Planner::forward_pass() {
   block_t * __restrict block[3] = { nullptr, nullptr, nullptr };
 
   for (uint8_t b = block_buffer_tail; b != block_buffer_head; b = next_block_index(b)) {
@@ -328,7 +325,7 @@ void Planner::forward_pass() {
  * according to the entry_factor for each junction. Must be called by
  * recalculate() after updating the blocks.
  */
-void Planner::recalculate_trapezoids() {
+void __forceinline __flatten Planner::recalculate_trapezoids() {
   uint8 block_index = block_buffer_tail;
   block_t * __restrict next = nullptr;
 
@@ -456,7 +453,7 @@ void Planner::recalculate_trapezoids() {
  *
  *   3. Recalculate "trapezoids" for all blocks.
  */
-void Planner::recalculate() {
+void __forceinline __flatten Planner::recalculate() {
   reverse_pass();
   forward_pass();
   recalculate_trapezoids();
@@ -492,7 +489,7 @@ void Planner::recalculate() {
 /**
  * Maintain fans, paste extruder pressure,
  */
-void Planner::check_axes_activity() {
+void __forceinline __flatten Planner::check_axes_activity() {
   unsigned char axis_active[NUM_AXIS] = { 0 },
                 tail_fan_speed[FAN_COUNT];
 
@@ -769,7 +766,7 @@ void Planner::check_axes_activity() {
  *  fr_mm_s     - (target) speed of the move
  *  extruder    - target extruder
  */
-void Planner::_buffer_line(const float & __restrict a, const float & __restrict b, const float & __restrict c, const float & __restrict e, float fr_mm_s, const uint8_t extruder) {
+void __forceinline Planner::_buffer_line(const float & __restrict a, const float & __restrict b, const float & __restrict c, const float & __restrict e, float fr_mm_s, const uint8_t extruder) {
 
   // The target position of the tool in absolute steps
   // Calculate target position in absolute steps
@@ -1184,8 +1181,10 @@ void Planner::_buffer_line(const float & __restrict a, const float & __restrict 
 #endif
 
   block->nominal_speed = block->millimeters * inverse_mm_s; // (mm/sec) Always > 0
+  __assume(block->nominal_speed > 0.0);
   block->nominal_rate = CEIL(block->step_event_count * inverse_mm_s); // (step/sec) Always > 0
-  block->plateau_rate = block->nominal_rate;
+  __assume(block->nominal_rate > 0.0);
+  //block->plateau_rate = block->nominal_rate;
 
   #if ENABLED(FILAMENT_WIDTH_SENSOR)
     static float filwidth_e_count = 0, filwidth_delay_dist = 0;
@@ -1274,7 +1273,7 @@ void Planner::_buffer_line(const float & __restrict a, const float & __restrict 
     LOOP_XYZE(i) current_speed[i] *= speed_factor;
     block->nominal_speed *= speed_factor;
     block->nominal_rate *= speed_factor;
-    block->plateau_rate *= speed_factor;
+    //block->plateau_rate *= speed_factor;
   }
 
   // Compute and limit the acceleration rate for the trapezoid generator.
@@ -1327,55 +1326,6 @@ void Planner::_buffer_line(const float & __restrict a, const float & __restrict 
 
   // Initial limit on the segment entry velocity
   float vmax_junction;
-
-  #if 0  // Use old jerk for now
-
-    float junction_deviation = 0.1;
-
-    // Compute path unit vector
-    double unit_vec[XYZ] = {
-      delta_mm[X_AXIS] * inverse_millimeters,
-      delta_mm[Y_AXIS] * inverse_millimeters,
-      delta_mm[Z_AXIS] * inverse_millimeters
-    };
-
-    /*
-       Compute maximum allowable entry speed at junction by centripetal acceleration approximation.
-
-       Let a circle be tangent to both previous and current path line segments, where the junction
-       deviation is defined as the distance from the junction to the closest edge of the circle,
-       collinear with the circle center.
-
-       The circular segment joining the two paths represents the path of centripetal acceleration.
-       Solve for max velocity based on max acceleration about the radius of the circle, defined
-       indirectly by junction deviation.
-
-       This may be also viewed as path width or max_jerk in the previous grbl version. This approach
-       does not actually deviate from path, but used as a robust way to compute cornering speeds, as
-       it takes into account the nonlinearities of both the junction angle and junction velocity.
-     */
-
-    vmax_junction = 0.0f; // Set default max junction speed
-
-    // Skip first block or when previous_nominal_speed is used as a flag for homing and offset cycles.
-    if (block_buffer_head != block_buffer_tail && previous_nominal_speed > 0.0) {
-      // Compute cosine of angle between previous and current path. (prev_unit_vec is negative)
-      // NOTE: Max junction velocity is computed without sin() or acos() by trig half angle identity.
-      float cos_theta = - previous_unit_vec[X_AXIS] * unit_vec[X_AXIS]
-                        - previous_unit_vec[Y_AXIS] * unit_vec[Y_AXIS]
-                        - previous_unit_vec[Z_AXIS] * unit_vec[Z_AXIS] ;
-      // Skip and use default max junction speed for 0 degree acute junction.
-      if (cos_theta < 0.95) {
-        vmax_junction = min(previous_nominal_speed, block->nominal_speed);
-        // Skip and avoid divide by zero for straight junctions at 180 degrees. Limit to min() of nominal speeds.
-        if (cos_theta > -0.95) {
-          // Compute maximum junction velocity based on maximum acceleration and junction deviation
-          float sin_theta_d2 = SQRT(0.5 * (1.0 - cos_theta)); // Trig half angle identity. Always positive.
-          NOMORE(vmax_junction, SQRT(block->acceleration * junction_deviation * sin_theta_d2 / (1.0 - sin_theta_d2)));
-        }
-      }
-    }
-  #endif
 
   /**
    * Adapted from Průša MKS firmware
@@ -1534,7 +1484,7 @@ void Planner::_buffer_line(const float & __restrict a, const float & __restrict 
  * On CORE machines stepper ABC will be translated from the given XYZ.
  */
 
-void Planner::_set_position_mm(const float & __restrict a, const float & __restrict b, const float & __restrict c, const float & __restrict e) {
+void __forceinline Planner::_set_position_mm(const float & __restrict a, const float & __restrict b, const float & __restrict c, const float & __restrict e) {
   #if ENABLED(DISTINCT_E_FACTORS)
     #define _EINDEX (E_AXIS + active_extruder)
     last_extruder = active_extruder;
@@ -1556,7 +1506,7 @@ void Planner::_set_position_mm(const float & __restrict a, const float & __restr
   ZERO(previous_speed);
 }
 
-void Planner::set_position_mm_kinematic(const float position[NUM_AXIS]) {
+void __forceinline __flatten Planner::set_position_mm_kinematic(const float position[NUM_AXIS]) {
   #if PLANNER_LEVELING
     float lpos[XYZ] = { position[X_AXIS], position[Y_AXIS], position[Z_AXIS] };
     apply_leveling(lpos);
@@ -1574,7 +1524,7 @@ void Planner::set_position_mm_kinematic(const float position[NUM_AXIS]) {
 /**
  * Sync from the stepper positions. (e.g., after an interrupted move)
  */
-void Planner::sync_from_steppers() {
+void __forceinline __flatten Planner::sync_from_steppers() {
   LOOP_XYZE(i) {
     position[i] = stepper.position((AxisEnum)i);
     #if ENABLED(LIN_ADVANCE)
@@ -1590,7 +1540,7 @@ void Planner::sync_from_steppers() {
 /**
  * Setters for planner position (also setting stepper position).
  */
-void Planner::set_position_mm(const AxisEnum axis, const float & __restrict v) {
+void __forceinline __flatten Planner::set_position_mm(const AxisEnum axis, const float & __restrict v) {
   #if ENABLED(DISTINCT_E_FACTORS)
     const uint8_t axis_index = axis + (axis == E_AXIS ? active_extruder : 0);
     last_extruder = active_extruder;
@@ -1606,7 +1556,7 @@ void Planner::set_position_mm(const AxisEnum axis, const float & __restrict v) {
 }
 
 // Recalculate the steps/s^2 acceleration rates, based on the mm/s^2
-void Planner::reset_acceleration_rates() {
+void __forceinline __flatten Planner::reset_acceleration_rates() {
   #if ENABLED(DISTINCT_E_FACTORS)
     #define HIGHEST_CONDITION (i < E_AXIS || i == E_AXIS + active_extruder)
   #else
@@ -1621,7 +1571,7 @@ void Planner::reset_acceleration_rates() {
 }
 
 // Recalculate position, steps_to_mm if axis_steps_per_mm changes!
-void Planner::refresh_positioning() {
+void __forceinline Planner::refresh_positioning() {
   LOOP_XYZE_N(i) steps_to_mm[i] = 1.0 / axis_steps_per_mm[i];
   set_position_mm_kinematic(current_position);
   reset_acceleration_rates();

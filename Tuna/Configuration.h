@@ -497,12 +497,25 @@
  */
 //#define DISTINCT_E_FACTORS
 
+template <uint32_t _steps, uint32_t _microsteps, uint32_t _pitch> static constexpr const uint32_t screw_steps = (_steps * _microsteps) / _pitch;
+template <uint32_t _steps, uint32_t _microsteps, uint32_t _pitch, uint32_t _teeth> static constexpr const uint32_t belt_steps = (_steps * _microsteps) / (_pitch * _teeth);
+template <uint32_t _steps, uint32_t _microsteps, uint32_t _ratio> static constexpr const uint32_t gear_steps = _steps * _microsteps * _ratio;
+//template <uint32_t gsteps> static constexpr double esteps(const double hobb_diameter)
+//{
+//  return double(gsteps) / (hobb_diameter * PI);
+//}
+
 /**
  * Default Axis Steps Per Unit (steps/mm)
  * Override with M92
  *                                      X, Y, Z, E0 [, E1[, E2[, E3[, E4]]]]
  */
-#define DEFAULT_AXIS_STEPS_PER_UNIT   { 160, 100, 400, 88.78 }
+#define DEFAULT_AXIS_STEPS_PER_UNIT   { \
+  belt_steps<400, 16, 2, 16>, \
+  belt_steps<400, 16, 2, 16>, \
+  screw_steps<200, 16, 8>, \
+  88.78 \
+}
 
 /**
  * Default Max Feed Rate (mm/s)
@@ -717,7 +730,7 @@ constexpr const uint8_t DEFAULT_PREHEAT_PRESETS[3][2] = { // TODO fixme
 // @section extruder
 
 #define DISABLE_E false // For all extruders
-#define DISABLE_INACTIVE_EXTRUDER true // Keep only the active extruder enabled.
+#define DISABLE_INACTIVE_EXTRUDER false // Keep only the active extruder enabled.
 
 // @section machine
 
