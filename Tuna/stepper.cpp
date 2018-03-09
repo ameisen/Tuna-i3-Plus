@@ -136,11 +136,11 @@ volatile int24 Stepper::endstops_trigsteps[XYZ];
 // C1 B1 A1 is longIn1
 // D2 C2 B2 A2 is longIn2
 //
-inline uint16 __forceinline __flatten MultiU24X24toH16(arg_type<int24> longIn1, arg_type<int24> longIn2)
+inline uint16 __forceinline __flatten MultiU24X24toH16(arg_type<uint24> a, arg_type<uint24> b)
 {
-  const uint64 oper1 = uint64(longIn1);
+  const uint64 oper1 = uint64(a);
   __assume(oper1 <= type_trait<uint24>::max);
-  const uint24 oper2 = uint24(longIn2);
+  const uint24 oper2 = uint24(b);
   __assume(oper2 <= type_trait<uint24>::max);
   const uint64 mul_result = oper1 * oper2;
   __assume(mul_result <= (uint64(type_trait<uint24>::max) * type_trait<uint24>::max));

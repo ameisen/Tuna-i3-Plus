@@ -52,14 +52,18 @@ enum BlockFlagBit : uint8_t {
   BLOCK_BIT_START_FROM_FULL_HALT,
 
   // The block is busy
-  BLOCK_BIT_BUSY
+  BLOCK_BIT_BUSY,
+
+  // The Block is an arc block
+  BLOCK_BIT_ARC,
 };
 
 enum BlockFlag : uint8_t {
   BLOCK_FLAG_RECALCULATE          = _BV(BLOCK_BIT_RECALCULATE),
   BLOCK_FLAG_NOMINAL_LENGTH       = _BV(BLOCK_BIT_NOMINAL_LENGTH),
   BLOCK_FLAG_START_FROM_FULL_HALT = _BV(BLOCK_BIT_START_FROM_FULL_HALT),
-  BLOCK_FLAG_BUSY                 = _BV(BLOCK_BIT_BUSY)
+  BLOCK_FLAG_BUSY                 = _BV(BLOCK_BIT_BUSY),
+  BLOCK_FLAG_ARC                  = _BV(BLOCK_BIT_ARC)
 };
 
 /**
@@ -291,6 +295,12 @@ class Planner final {
     // TODO validate I actually want this to be forceinline. This makes the binary waaaaay bigger.
     static void __forceinline _buffer_line(const float & __restrict a, const float & __restrict b, const float & __restrict c, const float & __restrict e, float fr_mm_s, const uint8_t extruder);
 
+    static void __forceinline _buffer_arc(
+      const float(&target)[4],
+      const float(&start_velocity)[4],
+      const float(&end_velocity)[4]
+    );
+
     static void __forceinline _set_position_mm(const float & __restrict a, const float & __restrict b, const float & __restrict c, const float & __restrict e);
 
     /**
@@ -310,6 +320,15 @@ class Planner final {
         apply_leveling(lx, ly, lz);
       #endif
       _buffer_line(lx, ly, lz, e, fr_mm_s, extruder);
+    }
+
+    static void __forceinline buffer_arc(
+      const float(&target)[4],
+      const float(&start_velocity)[4],
+      const float(&end_velocity)[4]
+    )
+    {
+      _buffer_arc(target, start_velocity, end_velocity);
     }
 
     /**

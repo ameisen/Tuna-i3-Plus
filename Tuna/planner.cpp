@@ -756,6 +756,17 @@ void __forceinline __flatten Planner::check_axes_activity() {
 #endif // PLANNER_LEVELING
 
 /**
+* Add an arc movement to the buffer.
+*/
+void __forceinline Planner::_buffer_arc(
+  const float(&target)[4],
+  const float(&start_velocity)[4],
+  const float(&end_velocity)[4]
+)
+{
+}
+
+/**
  * Planner::_buffer_line
  *
  * Add a new linear movement to the buffer.

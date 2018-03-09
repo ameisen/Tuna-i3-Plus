@@ -213,9 +213,10 @@ namespace Tuna
   {
     const T m_Value = T{};
 
-    static inline __forceinline __flatten T _read_pgm(arg_type<T> value)
+    template <typename U = T>
+    static inline __forceinline __flatten U _read_pgm(arg_type<T> value)
     {
-      return read_pgm<T>(value);
+      return read_pgm<U>(value);
     }
 
   public:
@@ -226,7 +227,7 @@ namespace Tuna
     constexpr __forceinline __flatten flash(arg_type<T> value) : m_Value(value) {}
 
     template <typename U = T>
-    constexpr __forceinline __flatten T get() const __restrict
+    constexpr __forceinline __flatten U get() const __restrict
     {
       if (__builtin_constant_p(m_Value))
       {
@@ -234,7 +235,7 @@ namespace Tuna
       }
       else
       {
-        return _read_pgm(m_Value);
+        return _read_pgm<U>(m_Value);
       }
     }
 
